@@ -11,7 +11,11 @@ export async function apiFetch(
     headers.set("Content-Type", "application/json");
 
     if (token) {
-        headers.set("Authorization", token);
+        const authorization = token.startsWith("Bearer ")
+            ? token
+            : `Bearer ${token}`;
+
+        headers.set("Authorization", authorization);
     }
 
     const resposta = await fetch(`${API_URL}${endpoint}`, {

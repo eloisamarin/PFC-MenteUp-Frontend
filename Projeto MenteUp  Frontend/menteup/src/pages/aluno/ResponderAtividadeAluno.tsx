@@ -34,6 +34,13 @@ function chaveAtividadesConcluidas() {
   return `atividades-concluidas-${usuario.id || usuario.usuario || "aluno"}`;
 }
 
+function chaveStatusAtividades() {
+  const usuario = JSON.parse(
+    localStorage.getItem("usuario") || "{}"
+  );
+  return `atividades-status-${usuario.id || usuario.usuario || "aluno"}`;
+}
+
 function VisualizarAtividadeAluno() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -78,6 +85,15 @@ function VisualizarAtividadeAluno() {
         if (resultadoSalvo !== undefined) {
           setResultado(resultadoSalvo);
           setEnviada(true);
+        } else {
+          const status: Record<string, string> = JSON.parse(
+            localStorage.getItem(chaveStatusAtividades()) || "{}"
+          );
+          status[String(dados.id)] = "EM_ANDAMENTO";
+          localStorage.setItem(
+            chaveStatusAtividades(),
+            JSON.stringify(status)
+          );
         }
       } catch (error) {
         console.error("Erro ao buscar atividade:", error);
@@ -128,6 +144,15 @@ function VisualizarAtividadeAluno() {
     );
     concluidas[String(atividade.id)] = acertos;
     localStorage.setItem(chave, JSON.stringify(concluidas));
+
+    const status: Record<string, string> = JSON.parse(
+      localStorage.getItem(chaveStatusAtividades()) || "{}"
+    );
+    status[String(atividade.id)] = "CONCLUIDO";
+    localStorage.setItem(
+      chaveStatusAtividades(),
+      JSON.stringify(status)
+    );
   }
 
   /* ==============================
@@ -351,6 +376,7 @@ function VisualizarAtividadeAluno() {
                   (pergunta, index) => (
 
                     <div
+                  
                       className="mu-question"
                       key={pergunta.id}
                     >

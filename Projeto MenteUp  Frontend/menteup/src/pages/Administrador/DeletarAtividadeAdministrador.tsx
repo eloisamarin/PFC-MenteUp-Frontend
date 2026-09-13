@@ -106,7 +106,7 @@ function DeletarAtividadeAdministrador() {
             </div>
 
             <span className="mu-user-name">
-              Professora
+              Administrador
             </span>
 
           </div>
