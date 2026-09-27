@@ -44,6 +44,16 @@ function Login() {
 
             console.log("Login realizado:", dados);
 
+            if (!dados.token) {
+                localStorage.removeItem("token");
+                localStorage.removeItem("usuario");
+                sessionStorage.setItem("email2FA", email);
+                navigate("/verificar-2fa");
+                return;
+            }
+
+            sessionStorage.removeItem("email2FA");
+
             localStorage.setItem(
                 "token",
                 dados.token

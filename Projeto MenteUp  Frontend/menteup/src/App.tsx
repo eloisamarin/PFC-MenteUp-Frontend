@@ -1,4 +1,7 @@
 import { Routes, Route } from "react-router-dom";
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+
 
 import Home from "./pages/home";
 import Login from "./pages/login";
@@ -25,16 +28,54 @@ import CriarAtividadeAdministrador from "./pages/Administrador/CriarAtividadeAdm
 import AtividadesAdministrador from "./pages/Administrador/AtividadesAdministrador";
 
 import PrivateRoute from "./routes/privateRoute";
+import Verificar2FA from "./pages/Verificar2FA.tsx";
+import { ouvirNotificacoesFCM } from "./firebase/fcmService";
+
 
 function App() {
+    const navigate = useNavigate();
+
+    useEffect(() => {
+
+        function receberMensagem(event: MessageEvent) {
+
+            if (event.data?.tipo === "ABRIR_ATIVIDADES") {
+                navigate("/aluno/atividades");
+            }
+        }
+
+        navigator.serviceWorker.addEventListener(
+            "message",
+            receberMensagem
+        );
+
+        return () => {
+            navigator.serviceWorker.removeEventListener(
+                "message",
+                receberMensagem
+            );
+        };
+
+    }, [navigate]);
+    useEffect(() => {
+
+        console.log("🔔 Registrando listener do FCM...");
+
+        ouvirNotificacoesFCM();
+
+        console.log("🔔 Listener do FCM registrado!");
+
+    }, []);
 
     return (
+
         <Routes>
 
             {/* PÚBLICO */}
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/cadastro" element={<Cadastro />} />
+            <Route path="/verificar-2fa" element={<Verificar2FA />} />
 
 
             {/* ALUNO */}
@@ -120,9 +161,9 @@ function App() {
                 path="/professor/atividades/deletar/:id"
                 element={<DeletarAtividadeProfessor />}
 
-               /> 
+            />
 
-                {/* ADMINISTRADOR */}
+            {/* ADMINISTRADOR */}
             <Route
                 path="/administrador/dashboard"
                 element={
@@ -176,9 +217,11 @@ function App() {
                 path="/administrador/atividades/deletar/:id"
                 element={<DeletarAtividadeAdministrador />}
 
-               /> 
-
+            />
         </Routes>
+
+
+
     );
 }
 

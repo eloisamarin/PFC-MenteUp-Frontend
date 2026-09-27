@@ -61,9 +61,8 @@ function Cadastro() {
                 return;
             }
 
-            alert("Conta criada com sucesso!");
-
-            navigate("/login");
+            sessionStorage.setItem("email2FA", email);
+            navigate("/verificar-2fa");
 
         } catch (error) {
             console.error("Erro ao cadastrar:", error);
