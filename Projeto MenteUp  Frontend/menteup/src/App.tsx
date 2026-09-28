@@ -1,7 +1,4 @@
-import { Routes, Route } from "react-router-dom";
-import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-
+import {Routes, Route, useNavigate} from "react-router-dom";
 
 import Home from "./pages/home";
 import Login from "./pages/login";
@@ -9,6 +6,8 @@ import Cadastro from "./pages/cadastro";
 
 import DashboardAluno from "./pages/aluno/dashboardAluno";
 import AtividadesAluno from "./pages/aluno/atividadesAluno";
+import TurmasAluno from "./pages/aluno/turmasAluno";
+import Ranking from "./pages/aluno/Ranking";
 import ResponderAtividadesAluno from "./pages/aluno/ResponderAtividadeAluno";
 
 import DashboardProfessor from "./pages/professor/dashboardProfessor.tsx";
@@ -26,10 +25,12 @@ import EditarAtividadeAdministrador from "./pages/Administrador/EditarAtividadeA
 import DeletarAtividadeAdministrador from "./pages/Administrador/DeletarAtividadeAdministrador";
 import CriarAtividadeAdministrador from "./pages/Administrador/CriarAtividadeAdministrador";
 import AtividadesAdministrador from "./pages/Administrador/AtividadesAdministrador";
+import LogsAdministrador from "./pages/Administrador/LogsAdministrador.tsx";
 
 import PrivateRoute from "./routes/privateRoute";
 import Verificar2FA from "./pages/Verificar2FA.tsx";
 import { ouvirNotificacoesFCM } from "./firebase/fcmService";
+import {useEffect} from "react";
 
 
 function App() {
@@ -89,22 +90,40 @@ function App() {
             />
 
             <Route
+                path="/aluno/turmas"
+                element={
+                    <PrivateRoute permitido={["ALUNO"]}>
+                        <TurmasAluno/>
+                    </PrivateRoute>
+                }
+            />
+
+            <Route
                 path="/aluno/atividades"
                 element={
                     <PrivateRoute permitido={["ALUNO"]}>
                         <AtividadesAluno />
                     </PrivateRoute>
                 }
+
             />
             <Route
-                path="/aluno/atividades/responder/:id"
+                path="/aluno/ranking"
                 element={
                     <PrivateRoute permitido={["ALUNO"]}>
-                        <ResponderAtividadesAluno />
+                        <Ranking/>
                     </PrivateRoute>
                 }
             />
 
+            <Route
+                path="/aluno/atividades/responder/:id"
+                element={
+                    <PrivateRoute permitido={["ALUNO"]}>
+                        <ResponderAtividadesAluno/>
+                    </PrivateRoute>
+                }
+            />
 
             {/* PROFESSOR */}
             <Route
@@ -137,7 +156,7 @@ function App() {
                 path="/professor/atividades/criar"
                 element={
                     <PrivateRoute permitido={["PROFESSOR"]}>
-                        <CriarAtividadeProfessor />
+                        <CriarAtividadeProfessor/>
                     </PrivateRoute>
                 }
             />
@@ -145,7 +164,7 @@ function App() {
                 path="/professor/atividades/:id"
                 element={
                     <PrivateRoute permitido={["PROFESSOR"]}>
-                        <VisualizarAtividadeProfessor />
+                        <VisualizarAtividadeProfessor/>
                     </PrivateRoute>
                 }
             />
@@ -153,13 +172,13 @@ function App() {
                 path="/professor/atividades/editar/:id"
                 element={
                     <PrivateRoute permitido={["PROFESSOR"]}>
-                        <EditarAtividadeProfessor />
+                        <EditarAtividadeProfessor/>
                     </PrivateRoute>
                 }
             />
             <Route
                 path="/professor/atividades/deletar/:id"
-                element={<DeletarAtividadeProfessor />}
+                element={<DeletarAtividadeProfessor/>}
 
             />
 
@@ -185,7 +204,7 @@ function App() {
                 path="/administrador/atividades"
                 element={
                     <PrivateRoute permitido={["ADMINISTRADOR"]}>
-                        <AtividadesAdministrador />
+                        <AtividadesAdministrador/>
                     </PrivateRoute>
                 }
             />
@@ -193,7 +212,7 @@ function App() {
                 path="/administrador/atividades/criar"
                 element={
                     <PrivateRoute permitido={["ADMINISTRADOR"]}>
-                        <CriarAtividadeAdministrador />
+                        <CriarAtividadeAdministrador/>
                     </PrivateRoute>
                 }
             />
@@ -201,7 +220,7 @@ function App() {
                 path="/administrador/atividades/:id"
                 element={
                     <PrivateRoute permitido={["ADMINISTRADOR"]}>
-                        <VisualizarAtividadeAdministrador />
+                        <VisualizarAtividadeAdministrador/>
                     </PrivateRoute>
                 }
             />
@@ -209,19 +228,26 @@ function App() {
                 path="/administrador/atividades/editar/:id"
                 element={
                     <PrivateRoute permitido={["ADMINISTRADOR"]}>
-                        <EditarAtividadeAdministrador />
+                        <EditarAtividadeAdministrador/>
                     </PrivateRoute>
                 }
             />
             <Route
                 path="/administrador/atividades/deletar/:id"
-                element={<DeletarAtividadeAdministrador />}
+                element={<DeletarAtividadeAdministrador/>}
 
             />
+
+            <Route
+                path="/administrador/logs"
+                element={
+                    <PrivateRoute permitido={["ADMINISTRADOR"]}>
+                        <LogsAdministrador/>
+                    </PrivateRoute>
+                }
+            />
+
         </Routes>
-
-
-
     );
 }
 
