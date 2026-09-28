@@ -30,6 +30,10 @@ import LogsAdministrador from "./pages/Administrador/LogsAdministrador.tsx";
 import PrivateRoute from "./routes/privateRoute";
 import Verificar2FA from "./pages/Verificar2FA.tsx";
 import { ouvirNotificacoesFCM } from "./firebase/fcmService";
+import TermoAceite from "./pages/TermoAceite";
+import PoliticaPrivacidade from "./pages/PoliticaPrivacidade";
+import Footer from "./Footer";
+
 import {useEffect} from "react";
 
 
@@ -69,6 +73,9 @@ function App() {
     }, []);
 
     return (
+        <div className="flex min-h-screen flex-col">
+
+            <main className="flex-1">
 
         <Routes>
 
@@ -246,8 +253,25 @@ function App() {
                     </PrivateRoute>
                 }
             />
+            {/* DOCUMENTOS */}
+                    <Route
+                        path="/termo-de-aceite"
+                        element={<TermoAceite />}
+                    />
+
+                    <Route
+                        path="/politica-privacidade"
+                        element={<PoliticaPrivacidade />}
+                    />
+            
 
         </Routes>
+
+                </main>
+
+            <Footer />
+
+        </div
     );
 }
 
