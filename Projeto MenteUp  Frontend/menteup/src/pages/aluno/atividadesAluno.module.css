@@ -1,0 +1,367 @@
+/* Atividades do aluno — novo visual */
+
+/* ---------- Cabeçalho ---------- */
+.header {
+  margin-bottom: 28px;
+}
+
+.eyebrow {
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 16px;
+  text-transform: uppercase;
+  color: var(--mu-indigo);
+}
+
+.title {
+  margin: 8px 0 12px;
+  font-family: var(--mu-font-display);
+  font-size: 48px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--mu-app-text);
+}
+
+.subtitle {
+  margin: 0;
+  font-size: 16px;
+  line-height: 24px;
+  color: var(--mu-app-muted);
+}
+
+/* ---------- Filtros ---------- */
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 28px;
+}
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.tab {
+  height: 41px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 13px;
+  background: var(--mu-app-glass);
+  color: var(--mu-app-text);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.tab:hover:not(.tabActive) {
+  background: rgba(252, 250, 245, 0.14);
+}
+
+.tabActive {
+  background: var(--mu-gradient-brand);
+}
+
+.tabCount {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  display: inline-grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.search {
+  height: 41px;
+  width: 280px;
+  max-width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px;
+  border-radius: 13px;
+  background: var(--mu-app-glass);
+  border: 1px solid var(--mu-app-glass-border);
+  color: var(--mu-app-muted);
+  transition: border-color 0.2s;
+}
+
+.search:focus-within {
+  border-color: var(--mu-indigo);
+}
+
+.search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--mu-app-text);
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+}
+
+.search input::placeholder {
+  color: var(--mu-app-muted);
+}
+
+.error {
+  margin-bottom: 20px;
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: rgba(235, 100, 86, 0.15);
+  border: 1px solid rgba(235, 100, 86, 0.45);
+  color: #ffb4ab;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+/* ---------- Grade de cards ---------- */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 42px;
+}
+
+.card {
+  min-height: 326px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 29px;
+  border-radius: var(--mu-radius-2xl);
+  background: var(--mu-app-glass);
+  border: 1px solid var(--mu-app-glass-border);
+  box-shadow: var(--mu-app-shadow);
+  backdrop-filter: blur(10px);
+  transition: transform 0.2s, border-color 0.2s;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(252, 250, 245, 0.28);
+}
+
+.cardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.chip {
+  max-width: 65%;
+  padding: 9px 16px;
+  border-radius: 30px;
+  background: rgba(124, 58, 237, 0.3);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 16px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.xp {
+  color: var(--mu-gold);
+  font-size: 16px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.cardBody {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cardTitle {
+  margin: 0;
+  font-family: var(--mu-font-display);
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 32px;
+  color: var(--mu-app-text);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.date {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--mu-app-muted);
+}
+
+.track {
+  height: 12px;
+  border-radius: 999px;
+  background: var(--mu-app-track);
+  overflow: hidden;
+}
+
+.fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--mu-indigo);
+  transition: width 0.6s ease;
+}
+
+.trackLabels {
+  margin-top: 16px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--mu-app-muted);
+}
+
+/* ---------- Botões ---------- */
+.primaryButton,
+.secondaryButton {
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 0;
+  border-radius: var(--mu-radius-btn);
+  color: #fff;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: filter 0.2s, background 0.2s;
+}
+
+.primaryButton {
+  background: var(--mu-gradient-brand);
+}
+
+.primaryButton:hover {
+  filter: brightness(1.1);
+}
+
+.secondaryButton {
+  background: var(--mu-app-glass);
+}
+
+.secondaryButton:hover:not(:disabled) {
+  background: rgba(252, 250, 245, 0.14);
+}
+
+.secondaryButton:disabled {
+  color: var(--mu-app-muted);
+  cursor: not-allowed;
+}
+
+.tab:focus-visible,
+.primaryButton:focus-visible,
+.secondaryButton:focus-visible {
+  outline: 2px solid var(--mu-mint);
+  outline-offset: 2px;
+}
+
+/* ---------- Estados ---------- */
+.skeleton {
+  background: linear-gradient(90deg, var(--mu-app-glass) 0%, rgba(252, 250, 245, 0.14) 50%, var(--mu-app-glass) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s infinite linear;
+}
+
+@keyframes shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+.empty {
+  padding: 56px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+  border-radius: var(--mu-radius-2xl);
+  background: var(--mu-app-glass);
+  border: 1px solid var(--mu-app-glass-border);
+  color: var(--mu-app-muted);
+  font-size: 14px;
+}
+
+.empty svg {
+  margin-bottom: 8px;
+  opacity: 0.6;
+}
+
+.empty strong {
+  font-family: var(--mu-font-display);
+  font-size: 18px;
+  color: var(--mu-app-text);
+}
+
+.empty .primaryButton {
+  margin-top: 16px;
+  padding: 0 24px;
+}
+
+/* ---------- Responsivo ---------- */
+@media (max-width: 1100px) {
+  .grid {
+    gap: 24px;
+  }
+}
+
+@media (max-width: 640px) {
+  .title {
+    font-size: 36px;
+  }
+
+  .toolbar {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: stretch;
+  }
+
+  .tabs {
+    min-width: 0;
+  }
+
+  .tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .tab {
+    flex-shrink: 0;
+  }
+
+  .search {
+    width: 100%;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .card {
+    min-height: 0;
+    padding: 22px;
+  }
+}

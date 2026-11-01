@@ -1,24 +1,24 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-
 import {
-    Plus,
-    Search,
+    BookOpen,
+    CalendarDays,
     Eye,
     Pencil,
+    Plus,
+    Rocket,
+    Search,
     Trash2,
-    Play,
-    BookOpen,
-    Users,
-    Trophy,
+    TriangleAlert,
 } from "lucide-react";
 
-import { apiFetch } from "../../services/api";
+import ProfessorLayout from "../../components/professor/ProfessorLayout";
+import { apiFetch, lerErro } from "../../services/api";
+// Mesmo visual da lista de atividades do aluno
+import base from "../aluno/atividadesAluno.module.css";
+import styles from "./atividadesProfessor.module.css";
 
-type StatusAtividade =
-    | "PENDENTE"
-    | "EM_ANDAMENTO"
-    | "CONCLUIDO";
+type StatusAtividade = "PENDENTE" | "EM_ANDAMENTO" | "CONCLUIDO";
 
 type Atividade = {
     id: number | string;
@@ -26,34 +26,52 @@ type Atividade = {
     descricao?: string;
     pontuacao: number;
     status: StatusAtividade;
+    dataCriacao?: string;
     turma?: {
         id: number | string;
         nome?: string;
     };
 };
 
+type Filtro = "TODAS" | StatusAtividade;
+
+const FILTROS: { id: Filtro; rotulo: string }[] = [
+    { id: "TODAS", rotulo: "Todas" },
+    { id: "EM_ANDAMENTO", rotulo: "Ativas" },
+    { id: "PENDENTE", rotulo: "Rascunhos" },
+    { id: "CONCLUIDO", rotulo: "Encerradas" },
+];
+
+const STATUS: Record<StatusAtividade, { rotulo: string; classe: string }> = {
+    PENDENTE: { rotulo: "Rascunho", classe: "statusDraft" },
+    EM_ANDAMENTO: { rotulo: "Ativa", classe: "statusActive" },
+    CONCLUIDO: { rotulo: "Encerrada", classe: "statusClosed" },
+};
+
+function formatarData(data?: string) {
+    if (!data) return null;
+    const d = new Date(data);
+    return Number.isNaN(d.getTime()) ? null : d.toLocaleDateString("pt-BR");
+}
 
 function AtividadesProfessor() {
-
     const navigate = useNavigate();
 
     const [atividades, setAtividades] = useState<Atividade[]>([]);
-
     const [busca, setBusca] = useState("");
-
+    const [filtro, setFiltro] = useState<Filtro>("TODAS");
     const [carregando, setCarregando] = useState(true);
-
     const [erro, setErro] = useState("");
+    const [aviso, setAviso] = useState("");
 
+    const [paraExcluir, setParaExcluir] = useState<Atividade | null>(null);
+    const [excluindo, setExcluindo] = useState(false);
+    const [publicandoId, setPublicandoId] = useState<Atividade["id"] | null>(null);
 
-    // ==========================================
-    // CARREGAR ATIVIDADES
-    // ==========================================
+    /* ---------- Carregar ---------- */
 
     async function carregarAtividades() {
-
         try {
-
             setCarregando(true);
             setErro("");
 
@@ -63,805 +81,359 @@ function AtividadesProfessor() {
                 throw new Error("Erro ao carregar atividades");
             }
 
-            const dados = await resposta.json();
-
-            setAtividades(
-                [...dados].sort(
-                    (a: Atividade, b: Atividade) =>
-                        Number(b.id) - Number(a.id)
-                )
-            );
-
+            const dados: Atividade[] = await resposta.json();
+            setAtividades([...dados].sort((a, b) => Number(b.id) - Number(a.id)));
         } catch (error) {
-
             console.error(error);
-
-            setErro(
-                "Não foi possível carregar as atividades."
-            );
-
+            setErro("Não foi possível carregar as atividades.");
         } finally {
-
             setCarregando(false);
-
         }
     }
-
-
-    // ==========================================
-    // CARREGAR AO ABRIR A PÁGINA
-    // ==========================================
 
     useEffect(() => {
-
         carregarAtividades();
-
     }, []);
 
+    // Aviso de sucesso some sozinho
+    useEffect(() => {
+        if (!aviso) return;
+        const t = window.setTimeout(() => setAviso(""), 4000);
+        return () => window.clearTimeout(t);
+    }, [aviso]);
 
-    // ==========================================
-    // CRIAR ATIVIDADE
-    // ==========================================
+    /* ---------- Ações ---------- */
 
-    function criarAtividade() {
+    const visualizar = (a: Atividade) => navigate(`/professor/atividades/${a.id}`);
+    const editar = (a: Atividade) => navigate(`/professor/atividades/editar/${a.id}`);
 
-        navigate("/professor/atividades/criar");
-
-    }
-
-
-    // ==========================================
-    // VISUALIZAR ATIVIDADE
-    // ==========================================
-
-    function visualizarAtividade(
-        atividade: Atividade
-    ) {
-
-        navigate(
-            `/professor/atividades/${atividade.id}`
-        );
-
-    }
-
-
-    // ==========================================
-    // EDITAR ATIVIDADE
-    // ==========================================
-
-    function editarAtividade(
-        atividade: Atividade
-    ) {
-
-        navigate(
-            `/professor/atividades/editar/${atividade.id}`
-        );
-
-    }
-
-
-    // ==========================================
-    // DELETAR ATIVIDADE
-    // ==========================================
-
-    function deletarAtividade(
-        atividade: Atividade
-    ) {
-
-        navigate(
-            `/professor/atividades/deletar/${atividade.id}`
-        );
-
-    }
-
-
-    // ==========================================
-    // ATIVAR ATIVIDADE
-    // ==========================================
-
-    async function ativarAtividade(
-        atividade: Atividade
-    ) {
-
+    async function publicar(atividade: Atividade) {
         try {
+            setPublicandoId(atividade.id);
+            setErro("");
 
-            const resposta = await apiFetch(
-                "/atividades",
-                {
-                    method: "PUT",
-
-                    body: JSON.stringify({
-
-                        id: atividade.id,
-
-                        titulo: atividade.titulo,
-
-                        descricao: atividade.descricao,
-
-                        pontuacao: atividade.pontuacao,
-
-                        status: "EM_ANDAMENTO",
-
-                        turma: {
-                            id: atividade.turma?.id
-                        }
-
-                    }),
-                }
-            );
-
+            const resposta = await apiFetch("/atividades", {
+                method: "PUT",
+                body: JSON.stringify({
+                    id: atividade.id,
+                    titulo: atividade.titulo,
+                    descricao: atividade.descricao,
+                    pontuacao: atividade.pontuacao,
+                    status: "EM_ANDAMENTO",
+                    turma: { id: atividade.turma?.id },
+                }),
+            });
 
             if (!resposta.ok) {
-
-                alert(
-                    "Não foi possível ativar a atividade."
-                );
-
+                const erroApi = await lerErro(resposta, "Não foi possível publicar a atividade.");
+                setErro(erroApi.mensagem);
                 return;
-
             }
 
-
+            setAviso(`"${atividade.titulo}" foi publicada para os alunos.`);
             await carregarAtividades();
-
-
         } catch (error) {
-
             console.error(error);
-
-            alert(
-                "Erro ao ativar atividade."
-            );
-
+            setErro("Erro ao publicar a atividade.");
+        } finally {
+            setPublicandoId(null);
         }
-
     }
 
+    async function confirmarExclusao() {
+        if (!paraExcluir) return;
 
-    // ==========================================
-    // FILTRO DE PESQUISA
-    // ==========================================
+        try {
+            setExcluindo(true);
+            setErro("");
 
-    const atividadesFiltradas =
-        atividades.filter(
-            (atividade) =>
-                atividade.titulo
-                    .toLowerCase()
-                    .includes(
-                        busca.toLowerCase()
-                    )
-        );
+            const resposta = await apiFetch(`/atividades/${paraExcluir.id}`, { method: "DELETE" });
 
+            if (!resposta.ok) {
+                const padrao =
+                    resposta.status === 404
+                        ? "Atividade não encontrada."
+                        : resposta.status === 403
+                          ? "Você não tem permissão para excluir esta atividade."
+                          : "Não foi possível excluir a atividade.";
+                const erroApi = await lerErro(resposta, padrao);
+                setErro(erroApi.mensagem);
+                setParaExcluir(null);
+                return;
+            }
 
-    // ==========================================
-    // LABEL DO STATUS
-    // ==========================================
-
-    function statusLabel(
-        status: StatusAtividade
-    ) {
-
-        switch (status) {
-
-            case "PENDENTE":
-                return "Pendente";
-
-            case "EM_ANDAMENTO":
-                return "Em andamento";
-
-            case "CONCLUIDO":
-                return "Concluído";
-
-            default:
-                return status;
-
+            setAtividades((lista) => lista.filter((a) => a.id !== paraExcluir.id));
+            setAviso(`"${paraExcluir.titulo}" foi excluída.`);
+            setParaExcluir(null);
+        } catch (error) {
+            console.error(error);
+            setErro("Erro ao excluir a atividade.");
+            setParaExcluir(null);
+        } finally {
+            setExcluindo(false);
         }
-
     }
 
+    // Esc fecha a confirmação
+    useEffect(() => {
+        if (!paraExcluir) return;
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key === "Escape" && !excluindo) setParaExcluir(null);
+        };
+        window.addEventListener("keydown", onKey);
+        return () => window.removeEventListener("keydown", onKey);
+    }, [paraExcluir, excluindo]);
 
-    // ==========================================
-    // CLASSE DO STATUS
-    // ==========================================
+    /* ---------- Filtros ---------- */
 
-    function statusClass(
-        status: StatusAtividade
-    ) {
+    const contagem = useMemo(() => {
+        const c: Record<Filtro, number> = {
+            TODAS: atividades.length,
+            PENDENTE: 0,
+            EM_ANDAMENTO: 0,
+            CONCLUIDO: 0,
+        };
+        atividades.forEach((a) => {
+            if (a.status in c) c[a.status]++;
+        });
+        return c;
+    }, [atividades]);
 
-        switch (status) {
+    const filtradas = useMemo(() => {
+        const termo = busca.trim().toLowerCase();
+        return atividades.filter((a) => {
+            const passaFiltro = filtro === "TODAS" || a.status === filtro;
+            const passaBusca =
+                !termo ||
+                a.titulo.toLowerCase().includes(termo) ||
+                (a.turma?.nome ?? "").toLowerCase().includes(termo);
+            return passaFiltro && passaBusca;
+        });
+    }, [atividades, filtro, busca]);
 
-            case "PENDENTE":
-
-                return "bg-slate-100 text-slate-600";
-
-
-            case "EM_ANDAMENTO":
-
-                return "bg-emerald-100 text-emerald-700";
-
-
-            case "CONCLUIDO":
-
-                return "bg-blue-100 text-blue-700";
-
-
-            default:
-
-                return "bg-gray-100 text-gray-600";
-
-        }
-
-    }
-
-
-    // ==========================================
-    // TELA
-    // ==========================================
+    /* ---------- Tela ---------- */
 
     return (
+        <ProfessorLayout>
+            {/* CABEÇALHO */}
+            <header className={`${base.header} ${styles.headerRow}`}>
+                <div>
+                    <span className={base.eyebrow}>Gestão de conteúdo</span>
+                    <h1 className={base.title}>Atividades</h1>
+                    <p className={base.subtitle}>
+                        Crie, publique e acompanhe as missões das suas turmas.
+                    </p>
+                </div>
+                <button
+                    type="button"
+                    className={styles.createButton}
+                    onClick={() => navigate("/professor/atividades/criar")}
+                >
+                    <Plus size={16} /> Criar atividade
+                </button>
+            </header>
 
-        <div className="min-h-screen bg-[#f5f6fc] text-slate-800">
-
-
-            {/* ================================= */}
-            {/* SIDEBAR */}
-            {/* ================================= */}
-
-            <aside className="fixed left-0 top-0 h-screen w-56 bg-[#121329] text-white">
-
-
-                {/* LOGO */}
-
-                <div className="flex items-center gap-3 px-6 py-6">
-
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 font-bold">
-
-                        M
-
-                    </div>
-
-
-                    <span className="text-lg font-bold">
-
-                        Mente
-                        <span className="text-purple-400">
-                            Up
-                        </span>
-
-                    </span>
-
+            {/* FILTROS + BUSCA */}
+            <div className={base.toolbar}>
+                <div className={base.tabs} role="tablist" aria-label="Filtrar atividades">
+                    {FILTROS.map((f) => (
+                        <button
+                            key={f.id}
+                            type="button"
+                            role="tab"
+                            aria-selected={filtro === f.id}
+                            className={`${base.tab} ${filtro === f.id ? base.tabActive : ""}`}
+                            onClick={() => setFiltro(f.id)}
+                        >
+                            {f.rotulo}
+                            {!carregando && <span className={base.tabCount}>{contagem[f.id]}</span>}
+                        </button>
+                    ))}
                 </div>
 
-
-                {/* MENU */}
-
-                <nav className="mt-6 space-y-2 px-3">
-
-
-                    {/* DASHBOARD */}
-
-                    <button
-                        onClick={() =>
-                            navigate(
-                                "/professor/dashboard"
-                            )
-                        }
-                        className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm text-slate-300 hover:bg-white/10"
-                    >
-
-                        Dashboard
-
-                    </button>
-
-
-                    {/* TURMAS */}
-
-                    <button
-                        onClick={() =>
-                            navigate(
-                                "/professor/turmas"
-                            )
-                        }
-                        className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm text-slate-300 hover:bg-white/10"
-                    >
-
-                        <Users size={17} />
-
-                        Turmas
-
-                    </button>
-
-
-                    {/* ATIVIDADES */}
-
-                    <button
-                        onClick={() =>
-                            navigate(
-                                "/professor/atividades"
-                            )
-                        }
-                        className="flex w-full items-center gap-3 rounded-lg bg-white/10 px-4 py-3 text-sm font-medium text-white"
-                    >
-
-                        <BookOpen size={17} />
-
-                        Atividades
-
-                    </button>
-
-
-                    {/* DESEMPENHO */}
-
-                    <button
-                        className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm text-slate-300 hover:bg-white/10"
-                    >
-
-                        Desempenho
-
-                    </button>
-
-
-                    {/* RANKING */}
-
-                    <button
-                        className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm text-slate-300 hover:bg-white/10"
-                    >
-
-                        <Trophy size={17} />
-
-                        Ranking
-
-                    </button>
-
-
-                    {/* PERFIL */}
-
-                    <button
-                        className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm text-slate-300 hover:bg-white/10"
-                    >
-
-                        Perfil
-
-                    </button>
-
-                </nav>
-
-            </aside>
-
-
-            {/* ================================= */}
-            {/* CONTEÚDO PRINCIPAL */}
-            {/* ================================= */}
-
-            <main className="ml-56 min-h-screen">
-
-
-                {/* HEADER */}
-
-                <header className="flex h-20 items-center justify-between border-b bg-white px-8">
-
-
-                    {/* PESQUISA */}
-
-                    <div className="relative">
-
-                        <Search
-                            size={17}
-                            className="absolute left-4 top-3 text-slate-400"
-                        />
-
-
-                        <input
-                            value={busca}
-                            onChange={(e) =>
-                                setBusca(
-                                    e.target.value
-                                )
-                            }
-                            placeholder="Buscar atividade..."
-                            className="w-72 rounded-full bg-[#f4f5fb] py-2.5 pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-indigo-300"
-                        />
-
-                    </div>
-
-
-                    {/* USUÁRIO */}
-
-                    <div className="flex items-center gap-3">
-
-
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-600 text-sm font-bold text-white">
-
-                            {JSON.parse(
-                                localStorage.getItem(
-                                    "usuario"
-                                ) || "{}"
-                            ).nome?.charAt(0) || "P"}
-
-                        </div>
-
-
-                        <div className="text-sm">
-
-                            <p className="font-semibold">
-
-                                {JSON.parse(
-                                    localStorage.getItem(
-                                        "usuario"
-                                    ) || "{}"
-                                ).nome || "Professor"}
-
-                            </p>
-
-
-                            <p className="text-xs text-slate-400">
-
-                                Professor
-
-                            </p>
-
-                        </div>
-
-                    </div>
-
-                </header>
-
-
-                {/* ================================= */}
-                {/* SEÇÃO */}
-                {/* ================================= */}
-
-                <section className="p-8">
-
-
-                    {/* TÍTULO */}
-
-                    <div className="mb-7 flex items-center justify-between">
-
-
-                        <div>
-
-                            <div>
-                                <h1 className="text-2xl font-semibold">
-                                    Atividades
-                                </h1>
-
-                                <p className="mt-1 text-sm text-slate-400">
-                                    {atividades.length} atividades criadas
-                                </p>
-                            </div>
-
+                <label className={base.search}>
+                    <Search size={16} />
+                    <input
+                        type="search"
+                        placeholder="Buscar atividade ou turma..."
+                        value={busca}
+                        onChange={(e) => setBusca(e.target.value)}
+                    />
+                </label>
+            </div>
+
+            {erro && (
+                <div className={base.error} role="alert">
+                    {erro}
+                </div>
+            )}
+            {aviso && (
+                <div className={styles.success} role="status">
+                    {aviso}
+                </div>
+            )}
+
+            {/* LISTA */}
+            {carregando ? (
+                <div className={base.grid}>
+                    {[0, 1, 2].map((i) => (
+                        <div key={i} className={`${base.card} ${base.skeleton}`} />
+                    ))}
+                </div>
+            ) : filtradas.length === 0 ? (
+                <div className={base.empty}>
+                    <BookOpen size={40} />
+                    {atividades.length === 0 ? (
+                        <>
+                            <strong>Nenhuma atividade criada ainda</strong>
+                            <span>Crie a primeira missão para as suas turmas.</span>
                             <button
                                 type="button"
-                                onClick={carregarAtividades}
-                                disabled={carregando}
-                                className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-60"
+                                className={base.primaryButton}
+                                onClick={() => navigate("/professor/atividades/criar")}
                             >
-                                {carregando ? "Atualizando..." : "Atualizar lista"}
+                                <Plus size={16} /> Criar atividade
                             </button>
-
-                        </div>
-
-
-                        {/* CRIAR */}
-
-                        <button
-                            onClick={criarAtividade}
-                            className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-200 transition hover:-translate-y-0.5"
-                        >
-
-                            <Plus size={18} />
-
-                            Criar atividade
-
-                        </button>
-
-                    </div>
-
-
-                    {/* ERRO */}
-
-                    {erro && (
-
-                        <div className="mb-5 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-600">
-
-                            {erro}
-
-                        </div>
-
+                        </>
+                    ) : (
+                        <>
+                            <strong>Nenhuma atividade encontrada</strong>
+                            <span>Tente outro filtro ou outro termo de busca.</span>
+                        </>
                     )}
-
-
-                    {/* ================================= */}
-                    {/* TABELA */}
-                    {/* ================================= */}
-
-                    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-
-                        <div className="overflow-x-auto">
-
-                            <table className="w-full">
-
-
-                                {/* CABEÇALHO */}
-
-                                <thead className="border-b bg-slate-50">
-
-                                    <tr className="text-left text-xs uppercase text-slate-400">
-
-                                        <th className="px-5 py-4">
-                                            Atividade
-                                        </th>
-
-                                        <th className="px-5 py-4">
-                                            Turma
-                                        </th>
-
-                                        <th className="px-5 py-4">
-                                            XP
-                                        </th>
-
-                                        <th className="px-5 py-4">
-                                            Status
-                                        </th>
-
-                                        <th className="px-5 py-4 text-center">
-                                            Ações
-                                        </th>
-
-                                    </tr>
-
-                                </thead>
-
-
-                                {/* CORPO */}
-
-                                <tbody>
-
-
-                                    {/* CARREGANDO */}
-
-                                    {carregando ? (
-
-                                        <tr>
-
-                                            <td
-                                                colSpan={5}
-                                                className="py-12 text-center text-sm text-slate-400"
-                                            >
-
-                                                Carregando atividades...
-
-                                            </td>
-
-                                        </tr>
-
-
-                                    ) : atividadesFiltradas.length === 0 ? (
-
-
-                                        /* NENHUMA ATIVIDADE */
-
-                                        <tr>
-
-                                            <td
-                                                colSpan={5}
-                                                className="py-12 text-center"
-                                            >
-
-                                                <BookOpen
-                                                    size={40}
-                                                    className="mx-auto mb-3 text-slate-300"
-                                                />
-
-
-                                                <p className="font-medium text-slate-600">
-
-                                                    Nenhuma atividade encontrada
-
-                                                </p>
-
-
-                                                <p className="mt-1 text-sm text-slate-400">
-
-                                                    Crie sua primeira atividade.
-
-                                                </p>
-
-                                            </td>
-
-                                        </tr>
-
-
-                                    ) : (
-
-
-                                        /* ATIVIDADES */
-
-                                        atividadesFiltradas.map(
-                                            (atividade) => (
-
-                                                <tr
-                                                    key={atividade.id}
-                                                    className="border-b last:border-0 hover:bg-slate-50"
-                                                >
-
-
-                                                    {/* ATIVIDADE */}
-
-                                                    <td className="px-5 py-5">
-
-                                                        <p className="font-semibold text-slate-700">
-
-                                                            {atividade.titulo}
-
-                                                        </p>
-
-
-                                                        <p className="mt-1 max-w-md truncate text-xs text-slate-400">
-
-                                                            {atividade.descricao}
-
-                                                        </p>
-
-                                                    </td>
-
-
-                                                    {/* TURMA */}
-
-                                                    <td className="px-5 py-5 text-sm text-slate-600">
-
-                                                        {atividade.turma?.nome ||
-                                                            "Sem turma"}
-
-                                                    </td>
-
-
-                                                    {/* XP */}
-
-                                                    <td className="px-5 py-5 text-sm font-semibold">
-
-                                                        {atividade.pontuacao} XP
-
-                                                    </td>
-
-
-                                                    {/* STATUS */}
-
-                                                    <td className="px-5 py-5">
-
-                                                        <span
-                                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${statusClass(
-                                                                atividade.status
-                                                            )}`}
-                                                        >
-
-                                                            {statusLabel(
-                                                                atividade.status
-                                                            )}
-
-                                                        </span>
-
-                                                    </td>
-
-
-                                                    {/* AÇÕES */}
-
-                                                    <td className="px-5 py-5">
-
-                                                        <div className="flex justify-center gap-2">
-
-
-                                                            {/* ================= */}
-                                                            {/* VISUALIZAR */}
-                                                            {/* ================= */}
-
-                                                            <button
-                                                                title="Visualizar"
-                                                                onClick={() =>
-                                                                    visualizarAtividade(
-                                                                        atividade
-                                                                    )
-                                                                }
-                                                                className="rounded-lg border border-slate-200 p-2 text-slate-500 hover:bg-slate-100"
-                                                            >
-
-                                                                <Eye size={16} />
-
-                                                            </button>
-
-
-                                                            {/* ================= */}
-                                                            {/* EDITAR */}
-                                                            {/* ================= */}
-
-                                                            <button
-                                                                title="Editar"
-                                                                onClick={() =>
-                                                                    editarAtividade(
-                                                                        atividade
-                                                                    )
-                                                                }
-                                                                className="rounded-lg border border-slate-200 p-2 text-indigo-500 hover:bg-indigo-50"
-                                                            >
-
-                                                                <Pencil size={16} />
-
-                                                            </button>
-
-
-                                                            {/* ================= */}
-                                                            {/* ATIVAR */}
-                                                            {/* ================= */}
-
-                                                            {atividade.status ===
-                                                                "PENDENTE" && (
-
-                                                                    <button
-                                                                        title="Ativar"
-                                                                        onClick={() =>
-                                                                            ativarAtividade(
-                                                                                atividade
-                                                                            )
-                                                                        }
-                                                                        className="rounded-lg border border-emerald-200 p-2 text-emerald-600 hover:bg-emerald-50"
-                                                                    >
-
-                                                                        <Play
-                                                                            size={16}
-                                                                        />
-
-                                                                    </button>
-
-                                                                )}
-
-
-                                                            {/* ================= */}
-                                                            {/* DELETAR */}
-                                                            {/* ================= */}
-
-                                                            <button
-                                                                title="Excluir"
-                                                                onClick={() =>
-                                                                    deletarAtividade(
-                                                                        atividade
-                                                                    )
-                                                                }
-                                                                className="rounded-lg border border-red-200 p-2 text-red-500 hover:bg-red-50"
-                                                            >
-
-                                                                <Trash2
-                                                                    size={16}
-                                                                />
-
-                                                            </button>
-
-                                                        </div>
-
-                                                    </td>
-
-                                                </tr>
-
-                                            )
-                                        )
-
+                </div>
+            ) : (
+                <div className={base.grid}>
+                    {filtradas.map((atividade) => {
+                        const status = STATUS[atividade.status] ?? STATUS.PENDENTE;
+                        const data = formatarData(atividade.dataCriacao);
+                        const rascunho = atividade.status === "PENDENTE";
+
+                        return (
+                            <article key={atividade.id} className={base.card}>
+                                <div className={base.cardTop}>
+                                    <span className={base.chip} title="Turma">
+                                        {atividade.turma?.nome ?? "Sem turma"}
+                                    </span>
+                                    <span className={base.xp}>+{atividade.pontuacao} XP</span>
+                                </div>
+
+                                <div className={base.cardBody}>
+                                    <h2 className={base.cardTitle} title={atividade.titulo}>
+                                        {atividade.titulo}
+                                    </h2>
+                                    {data && (
+                                        <span className={base.date}>
+                                            <CalendarDays size={14} />
+                                            Criada em {data}
+                                        </span>
                                     )}
+                                    {atividade.descricao && (
+                                        <p className={styles.description}>{atividade.descricao}</p>
+                                    )}
+                                </div>
 
-                                </tbody>
+                                <div className={styles.statusRow}>
+                                    <span className={`${styles.status} ${styles[status.classe]}`}>
+                                        {status.rotulo}
+                                    </span>
+                                    {rascunho && (
+                                        <button
+                                            type="button"
+                                            className={styles.publish}
+                                            onClick={() => publicar(atividade)}
+                                            disabled={publicandoId === atividade.id}
+                                        >
+                                            <Rocket size={14} />
+                                            {publicandoId === atividade.id ? "Publicando..." : "Publicar"}
+                                        </button>
+                                    )}
+                                </div>
 
-                            </table>
+                                {/* AÇÕES */}
+                                <div className={styles.actions}>
+                                    <button
+                                        type="button"
+                                        className={`${base.primaryButton} ${styles.grow}`}
+                                        onClick={() => visualizar(atividade)}
+                                    >
+                                        <Eye size={16} /> Visualizar
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className={`${base.secondaryButton} ${styles.iconButton}`}
+                                        onClick={() => editar(atividade)}
+                                        title="Editar atividade"
+                                        aria-label={`Editar ${atividade.titulo}`}
+                                    >
+                                        <Pencil size={18} />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className={`${base.secondaryButton} ${styles.iconButton} ${styles.danger}`}
+                                        onClick={() => setParaExcluir(atividade)}
+                                        title="Excluir atividade"
+                                        aria-label={`Excluir ${atividade.titulo}`}
+                                    >
+                                        <Trash2 size={18} />
+                                    </button>
+                                </div>
+                            </article>
+                        );
+                    })}
+                </div>
+            )}
 
+            {/* CONFIRMAÇÃO DE EXCLUSÃO */}
+            {paraExcluir && (
+                <div
+                    className={styles.overlay}
+                    onClick={() => !excluindo && setParaExcluir(null)}
+                >
+                    <div
+                        className={styles.dialog}
+                        role="alertdialog"
+                        aria-modal="true"
+                        aria-labelledby="excluir-titulo"
+                        aria-describedby="excluir-texto"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <span className={styles.dialogIcon}>
+                            <TriangleAlert size={28} />
+                        </span>
+                        <h2 id="excluir-titulo" className={styles.dialogTitle}>
+                            Excluir atividade?
+                        </h2>
+                        <p id="excluir-texto" className={styles.dialogText}>
+                            <strong>{paraExcluir.titulo}</strong> será removida permanentemente,
+                            junto com as perguntas e respostas dos alunos. Essa ação não pode ser
+                            desfeita.
+                        </p>
+                        <div className={styles.dialogActions}>
+                            <button
+                                type="button"
+                                className={base.secondaryButton}
+                                onClick={() => setParaExcluir(null)}
+                                disabled={excluindo}
+                                autoFocus
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                type="button"
+                                className={styles.dangerButton}
+                                onClick={confirmarExclusao}
+                                disabled={excluindo}
+                            >
+                                <Trash2 size={16} />
+                                {excluindo ? "Excluindo..." : "Excluir"}
+                            </button>
                         </div>
-
                     </div>
-
-                </section>
-
-            </main>
-
-        </div>
+                </div>
+            )}
+        </ProfessorLayout>
     );
 }
-
 
 export default AtividadesProfessor;

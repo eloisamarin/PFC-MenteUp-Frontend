@@ -271,7 +271,7 @@ function App() {
 
             <Footer />
 
-        </div
+        </div>
     );
 }
 

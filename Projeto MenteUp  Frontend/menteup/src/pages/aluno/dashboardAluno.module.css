@@ -1,0 +1,515 @@
+/* Cartões */
+.card,
+.statCard,
+.miniStat {
+  background: var(--mu-app-glass);
+  border: 1px solid var(--mu-app-glass-border);
+  box-shadow: var(--mu-app-shadow);
+  backdrop-filter: blur(10px);
+}
+
+.card {
+  border-radius: var(--mu-radius-2xl);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cardTitle,
+.cardTitleSm {
+  margin: 0;
+  font-family: var(--mu-font-display);
+  font-weight: 700;
+  color: var(--mu-app-text);
+}
+
+.cardTitle {
+  font-size: 20px;
+  line-height: 28px;
+}
+
+.cardTitleSm {
+  font-size: 18px;
+  line-height: 28px;
+}
+
+.muted {
+  color: var(--mu-app-muted);
+  font-family: var(--mu-font-body);
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.eyebrowIndigo,
+.eyebrowCoral {
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 16px;
+  text-transform: uppercase;
+}
+
+.eyebrowIndigo { color: var(--mu-indigo); }
+.eyebrowCoral { color: var(--mu-coral); }
+
+.gold { color: var(--mu-gold); }
+.mintText { color: var(--mu-mint); }
+.goldText { color: var(--mu-gold); }
+.coralText { color: var(--mu-coral); }
+
+/* ---------- Barras ---------- */
+.track {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--mu-app-track);
+  overflow: hidden;
+}
+
+.trackLg {
+  height: 12px;
+  margin-top: 4px;
+}
+
+.fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.6s ease;
+}
+
+.fillIndigo { background: var(--mu-indigo); }
+
+.trackLabels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--mu-app-muted);
+  margin-top: -6px;
+}
+
+/* ---------- Cabeçalho ---------- */
+.hero {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.heroTitle {
+  margin: 8px 0 12px;
+  font-family: var(--mu-font-display);
+  font-size: 48px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--mu-app-text);
+}
+
+.heroTitle span {
+  color: var(--mu-indigo);
+}
+
+.heroText {
+  margin: 0;
+  font-size: 16px;
+  line-height: 24px;
+  color: var(--mu-app-muted);
+}
+
+.heroStats {
+  display: flex;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.statCard {
+  width: 124px;
+  border-radius: var(--mu-radius-xl);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.statCard strong {
+  margin-top: 4px;
+  font-family: var(--mu-font-display);
+  font-size: 20px;
+  line-height: 28px;
+}
+
+.statCard span {
+  font-size: 12px;
+  color: var(--mu-app-muted);
+}
+
+.error {
+  margin-bottom: 20px;
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: rgba(235, 100, 86, 0.15);
+  border: 1px solid rgba(235, 100, 86, 0.45);
+  color: #ffb4ab;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+/* ---------- Grade ---------- */
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 729fr) minmax(0, 515fr);
+  gap: 20px;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.podium {
+  grid-column: 1 / -1;
+}
+
+/* ---------- Jornada de hoje ---------- */
+.journey {
+  padding: 28px;
+}
+
+.badge {
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgba(124, 58, 237, 0.45);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+}
+
+.row {
+  width: 100%;
+  min-height: 80px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  border: 0;
+  border-radius: var(--mu-radius-xl);
+  background: var(--mu-app-glass);
+  color: inherit;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+}
+
+.row:hover {
+  background: rgba(252, 250, 245, 0.13);
+  transform: translateX(2px);
+}
+
+.rowIcon {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: var(--mu-radius-btn);
+  display: grid;
+  place-items: center;
+}
+
+.mint { background: rgba(0, 169, 158, 0.25); color: #5ee6dc; }
+.gold.rowIcon,
+.rowIcon.gold { background: rgba(237, 190, 36, 0.2); color: var(--mu-gold); }
+.coral { background: rgba(235, 100, 86, 0.25); color: #ff9b8f; }
+
+.rowText {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.rowTitle {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 24px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rowMeta {
+  font-size: 12.8px;
+  line-height: 19.2px;
+  color: var(--mu-app-muted);
+}
+
+.rowXp {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--mu-gold);
+  white-space: nowrap;
+}
+
+.skeleton {
+  height: 80px;
+  border-radius: var(--mu-radius-xl);
+  background: linear-gradient(90deg, var(--mu-app-glass) 0%, rgba(252, 250, 245, 0.14) 50%, var(--mu-app-glass) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s infinite linear;
+}
+
+@keyframes shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+.empty {
+  margin: 0;
+  padding: 16px;
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--mu-app-muted);
+}
+
+.primaryButton {
+  height: 48px;
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 0;
+  border-radius: var(--mu-radius-btn);
+  background: var(--mu-gradient-brand);
+  color: #fff;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: filter 0.2s;
+}
+
+.primaryButton:hover {
+  filter: brightness(1.1);
+}
+
+/* ---------- Próximo nível ---------- */
+.miniStats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.miniStat {
+  border-radius: var(--mu-radius-xl);
+  padding: 18px 8px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.miniStat strong {
+  font-family: var(--mu-font-display);
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 32px;
+}
+
+.miniStat span {
+  font-size: 12px;
+  color: var(--mu-app-muted);
+}
+
+/* ---------- Desafio do dia ---------- */
+.challenge {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: -8px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.challengeTitle {
+  font-family: var(--mu-font-display);
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 32px;
+}
+
+.challenge:hover .challengeTitle {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.challengeText {
+  margin: 0;
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--mu-app-muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.challengeFooter {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.timer {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.challengeXp {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--mu-gold);
+}
+
+/* ---------- Pódio ---------- */
+.linkButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 12px;
+  background: none;
+  color: var(--mu-app-text);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.linkButton:hover {
+  background: var(--mu-app-glass);
+}
+
+.podiumGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.podiumItem {
+  min-height: 76px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border-radius: var(--mu-radius-xl);
+  background: var(--mu-app-glass);
+}
+
+.podiumMe {
+  background: rgba(97, 95, 255, 0.2);
+  box-shadow: 0 0 0 1px rgba(0, 169, 158, 0.4);
+}
+
+.podiumPos {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--mu-mint);
+}
+
+.podiumAvatar {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--mu-coral);
+  display: grid;
+  place-items: center;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.podiumName {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 20px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Foco visível */
+.row:focus-visible,
+.primaryButton:focus-visible,
+.challenge:focus-visible,
+.linkButton:focus-visible {
+  outline: 2px solid var(--mu-mint);
+  outline-offset: 2px;
+}
+
+/* ---------- Responsivo ---------- */
+@media (max-width: 1280px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  .hero {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .heroTitle {
+    font-size: 36px;
+  }
+
+  .podiumGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .heroStats {
+    width: 100%;
+  }
+
+  .statCard {
+    flex: 1;
+    width: auto;
+  }
+
+  .card,
+  .journey {
+    padding: 20px;
+  }
+
+  .rowXp {
+    display: none;
+  }
+}

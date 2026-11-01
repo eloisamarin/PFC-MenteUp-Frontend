@@ -1,4 +1,3 @@
-@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap");
 
 /* ============ DESIGN TOKENS (mesma identidade do protótipo MenteUp) ============ */
 .mu-page {
@@ -29,8 +28,8 @@
   --shadow-sm: 0 2px 8px rgba(20, 21, 43, 0.05);
   --shadow-md: 0 8px 24px rgba(20, 21, 43, 0.08);
   --shadow-lg: 0 20px 48px rgba(20, 21, 43, 0.14);
-  --font-display: "Space Grotesk", sans-serif;
-  --font-body: "Inter", sans-serif;
+  --font-display: "Sora", system-ui, sans-serif;
+  --font-body: "Manrope", system-ui, sans-serif;
 
   font-family: var(--font-body);
   color: var(--ink-900);
@@ -72,7 +71,7 @@
   padding: 40px 24px 64px;
   background: #f5f6fc;
   color: #14152b;
-  font-family: "Inter", sans-serif;
+  font-family: "Manrope", system-ui, sans-serif;
 }
 
 .criar-atividade-container > * {
@@ -84,7 +83,7 @@
 .criar-atividade-container h1 {
   margin: 24px auto 8px;
   color: #14152b;
-  font-family: "Space Grotesk", sans-serif;
+  font-family: "Sora", system-ui, sans-serif;
   font-size: clamp(28px, 4vw, 40px);
   font-weight: 700;
 }
@@ -139,12 +138,12 @@
 
 .card-atividade h2 {
   margin-bottom: 20px;
-  font-family: "Space Grotesk", sans-serif;
+  font-family: "Sora", system-ui, sans-serif;
   font-size: 22px;
 }
 
 .card-atividade h3 {
-  font-family: "Space Grotesk", sans-serif;
+  font-family: "Sora", system-ui, sans-serif;
   font-size: 18px;
 }
 
@@ -285,7 +284,7 @@
   min-height: 100vh;
   background: #f5f6fc;
   color: #14152b;
-  font-family: "Inter", sans-serif;
+  font-family: "Manrope", system-ui, sans-serif;
 }
 
 .mu-main {
@@ -355,7 +354,7 @@
 .mu-title h1 {
   margin: 0;
   color: #14152b;
-  font-family: "Space Grotesk", sans-serif;
+  font-family: "Sora", system-ui, sans-serif;
   font-size: 30px;
   font-weight: 700;
 }
@@ -464,7 +463,7 @@
 .mu-view-header h1 {
   margin: 0 0 8px;
   color: #14152b;
-  font-family: "Space Grotesk", sans-serif;
+  font-family: "Sora", system-ui, sans-serif;
   font-size: 32px;
   font-weight: 700;
 }
@@ -552,7 +551,7 @@
 .mu-section-header h2 {
   margin: 0 0 6px;
   color: #14152b;
-  font-family: "Space Grotesk", sans-serif;
+  font-family: "Sora", system-ui, sans-serif;
   font-size: 22px;
 }
 
@@ -833,8 +832,8 @@
   --shadow-sm: 0 2px 8px rgba(20, 21, 43, 0.05);
   --shadow-md: 0 8px 24px rgba(20, 21, 43, 0.08);
   --shadow-lg: 0 20px 48px rgba(20, 21, 43, 0.14);
-  --font-display: "Space Grotesk", sans-serif;
-  --font-body: "Inter", sans-serif;
+  --font-display: "Sora", system-ui, sans-serif;
+  --font-body: "Manrope", system-ui, sans-serif;
 }
 .mu-dashboard button {
   font-family: var(--font-body);

@@ -1,0 +1,70 @@
+/* =========================================================
+   MenteUp — Design tokens do novo visual (redesign 2026)
+   Prefixo --mu- para não colidir com App.css antigo
+   nem com as variáveis do Tailwind.
+   ========================================================= */
+
+:root {
+  /* Cores base */
+  --mu-bg: #1a2767;
+  --mu-bg-deep: #12134e;
+  --mu-surface: rgba(29, 41, 100, 0.95);
+  --mu-surface-soft: rgba(29, 41, 100, 0.65);
+  --mu-surface-sunken: rgba(18, 19, 78, 0.55);
+  --mu-input-bg: rgba(18, 19, 78, 0.4);
+  --mu-surface-solid: #1d2964;
+
+  --mu-border: rgba(86, 106, 175, 0.55);
+  --mu-border-input: #3a497e;
+
+  /* Texto */
+  --mu-text: #f7faff;
+  --mu-text-muted: #a3adcb;
+  --mu-text-on-brand: #fcfcfc;
+
+  /* Marca */
+  --mu-teal: #00b4ac;
+  --mu-teal-ink: #080e2c;
+  --mu-purple: #7755ff;
+  --mu-blue: #3652ff;
+  --mu-violet: #7c3aed;
+  --mu-gradient-brand: linear-gradient(90deg, #3652ff 0%, #7c3aed 100%);
+  --mu-danger: #ff6b81;
+
+  /* Forma */
+  --mu-radius-sm: 10px;
+  --mu-radius-md: 12px;
+  --mu-radius-lg: 16px;
+  --mu-radius-pill: 999px;
+  --mu-shadow-card: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  --mu-shadow-input: 0 1px 2px -1px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.1);
+
+  /* Tipografia (padrão do projeto) */
+  --mu-font: var(--mu-font-body);
+
+  /* ---------- Área logada (aluno) ---------- */
+  --mu-app-text: #fcfaf5;
+  --mu-app-muted: #c3d4e0;
+  --mu-app-glass: rgba(252, 250, 245, 0.08);
+  --mu-app-glass-border: rgba(252, 250, 245, 0.16);
+  --mu-app-track: rgba(252, 250, 245, 0.14);
+  --mu-app-shadow: 0 12px 30px rgba(0, 3, 16, 0.28);
+
+  --mu-indigo: #615fff;
+  --mu-gold: #edbe24;
+  --mu-mint: #00a99e;
+  --mu-coral: #eb6456;
+  --mu-lilac: #c27aff;
+
+  --mu-radius-xl: 22px;
+  --mu-radius-2xl: 26px;
+  --mu-radius-btn: 18px;
+
+  --mu-font-display: "Sora", system-ui, sans-serif;
+  --mu-font-body: "Manrope", system-ui, sans-serif;
+}
+
+/* Fonte padrão para toda a aplicação */
+body {
+  font-family: var(--mu-font-body);
+}
