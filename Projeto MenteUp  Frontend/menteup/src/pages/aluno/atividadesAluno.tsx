@@ -7,6 +7,7 @@ import {
     BookOpen,
     Clock,
     CheckCircle,
+    Zap,
 } from "lucide-react";
 import { apiFetch } from "../../services/api";
 
@@ -128,6 +129,9 @@ function AtividadesAluno() {
                     </button>
                     <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-[#282451] text-white">
                         <BookOpen size={18} /> Atividades
+                    </button>
+                    <button onClick={() => navigate("/aluno/desafios")} className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-white/10 transition">
+                        <Zap size={18} /> Desafios
                     </button>
                     <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-white/10 transition">
                         <CheckCircle size={18} /> Desempenho

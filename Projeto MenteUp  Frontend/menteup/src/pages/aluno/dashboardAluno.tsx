@@ -1,24 +1,7 @@
-import { useNavigate } from "react-router-dom";
+import DashboardPainel from "../../components/DashboardPainel";
 
 function DashboardAluno() {
-
-    const navigate = useNavigate();
-
-    return (
-        <div>
-
-            <h1>Atividades</h1>
-
-            <p>Gerenciamento de atividades.</p>
-
-            <button
-                onClick={() => navigate("/aluno/atividades")}
-            >
-                Ver atividades
-            </button>
-
-        </div>
-    );
+    return <DashboardPainel perfil="ALUNO"/>;
 }
 
 export default DashboardAluno;
