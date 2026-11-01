@@ -5,7 +5,6 @@ interface ProgressoCardProps {
     total: number;
 }
 
-/** Card lateral "Progresso geral" (fica abaixo do menu do aluno) */
 export default function ProgressoCard({ concluidas, total }: ProgressoCardProps) {
     const percentual = total ? Math.round((concluidas / total) * 100) : 0;
     const faltam = total - concluidas;

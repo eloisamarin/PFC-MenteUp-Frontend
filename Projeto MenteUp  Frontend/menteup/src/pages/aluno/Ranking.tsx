@@ -48,8 +48,6 @@ export default function Ranking() {
         return { posicao: indice + 1, dados: ranking[indice], acima: ranking[indice - 1] ?? null };
     }, [ranking, meuId]);
 
-    /* ---------- Cards laterais ---------- */
-
     const nivelMeu = calcularNivel(meu?.dados.pontuacaoTotal ?? 0);
     const liga = proximaLiga(nivelMeu.nivel);
 
@@ -77,7 +75,6 @@ export default function Ranking() {
             </header>
 
             <div className={styles.layout}>
-                {/* LISTA */}
                 <section className={styles.card} aria-label="Classificação">
                     {carregando ? (
                         <div className={styles.list}>
@@ -141,7 +138,6 @@ export default function Ranking() {
                     )}
                 </section>
 
-                {/* LATERAL */}
                 <aside className={styles.aside}>
                     <section className={styles.card}>
                         <Crown size={36} className={styles.gold} />

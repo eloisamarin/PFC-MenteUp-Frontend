@@ -13,8 +13,6 @@ import AlunoLayout from "../../components/aluno/AlunoLayout";
 import { apiFetch, lerErro } from "../../services/api";
 import styles from "./ResponderAtividadeAluno.module.css";
 
-/* ---------- Tipos (formato da API) ---------- */
-
 interface AlternativaResponse {
     id: number;
     texto: string;
@@ -84,9 +82,7 @@ function ResponderAtividadeAluno() {
     const [carregando, setCarregando] = useState(true);
     const [erro, setErro] = useState("");
 
-    /** Respostas já salvas no servidor (perguntaId -> alternativaId) */
     const [respostas, setRespostas] = useState<Record<number, number>>({});
-    /** Pergunta exibida e alternativa marcada (ainda não confirmada) */
     const [indice, setIndice] = useState(0);
     const [selecionada, setSelecionada] = useState<number | null>(null);
     const [enviando, setEnviando] = useState(false);
@@ -103,8 +99,6 @@ function ResponderAtividadeAluno() {
     const ultima = indice === perguntas.length - 1;
     const respondidas = perguntas.filter((p) => respostas[p.id] !== undefined).length;
     const percentual = perguntas.length ? Math.round((respondidas / perguntas.length) * 100) : 0;
-
-    /* ---------- Carregar questionário ---------- */
 
     useEffect(() => {
         const buscarAtividade = async () => {
@@ -138,7 +132,6 @@ function ResponderAtividadeAluno() {
                 });
                 setRespostas(salvas);
 
-                // Retoma na primeira pergunta ainda não respondida
                 const primeiraAberta = dados.perguntas.findIndex((p) => salvas[p.id] === undefined);
                 setIndice(primeiraAberta === -1 ? Math.max(0, dados.perguntas.length - 1) : primeiraAberta);
             } catch (error) {
@@ -151,13 +144,10 @@ function ResponderAtividadeAluno() {
         buscarAtividade();
     }, [id, navigate]);
 
-    // Ao trocar de pergunta, mostra a resposta já salva (se houver)
     useEffect(() => {
         if (pergunta) setSelecionada(respostas[pergunta.id] ?? null);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [indice, pergunta?.id]);
-
-    /* ---------- Ações ---------- */
 
     async function salvarResposta(perguntaId: number, alternativaId: number) {
         const resposta = await apiFetch(`/atividades/${id}/progresso`, {
@@ -219,7 +209,6 @@ function ResponderAtividadeAluno() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [podeResponder, pergunta, selecionada, enviando, respostas, ultima]);
 
-    // Atalhos: A–D escolhe, Enter confirma
     useEffect(() => {
         if (!podeResponder || !pergunta) return;
         const alternativas = pergunta.alternativas;
@@ -240,8 +229,6 @@ function ResponderAtividadeAluno() {
 
     const voltar = () => navigate("/aluno/atividades");
 
-    /* ---------- Topo (Sair + XP) ---------- */
-
     const topo = (
         <div className={styles.topRow}>
             <button type="button" className={styles.back} onClick={voltar}>
@@ -254,8 +241,6 @@ function ResponderAtividadeAluno() {
             )}
         </div>
     );
-
-    /* ---------- Estados de carregamento / erro ---------- */
 
     if (carregando) {
         return (
@@ -288,8 +273,6 @@ function ResponderAtividadeAluno() {
     }
 
     const assunto = [atividade.turma?.nome, atividade.titulo].filter(Boolean).join(" - ");
-
-    /* ---------- Resultado (já enviada) ---------- */
 
     if (meuResultado) {
         const pctAcerto = meuResultado.totalQuestoes
@@ -330,8 +313,6 @@ function ResponderAtividadeAluno() {
         );
     }
 
-    /* ---------- Não pode responder (encerrada / não aberta) ---------- */
-
     if (!podeResponder || perguntas.length === 0) {
         const titulo = encerrada
             ? "Atividade encerrada"
@@ -359,8 +340,6 @@ function ResponderAtividadeAluno() {
             </AlunoLayout>
         );
     }
-
-    /* ---------- Pergunta ---------- */
 
     const linhas = Math.ceil(pergunta.alternativas.length / 2);
 

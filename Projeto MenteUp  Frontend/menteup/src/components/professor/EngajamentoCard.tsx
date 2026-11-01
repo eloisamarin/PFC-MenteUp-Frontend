@@ -5,14 +5,9 @@ import type { RankingAluno } from "../../types/aluno";
 import styles from "./EngajamentoCard.module.css";
 
 interface EngajamentoCardProps {
-    /**
-     * Lista de alunos já carregada pela página (evita outra requisição).
-     * Se não for informada, o card busca /ranking sozinho.
-     */
     alunos?: RankingAluno[] | null;
 }
 
-/** Card lateral "Alunos engajados" do professor */
 export default function EngajamentoCard({ alunos }: EngajamentoCardProps) {
     const [buscados, setBuscados] = useState<RankingAluno[] | null>(null);
     const precisaBuscar = alunos === undefined;

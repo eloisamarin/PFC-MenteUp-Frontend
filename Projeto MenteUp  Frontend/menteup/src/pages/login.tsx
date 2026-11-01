@@ -109,7 +109,6 @@ function Login() {
     return (
         <div className={styles.page}>
             <div className={styles.container}>
-                {/* MARCA */}
                 <button
                     type="button"
                     className={styles.brand}
@@ -126,7 +125,6 @@ function Login() {
                 </button>
 
                 <main className={styles.main}>
-                    {/* HERO */}
                     <section className={styles.hero}>
                         <span className={styles.pill}>
                             <Sparkles size={16} />
@@ -171,7 +169,6 @@ function Login() {
                         </div>
                     </section>
 
-                    {/* CARD DE LOGIN */}
                     <section className={styles.card} aria-labelledby="login-title">
                         <header className={styles.cardHeader}>
                             <span className={styles.eyebrow}>Acesso MenteUp</span>
@@ -183,7 +180,6 @@ function Login() {
                             </p>
                         </header>
 
-                        {/* PERFIL */}
                         <div
                             className={styles.segmented}
                             role="radiogroup"
@@ -212,7 +208,6 @@ function Login() {
                             </button>
                         </div>
 
-                        {/* FORMULÁRIO */}
                         <form className={styles.form} onSubmit={handleLogin} noValidate>
                             <div className={styles.field}>
                                 <label htmlFor="email" className={styles.label}>

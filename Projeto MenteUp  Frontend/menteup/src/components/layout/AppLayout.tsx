@@ -8,26 +8,18 @@ import { iniciais, obterUsuarioLogado, sair } from "../../services/usuarioLogado
 export interface ItemMenu {
     rotulo: string;
     icone: ReactNode;
-    /** Sem rota = ainda não implementado ("em breve") */
     para?: string;
-    /** Só fica ativo na rota exata (não nas sub-rotas) */
     exato?: boolean;
 }
 
 export interface AppLayoutProps {
     children: ReactNode;
     menu: ItemMenu[];
-    /** Texto abaixo de "MenteUp" (ex.: "Jornada do aluno") */
     subtitulo: string;
-    /** Para onde o logo leva */
     inicio: string;
-    /** Rótulo do menu para leitores de tela */
     rotuloMenu?: string;
-    /** XP exibido no topo; null/undefined esconde */
     xp?: number | null;
-    /** Conteúdo extra abaixo do menu lateral */
     sidebarExtra?: ReactNode;
-    /** Menos espaço no topo (telas que precisam caber sem rolagem) */
     compacto?: boolean;
 }
 
@@ -54,7 +46,6 @@ export default function AppLayout({
             <div className={styles.glowTop} aria-hidden />
             <div className={styles.glowBottom} aria-hidden />
 
-            {/* TOPO */}
             <header className={styles.topbar}>
                 <div className={styles.topbarInner}>
                     <button type="button" className={styles.brand} onClick={() => navigate(inicio)}>
@@ -88,7 +79,6 @@ export default function AppLayout({
             </header>
 
             <div className={`${styles.body} ${compacto ? styles.bodyCompact : ""}`}>
-                {/* MENU LATERAL */}
                 <aside className={styles.sidebar}>
                     <nav className={styles.nav} aria-label={rotuloMenu}>
                         {menu.map((item) =>

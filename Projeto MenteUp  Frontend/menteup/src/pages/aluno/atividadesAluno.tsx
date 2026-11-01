@@ -107,7 +107,6 @@ function AtividadesAluno() {
                 ) : undefined
             }
         >
-            {/* CABEÇALHO */}
             <header className={styles.header}>
                 <span className={styles.eyebrow}>Sua jornada</span>
                 <h1 className={styles.title}>Atividades</h1>
@@ -116,7 +115,6 @@ function AtividadesAluno() {
                 </p>
             </header>
 
-            {/* FILTROS + BUSCA */}
             <div className={styles.toolbar}>
                 <div className={styles.tabs} role="tablist" aria-label="Filtrar atividades">
                     {filtrosVisiveis.map((f) => (
@@ -151,7 +149,6 @@ function AtividadesAluno() {
                 </div>
             )}
 
-            {/* LISTA */}
             {carregando ? (
                 <div className={styles.grid}>
                     {[0, 1, 2].map((i) => (

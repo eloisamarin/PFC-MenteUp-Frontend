@@ -8,8 +8,6 @@ import { nomeCurto, obterUsuarioLogado, primeiroNome } from "../../services/usua
 import type { RankingAluno } from "../../types/aluno";
 import styles from "./dashboardProfessor.module.css";
 
-/* ---------- Tipos (mesmo formato de atividadesProfessor.tsx) ---------- */
-
 type StatusAtividade = "PENDENTE" | "EM_ANDAMENTO" | "CONCLUIDO";
 
 interface AtividadeProfessor {
@@ -68,7 +66,6 @@ function DashboardProfessor() {
             const dados: AtividadeProfessor[] = await respAtividades.json();
             setAtividades([...dados].sort((a, b) => Number(b.id) - Number(a.id)));
 
-            // Ranking é opcional: se o professor não tiver acesso, os cards mostram "–"
             setRanking(respRanking?.ok ? await respRanking.json() : null);
         } catch (error) {
             console.error("Erro ao carregar visão geral:", error);
@@ -81,8 +78,6 @@ function DashboardProfessor() {
     useEffect(() => {
         carregar();
     }, []);
-
-    /* ---------- Números derivados ---------- */
 
     const dados = useMemo(() => {
         const ativas = atividades.filter((a) => a.status === "EM_ANDAMENTO");
@@ -97,13 +92,11 @@ function DashboardProfessor() {
             ? Math.round(alunos.reduce((s, a) => s + a.pontuacaoTotal, 0) / alunos.length)
             : 0;
 
-        // Gráfico: os 7 alunos com mais atividades concluídas
         const grafico = [...alunos]
             .sort((a, b) => b.atividadesConcluidas - a.atividadesConcluidas)
             .slice(0, 7);
         const maxGrafico = Math.max(1, ...grafico.map((a) => a.atividadesConcluidas));
 
-        // Atenção recomendada
         const atencao: ItemAtencao[] = [];
         rascunhos.slice(0, 2).forEach((a) =>
             atencao.push({
@@ -155,7 +148,6 @@ function DashboardProfessor() {
 
     return (
         <ProfessorLayout alunos={carregando ? null : ranking}>
-            {/* CABEÇALHO */}
             <header className={styles.hero}>
                 <div>
                     <span className={styles.eyebrow}>Visão da turma</span>
@@ -184,7 +176,6 @@ function DashboardProfessor() {
                 </div>
             )}
 
-            {/* INDICADORES */}
             <div className={styles.stats}>
                 <div className={styles.stat}>
                     <strong className={styles.indigo}>{valor(dados.ativas.length)}</strong>
@@ -209,7 +200,6 @@ function DashboardProfessor() {
             </div>
 
             <div className={styles.grid}>
-                {/* GRÁFICO */}
                 <section className={styles.card}>
                     <header className={styles.cardHeader}>
                         <h2 className={styles.cardTitle}>Engajamento dos alunos</h2>
@@ -244,7 +234,6 @@ function DashboardProfessor() {
                     )}
                 </section>
 
-                {/* ATENÇÃO RECOMENDADA */}
                 <section className={styles.card}>
                     <h2 className={styles.cardTitle}>Atenção recomendada</h2>
 
@@ -285,7 +274,6 @@ function DashboardProfessor() {
                     )}
                 </section>
 
-                {/* ATIVIDADES RECENTES */}
                 <section className={`${styles.card} ${styles.full}`}>
                     <header className={styles.cardHeader}>
                         <h2 className={styles.cardTitle}>Atividades recentes</h2>

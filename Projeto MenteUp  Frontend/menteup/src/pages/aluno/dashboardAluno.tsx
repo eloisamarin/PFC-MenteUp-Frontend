@@ -24,8 +24,6 @@ import ProgressoCard from "../../components/aluno/ProgressoCard";
 import { estaAberta, type AtividadeAluno, type RankingAluno } from "../../types/aluno";
 import styles from "./dashboardAluno.module.css";
 
-/* ---------- Helpers ---------- */
-
 function saudacao(data = new Date()) {
     const h = data.getHours();
     if (h < 12) return "Bom dia";
@@ -48,8 +46,6 @@ const ICONES = [
 ] as const;
 
 const fmt = (n: number) => n.toLocaleString("pt-BR");
-
-/* ---------- Página ---------- */
 
 function DashboardAluno() {
     const navigate = useNavigate();
@@ -93,13 +89,10 @@ function DashboardAluno() {
         carregar();
     }, []);
 
-    // Relógio do "Desafio do dia"
     useEffect(() => {
         const id = window.setInterval(() => setAgora(new Date()), 1000);
         return () => window.clearInterval(id);
     }, []);
-
-    /* ---------- Números derivados ---------- */
 
     const dados = useMemo(() => {
         const abertas = atividades.filter(estaAberta);
@@ -115,7 +108,6 @@ function DashboardAluno() {
 
         const acertos = concluidas.reduce((soma, a) => soma + (a.acertos ?? 0), 0);
 
-        // Em andamento primeiro, depois as mais recentes
         const fila = [...abertas].sort((a, b) => {
             if (a.status === "EM_ANDAMENTO" && b.status !== "EM_ANDAMENTO") return -1;
             if (b.status === "EM_ANDAMENTO" && a.status !== "EM_ANDAMENTO") return 1;
@@ -152,7 +144,6 @@ function DashboardAluno() {
 
     return (
         <AlunoLayout xp={carregando ? null : dados.xp} sidebarExtra={<ProgressoCard concluidas={dados.concluidas.length} total={total} />}>
-            {/* CABEÇALHO */}
             <section className={styles.hero}>
                 <div>
                     <span className={styles.eyebrowIndigo}>
@@ -191,7 +182,6 @@ function DashboardAluno() {
             )}
 
             <div className={styles.grid}>
-                {/* JORNADA DE HOJE */}
                 <section className={`${styles.card} ${styles.journey}`}>
                     <header className={styles.cardHeader}>
                         <h2 className={styles.cardTitle}>Jornada de hoje</h2>
@@ -252,7 +242,6 @@ function DashboardAluno() {
                 </section>
 
                 <div className={styles.column}>
-                    {/* PRÓXIMO NÍVEL */}
                     <section className={styles.card}>
                         <header className={styles.cardHeader}>
                             <h2 className={styles.cardTitleSm}>Próximo nível</h2>
@@ -290,7 +279,6 @@ function DashboardAluno() {
                         </div>
                     </section>
 
-                    {/* DESAFIO DO DIA */}
                     <section className={styles.card}>
                         <span className={styles.eyebrowCoral}>Desafio do dia</span>
                         {dados.desafio ? (
@@ -324,7 +312,6 @@ function DashboardAluno() {
                     </section>
                 </div>
 
-                {/* PÓDIO */}
                 <section className={`${styles.card} ${styles.podium}`}>
                     <header className={styles.cardHeader}>
                         <h2 className={styles.cardTitleSm}>

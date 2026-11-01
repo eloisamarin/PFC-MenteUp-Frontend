@@ -1,6 +1,21 @@
-import {useNavigate, useParams} from "react-router-dom";
-import {useEffect, useState} from "react";
-import {apiFetch, lerErro} from "../../services/api";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import {
+    BookOpen,
+    Check,
+    ChevronLeft,
+    ChevronRight,
+    FileQuestion,
+    Pencil,
+    TriangleAlert,
+    Trophy,
+    Users,
+    Zap,
+} from "lucide-react";
+
+import ProfessorLayout from "../../components/professor/ProfessorLayout";
+import { apiFetch, lerErro } from "../../services/api";
+import styles from "./VisualizarAtividadeProfessor.module.css";
 
 interface Alternativa {
     id: number;
@@ -28,20 +43,27 @@ interface Atividade {
     perguntas: Pergunta[];
 }
 
-// GET /atividades/{id} devolve { atividade, perguntas, ... }.
-// Também aceitamos o formato antigo (perguntas dentro da atividade).
 interface QuestionarioResponse {
     atividade?: Atividade;
     perguntas?: Pergunta[];
 }
 
+const LETRAS = "ABCDEFGH";
+
+const STATUS: Record<string, { rotulo: string; classe: string }> = {
+    PENDENTE: { rotulo: "Rascunho", classe: "statusDraft" },
+    EM_ANDAMENTO: { rotulo: "Ativa", classe: "statusActive" },
+    CONCLUIDO: { rotulo: "Encerrada", classe: "statusClosed" },
+};
+
 function VisualizarAtividadeProfessor() {
-    const {id} = useParams<{ id: string }>();
+    const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
 
     const [atividade, setAtividade] = useState<Atividade | null>(null);
     const [carregando, setCarregando] = useState(true);
     const [erro, setErro] = useState("");
+    const [indice, setIndice] = useState(0);
 
     useEffect(() => {
         const buscarAtividade = async () => {
@@ -61,17 +83,12 @@ function VisualizarAtividadeProfessor() {
                 const response = await apiFetch(`/atividades/${id}`);
 
                 if (!response.ok) {
-                    const erroApi = await lerErro(
-                        response,
-                        "Atividade não encontrada."
-                    );
+                    const erroApi = await lerErro(response, "Atividade não encontrada.");
                     setErro(erroApi.mensagem);
                     return;
                 }
 
-                const dados: QuestionarioResponse & Atividade =
-                    await response.json();
-
+                const dados: QuestionarioResponse & Atividade = await response.json();
                 const base: Atividade = dados.atividade ?? dados;
 
                 setErro("");
@@ -90,293 +107,217 @@ function VisualizarAtividadeProfessor() {
         buscarAtividade();
     }, [id, navigate]);
 
-    /* ==============================
-       CARREGANDO
-    ============================== */
+    const perguntas = atividade?.perguntas ?? [];
+    const total = perguntas.length;
+
+    useEffect(() => {
+        if (total === 0) return;
+
+        function onKey(e: KeyboardEvent) {
+            if (e.key === "ArrowRight") setIndice((i) => Math.min(i + 1, total - 1));
+            if (e.key === "ArrowLeft") setIndice((i) => Math.max(i - 1, 0));
+        }
+
+        window.addEventListener("keydown", onKey);
+        return () => window.removeEventListener("keydown", onKey);
+    }, [total]);
+
+    const voltar = () => navigate("/professor/atividades");
+
+    const topo = (
+        <div className={styles.topRow}>
+            <button type="button" className={styles.back} onClick={voltar}>
+                <ChevronLeft size={18} /> Voltar
+            </button>
+            {atividade && (
+                <div className={styles.topActions}>
+                    <button
+                        type="button"
+                        className={styles.editButton}
+                        onClick={() => navigate(`/professor/atividades/editar/${atividade.id}`)}
+                    >
+                        <Pencil size={16} /> Editar
+                    </button>
+                    <span className={styles.xpChip}>
+                        <Zap size={26} />+{atividade.pontuacao} XP
+                    </span>
+                </div>
+            )}
+        </div>
+    );
 
     if (carregando) {
         return (
-            <div className="mu-dashboard">
-                <main className="mu-main">
-                    <div className="mu-content">
-                        <div className="mu-card mu-empty">
-                            <div className="mu-empty-icon">⏳</div>
-
-                            <h3>Carregando atividade...</h3>
-
-                            <p>Aguarde enquanto buscamos os dados.</p>
-                        </div>
-                    </div>
-                </main>
-            </div>
+            <ProfessorLayout compacto>
+                {topo}
+                <section className={`${styles.card} ${styles.center}`}>
+                    <div className={styles.spinner} aria-hidden />
+                    <h2 className={styles.stateTitle}>Carregando atividade...</h2>
+                    <p className={styles.muted}>Aguarde enquanto buscamos os dados.</p>
+                </section>
+            </ProfessorLayout>
         );
     }
-
-    /* ==============================
-       ERRO
-    ============================== */
 
     if (!atividade) {
         return (
-            <div className="mu-dashboard">
-                <main className="mu-main">
-                    <div className="mu-content">
-                        <div className="mu-card mu-empty">
-                            <div className="mu-empty-icon">⚠️</div>
-
-                            <h3>Atividade não encontrada</h3>
-
-                            <p>
-                                {erro || "Não foi possível encontrar esta atividade."}
-                            </p>
-
-                            <button
-                                className="mu-btn mu-btn-primary"
-                                onClick={() => navigate("/professor/atividades")}
-                            >
-                                ← Voltar para atividades
-                            </button>
-                        </div>
-                    </div>
-                </main>
-            </div>
+            <ProfessorLayout compacto>
+                {topo}
+                <section className={`${styles.card} ${styles.center}`}>
+                    <TriangleAlert size={40} className={styles.coral} />
+                    <h2 className={styles.stateTitle}>Atividade não encontrada</h2>
+                    <p className={styles.muted}>
+                        {erro || "Não foi possível encontrar esta atividade."}
+                    </p>
+                    <button type="button" className={styles.primary} onClick={voltar}>
+                        <ChevronLeft size={16} /> Voltar para atividades
+                    </button>
+                </section>
+            </ProfessorLayout>
         );
     }
 
-    /* ==============================
-       TELA DE VISUALIZAÇÃO
-    ============================== */
+    const status = STATUS[atividade.status] ?? { rotulo: atividade.status, classe: "statusClosed" };
+    const pergunta = perguntas[indice];
+    const linhas = pergunta ? Math.ceil(pergunta.alternativas.length / 2) : 1;
+    const percentual = total ? Math.round(((indice + 1) / total) * 100) : 0;
 
     return (
-        <div className="mu-dashboard">
-            <main className="mu-main">
+        <ProfessorLayout compacto>
+            {topo}
 
-                {/* HEADER */}
-
-                <header className="mu-header">
-                    <input
-                        className="mu-search"
-                        type="text"
-                        placeholder="Pesquisar..."
-                    />
-
-                    <div className="mu-header-user">
-                        <div className="mu-avatar">
-                            PE
-                        </div>
-
-                        <span className="mu-user-name">
-              Professora
-            </span>
+            <header className={styles.info}>
+                <div className={styles.infoMain}>
+                    <div className={styles.infoTitleRow}>
+                        <span className={styles.eyebrow}>Atividade</span>
+                        <span className={`${styles.status} ${styles[status.classe]}`}>
+                            {status.rotulo}
+                        </span>
                     </div>
-                </header>
-
-                {/* CONTEÚDO */}
-
-                <div className="mu-content">
-
-                    {/* VOLTAR */}
-
-                    <button
-                        className="mu-btn mu-btn-secondary"
-                        onClick={() =>
-                            navigate("/professor/atividades")
-                        }
-                    >
-                        ← Voltar
-                    </button>
-
-                    {/* CABEÇALHO */}
-
-                    <div className="mu-view-header">
-
-                        <div>
-              <span className="mu-view-label">
-                ATIVIDADE
-              </span>
-
-                            <h1>
-                                {atividade.titulo}
-                            </h1>
-
-                            <p>
-                                {atividade.descricao}
-                            </p>
-                        </div>
-
-                        <div className="mu-view-status">
-
-              <span
-                  className={`mu-badge ${
-                      atividade.status === "CONCLUIDO"
-                          ? "mu-status-concluida"
-                          : atividade.status === "EM_ANDAMENTO"
-                              ? "mu-status-andamento"
-                              : "mu-status-rascunho"
-                  }`}
-              >
-                {atividade.status}
-              </span>
-
-                        </div>
-
-                    </div>
-
-                    {/* INFORMAÇÕES */}
-
-                    <div className="mu-info-grid">
-
-                        <div className="mu-info-card">
-                            <span>🏆</span>
-
-                            <div>
-                                <small>Pontuação</small>
-
-                                <strong>
-                                    {atividade.pontuacao} pontos
-                                </strong>
-                            </div>
-                        </div>
-
-                        <div className="mu-info-card">
-                            <span>🏫</span>
-
-                            <div>
-                                <small>Turma</small>
-
-                                <strong>
-                                    {atividade.turma?.nome ||
-                                        "Não informada"}
-                                </strong>
-                            </div>
-                        </div>
-
-                        <div className="mu-info-card">
-                            <span>📝</span>
-
-                            <div>
-                                <small>Perguntas</small>
-
-                                <strong>
-                                    {atividade.perguntas?.length || 0}
-                                </strong>
-                            </div>
-                        </div>
-
-                    </div>
-
-                    {/* PERGUNTAS */}
-
-                    <div className="mu-card mu-questions-card">
-
-                        <div className="mu-section-header">
-
-                            <div>
-                                <h2>
-                                    Perguntas da atividade
-                                </h2>
-
-                                <p>
-                                    Confira as perguntas e alternativas
-                                    cadastradas.
-                                </p>
-                            </div>
-
-                        </div>
-
-                        {atividade.perguntas?.length === 0 ? (
-
-                            <div className="mu-empty">
-
-                                <div className="mu-empty-icon">
-                                    📝
-                                </div>
-
-                                <h3>
-                                    Nenhuma pergunta cadastrada
-                                </h3>
-
-                                <p>
-                                    Esta atividade ainda não possui
-                                    perguntas.
-                                </p>
-
-                            </div>
-
-                        ) : (
-
-                            <div className="mu-question-list">
-
-                                {atividade.perguntas.map(
-                                    (pergunta, index) => (
-
-                                        <div
-                                            className="mu-question"
-                                            key={pergunta.id ?? index}
-                                        >
-
-                                            <div className="mu-question-number">
-                                                {index + 1}
-                                            </div>
-
-                                            <div className="mu-question-content">
-
-                                                <h3>
-                                                    {pergunta.texto ?? pergunta.enunciado}
-                                                </h3>
-
-                                                <div className="mu-alternatives">
-
-                                                    {pergunta.alternativas?.map(
-                                                        (alternativa) => (
-
-                                                            <div
-                                                                className={`mu-alternative ${
-                                                                    alternativa.correta
-                                                                        ? "correct"
-                                                                        : ""
-                                                                }`}
-                                                                key={alternativa.id}
-                                                            >
-
-                                <span className="mu-alternative-letter">
-                                  •
-                                </span>
-
-                                                                <span>
-                                  {alternativa.texto}
-                                </span>
-
-                                                                {alternativa.correta && (
-                                                                    <span className="mu-correct">
-                                    ✓ Correta
-                                  </span>
-                                                                )}
-
-                                                            </div>
-
-                                                        )
-                                                    )}
-
-                                                </div>
-
-                                            </div>
-
-                                        </div>
-
-                                    )
-                                )}
-
-                            </div>
-
-                        )}
-
-                    </div>
-
+                    <h1 className={styles.title}>{atividade.titulo}</h1>
+                    {atividade.descricao && <p className={styles.description}>{atividade.descricao}</p>}
                 </div>
 
-            </main>
-        </div>
+                <div className={styles.infoStats}>
+                    <div className={styles.infoStat}>
+                        <Trophy size={18} className={styles.gold} />
+                        <span>
+                            <small>Pontuação</small>
+                            <strong>{atividade.pontuacao} pontos</strong>
+                        </span>
+                    </div>
+                    <div className={styles.infoStat}>
+                        <Users size={18} className={styles.mint} />
+                        <span>
+                            <small>Turma</small>
+                            <strong>{atividade.turma?.nome || "Não informada"}</strong>
+                        </span>
+                    </div>
+                    <div className={styles.infoStat}>
+                        <BookOpen size={18} className={styles.indigo} />
+                        <span>
+                            <small>Perguntas</small>
+                            <strong>{total}</strong>
+                        </span>
+                    </div>
+                </div>
+            </header>
+
+            {total === 0 || !pergunta ? (
+                <section className={`${styles.card} ${styles.center}`}>
+                    <FileQuestion size={40} className={styles.muted} />
+                    <h2 className={styles.stateTitle}>Nenhuma pergunta cadastrada</h2>
+                    <p className={styles.muted}>Esta atividade ainda não possui perguntas.</p>
+                    <button
+                        type="button"
+                        className={styles.primary}
+                        onClick={() => navigate(`/professor/atividades/editar/${atividade.id}`)}
+                    >
+                        <Pencil size={16} /> Adicionar perguntas
+                    </button>
+                </section>
+            ) : (
+                <section className={styles.card} aria-labelledby="pergunta-texto">
+                    <header className={styles.cardHeader}>
+                        <span className={styles.subject}>Perguntas da atividade</span>
+                        <span className={styles.counter}>
+                            Questão {indice + 1} de {total}
+                        </span>
+                    </header>
+
+                    <div
+                        className={styles.track}
+                        role="progressbar"
+                        aria-valuenow={percentual}
+                        aria-valuemin={0}
+                        aria-valuemax={100}
+                        aria-label="Posição na lista de perguntas"
+                    >
+                        <div className={styles.fill} style={{ width: `${percentual}%` }} />
+                    </div>
+
+                    <p className={styles.hint}>Confira as perguntas e alternativas cadastradas:</p>
+                    <h2 id="pergunta-texto" className={styles.question}>
+                        {pergunta.texto ?? pergunta.enunciado}
+                    </h2>
+
+                    <ul
+                        className={styles.options}
+                        style={{ gridTemplateRows: `repeat(${linhas}, auto)` }}
+                    >
+                        {pergunta.alternativas?.map((alternativa, i) => (
+                            <li
+                                key={alternativa.id}
+                                className={`${styles.option} ${alternativa.correta ? styles.optionCorrect : ""}`}
+                            >
+                                <span className={styles.letter}>{LETRAS[i] ?? i + 1}</span>
+                                <span className={styles.optionText}>{alternativa.texto}</span>
+                                {alternativa.correta && (
+                                    <span className={styles.correctBadge}>
+                                        <Check size={14} /> Correta
+                                    </span>
+                                )}
+                            </li>
+                        ))}
+                    </ul>
+
+                    <footer className={styles.footer}>
+                        <button
+                            type="button"
+                            className={styles.navButton}
+                            onClick={() => setIndice((i) => i - 1)}
+                            disabled={indice === 0}
+                        >
+                            <ChevronLeft size={16} /> Anterior
+                        </button>
+
+                        <nav className={styles.dots} aria-label="Ir para a pergunta">
+                            {perguntas.map((p, i) => (
+                                <button
+                                    key={p.id ?? i}
+                                    type="button"
+                                    className={`${styles.dot} ${i === indice ? styles.dotActive : ""}`}
+                                    onClick={() => setIndice(i)}
+                                    aria-label={`Pergunta ${i + 1}`}
+                                    aria-current={i === indice ? "step" : undefined}
+                                >
+                                    {i + 1}
+                                </button>
+                            ))}
+                        </nav>
+
+                        <button
+                            type="button"
+                            className={styles.navButton}
+                            onClick={() => setIndice((i) => i + 1)}
+                            disabled={indice === total - 1}
+                        >
+                            Próxima <ChevronRight size={16} />
+                        </button>
+                    </footer>
+                </section>
+            )}
+        </ProfessorLayout>
     );
 }
 

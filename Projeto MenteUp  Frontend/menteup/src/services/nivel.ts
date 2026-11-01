@@ -1,8 +1,3 @@
-/**
- * Regra de níveis calculada no frontend a partir do XP total.
- * O backend ainda não tem o conceito de nível; quando tiver,
- * basta trocar esta função pela resposta da API.
- */
 export const XP_POR_NIVEL = 500;
 
 const TITULOS: { aPartirDe: number; titulo: string }[] = [
@@ -33,7 +28,6 @@ export function calcularNivel(xp: number): InfoNivel {
     return { nivel, titulo, xpProximoNivel, percentual };
 }
 
-/** Próximo título (liga) e o nível em que ele começa; null se já está no topo */
 export function proximaLiga(nivelAtual: number): { titulo: string; aPartirDe: number } | null {
     return TITULOS.find((t) => t.aPartirDe > nivelAtual) ?? null;
 }

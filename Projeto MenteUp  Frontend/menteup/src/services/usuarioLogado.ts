@@ -1,8 +1,3 @@
-/**
- * Lê o usuário salvo no localStorage pelo login.
- * O formato vem da resposta de /usuarios/logar, por isso
- * todos os campos são tratados como opcionais.
- */
 export interface UsuarioLogado {
     id?: number;
     usuarioId?: number;
@@ -25,13 +20,11 @@ export function idDoUsuario(usuario: UsuarioLogado | null): number | null {
     return id ? Number(id) : null;
 }
 
-/** "Lívia Vieira" -> "Lívia" (cai para o e-mail se não houver nome) */
 export function primeiroNome(usuario: UsuarioLogado | null): string {
     const base = usuario?.nome?.trim() || usuario?.usuario?.split("@")[0] || "aluno";
     return base.split(/\s+/)[0];
 }
 
-/** "Lívia Vieira" -> "LV" */
 export function iniciais(nome?: string): string {
     if (!nome) return "?";
     const partes = nome.trim().split(/\s+/);
@@ -40,7 +33,6 @@ export function iniciais(nome?: string): string {
     return (primeira + ultima).toUpperCase() || "?";
 }
 
-/** "Lívia Vieira" -> "Lívia V." */
 export function nomeCurto(nome?: string): string {
     if (!nome) return "";
     const partes = nome.trim().split(/\s+/);

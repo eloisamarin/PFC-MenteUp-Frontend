@@ -14,7 +14,6 @@ import {
 
 import ProfessorLayout from "../../components/professor/ProfessorLayout";
 import { apiFetch, lerErro } from "../../services/api";
-// Mesmo visual da lista de atividades do aluno
 import base from "../aluno/atividadesAluno.module.css";
 import styles from "./atividadesProfessor.module.css";
 
@@ -68,8 +67,6 @@ function AtividadesProfessor() {
     const [excluindo, setExcluindo] = useState(false);
     const [publicandoId, setPublicandoId] = useState<Atividade["id"] | null>(null);
 
-    /* ---------- Carregar ---------- */
-
     async function carregarAtividades() {
         try {
             setCarregando(true);
@@ -95,14 +92,11 @@ function AtividadesProfessor() {
         carregarAtividades();
     }, []);
 
-    // Aviso de sucesso some sozinho
     useEffect(() => {
         if (!aviso) return;
         const t = window.setTimeout(() => setAviso(""), 4000);
         return () => window.clearTimeout(t);
     }, [aviso]);
-
-    /* ---------- Ações ---------- */
 
     const visualizar = (a: Atividade) => navigate(`/professor/atividades/${a.id}`);
     const editar = (a: Atividade) => navigate(`/professor/atividades/editar/${a.id}`);
@@ -174,7 +168,6 @@ function AtividadesProfessor() {
         }
     }
 
-    // Esc fecha a confirmação
     useEffect(() => {
         if (!paraExcluir) return;
         const onKey = (e: KeyboardEvent) => {
@@ -183,8 +176,6 @@ function AtividadesProfessor() {
         window.addEventListener("keydown", onKey);
         return () => window.removeEventListener("keydown", onKey);
     }, [paraExcluir, excluindo]);
-
-    /* ---------- Filtros ---------- */
 
     const contagem = useMemo(() => {
         const c: Record<Filtro, number> = {
@@ -211,11 +202,8 @@ function AtividadesProfessor() {
         });
     }, [atividades, filtro, busca]);
 
-    /* ---------- Tela ---------- */
-
     return (
         <ProfessorLayout>
-            {/* CABEÇALHO */}
             <header className={`${base.header} ${styles.headerRow}`}>
                 <div>
                     <span className={base.eyebrow}>Gestão de conteúdo</span>
@@ -233,7 +221,6 @@ function AtividadesProfessor() {
                 </button>
             </header>
 
-            {/* FILTROS + BUSCA */}
             <div className={base.toolbar}>
                 <div className={base.tabs} role="tablist" aria-label="Filtrar atividades">
                     {FILTROS.map((f) => (
@@ -273,7 +260,6 @@ function AtividadesProfessor() {
                 </div>
             )}
 
-            {/* LISTA */}
             {carregando ? (
                 <div className={base.grid}>
                     {[0, 1, 2].map((i) => (
@@ -350,7 +336,6 @@ function AtividadesProfessor() {
                                     )}
                                 </div>
 
-                                {/* AÇÕES */}
                                 <div className={styles.actions}>
                                     <button
                                         type="button"
@@ -384,7 +369,6 @@ function AtividadesProfessor() {
                 </div>
             )}
 
-            {/* CONFIRMAÇÃO DE EXCLUSÃO */}
             {paraExcluir && (
                 <div
                     className={styles.overlay}

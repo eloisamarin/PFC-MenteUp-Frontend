@@ -17,18 +17,11 @@ const MENU: ItemMenu[] = [
 
 interface AlunoLayoutProps {
     children: ReactNode;
-    /**
-     * XP total exibido no topo. Se a página não informar,
-     * o layout busca no /ranking. Passe null para esconder.
-     */
     xp?: number | null;
-    /** Conteúdo extra abaixo do menu lateral (ex.: card de meta) */
     sidebarExtra?: ReactNode;
-    /** Menos espaço no topo (telas que precisam caber sem rolagem) */
     compacto?: boolean;
 }
 
-/** Layout da área do aluno (usa o AppLayout compartilhado) */
 export default function AlunoLayout({ children, xp, sidebarExtra, compacto }: AlunoLayoutProps) {
     const [xpBuscado, setXpBuscado] = useState<number | null>(null);
     const precisaBuscarXp = xp === undefined;

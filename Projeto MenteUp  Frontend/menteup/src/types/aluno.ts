@@ -1,5 +1,3 @@
-/* Tipos compartilhados pelas telas do aluno (mesmo formato da API) */
-
 export interface Turma {
     id: number;
     nome: string;
@@ -30,7 +28,6 @@ export interface RankingAluno {
     atividadesConcluidas: number;
 }
 
-/** Como o aluno enxerga a atividade */
 export type VisaoStatus = "PENDENTE" | "EM_ANDAMENTO" | "CONCLUIDA" | "ENCERRADA";
 
 export function visaoStatus(item: AtividadeAluno): VisaoStatus {
@@ -39,7 +36,6 @@ export function visaoStatus(item: AtividadeAluno): VisaoStatus {
     return item.atividade.status === "CONCLUIDO" ? "ENCERRADA" : "PENDENTE";
 }
 
-/** Atividade que o aluno ainda pode fazer */
 export function estaAberta(item: AtividadeAluno) {
     const v = visaoStatus(item);
     return v === "PENDENTE" || v === "EM_ANDAMENTO";
