@@ -11,6 +11,7 @@ import {
     BookOpen,
     Users,
     Trophy,
+    Zap,
 } from "lucide-react";
 
 import { apiFetch } from "../../services/api";
@@ -386,6 +387,24 @@ function AtividadesProfessor() {
                         <BookOpen size={17} />
 
                         Atividades
+
+                    </button>
+
+
+                    {/* DESAFIOS */}
+
+                    <button
+                        onClick={() =>
+                            navigate(
+                                "/professor/desafios"
+                            )
+                        }
+                        className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm text-slate-300 hover:bg-white/10"
+                    >
+
+                        <Zap size={17} />
+
+                        Desafios
 
                     </button>
 

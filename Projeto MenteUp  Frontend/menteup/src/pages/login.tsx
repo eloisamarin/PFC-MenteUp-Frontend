@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+﻿import {useState} from "react";
+import {useNavigate} from "react-router-dom";
 
 function Login() {
     const navigate = useNavigate();
@@ -8,9 +8,7 @@ function Login() {
     const [senha, setSenha] = useState("");
     const [erro, setErro] = useState("");
 
-    async function handleLogin(
-        event: React.FormEvent<HTMLFormElement>
-    ) {
+    async function handleLogin(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault();
 
         setErro("");
@@ -39,10 +37,19 @@ function Login() {
                 setErro("E-mail ou senha inválidos.");
                 return;
             }
-
             const dados = await resposta.json();
 
             console.log("Login realizado:", dados);
+
+            if (!dados.token) {
+                localStorage.removeItem("token");
+                localStorage.removeItem("usuario");
+                sessionStorage.setItem("email2FA", email);
+                navigate("/verificar-2fa");
+                return;
+            }
+
+            sessionStorage.removeItem("email2FA");
 
             localStorage.setItem(
                 "token",
@@ -85,6 +92,10 @@ function Login() {
         }
     }
 
+    function handleCadastro() {
+        navigate("/cadastro");
+    }
+
     return (
         <div className="mu-page">
             <div className="mu-login-page">
@@ -108,15 +119,11 @@ function Login() {
 
                     {/* TÍTULO */}
                     <div className="mu-login-title">
-
-                        <h1>
-                            Bem-vindo!
-                        </h1>
+                        <h1>Bem-vindo!</h1>
 
                         <p>
                             Entre para sua jornada de aprendizado
                         </p>
-
                     </div>
 
                     {/* FORMULÁRIO */}
@@ -199,7 +206,7 @@ function Login() {
                         <button
                             type="button"
                             className="mu-btn mu-btn-ghost"
-                            onClick={() => navigate("/cadastro")}
+                            onClick={handleCadastro}
                         >
                             Criar conta
                         </button>

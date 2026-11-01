@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:8080";
+const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8080";
 
 export async function apiFetch(
     endpoint: string,
@@ -36,4 +36,30 @@ export async function apiFetch(
     }
 
     return resposta;
+}
+
+export interface ErroApi {
+    codigo: string;
+    mensagem: string;
+    campos?: Record<string, string>;
+}
+
+export async function lerErro(
+    resposta: Response,
+    mensagemPadrao: string
+): Promise<ErroApi> {
+    try {
+        const corpo = await resposta.json();
+
+        if (corpo && typeof corpo.mensagem === "string") {
+            return {
+                codigo: typeof corpo.codigo === "string" ? corpo.codigo : "ERRO",
+                mensagem: corpo.mensagem,
+                campos: corpo.campos,
+            };
+        }
+    } catch {
+        // Corpo Vazio
+    }
+    return {codigo: "ERRO-DESCONHECIDO", mensagem: mensagemPadrao};
 }
