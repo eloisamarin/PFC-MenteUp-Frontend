@@ -4,6 +4,7 @@ import {
     BookOpen,
     CalendarDays,
     Eye,
+    Gamepad2,
     Pencil,
     Plus,
     Rocket,
@@ -14,6 +15,7 @@ import {
 
 import ProfessorLayout from "../../components/professor/ProfessorLayout";
 import { apiFetch, lerErro } from "../../services/api";
+import { NOME_TIPO, type TipoAtividade } from "../../types/aluno";
 import base from "../aluno/atividadesAluno.module.css";
 import styles from "./atividadesProfessor.module.css";
 
@@ -25,6 +27,7 @@ type Atividade = {
     descricao?: string;
     pontuacao: number;
     status: StatusAtividade;
+    tipo?: TipoAtividade;
     dataCriacao?: string;
     turma?: {
         id: number | string;
@@ -314,6 +317,10 @@ function AtividadesProfessor() {
                                             Criada em {data}
                                         </span>
                                     )}
+                                    <span className={base.date}>
+                                        <Gamepad2 size={14} />
+                                        {NOME_TIPO[atividade.tipo ?? "QUIZ"] ?? atividade.tipo}
+                                    </span>
                                     {atividade.descricao && (
                                         <p className={styles.description}>{atividade.descricao}</p>
                                     )}

@@ -9,6 +9,7 @@ export interface Atividade {
     descricao: string;
     pontuacao: number;
     status: "PENDENTE" | "EM_ANDAMENTO" | "CONCLUIDO";
+    tipo?: TipoAtividade;
     dataCriacao: string;
     turma?: Turma;
 }
@@ -40,3 +41,13 @@ export function estaAberta(item: AtividadeAluno) {
     const v = visaoStatus(item);
     return v === "PENDENTE" || v === "EM_ANDAMENTO";
 }
+
+export type TipoAtividade = "QUIZ" | "VERDADEIRO_FALSO" | "ASSOCIACAO" | "ORDENACAO" | "LACUNAS";
+
+export const NOME_TIPO: Record<TipoAtividade, string> = {
+    QUIZ: "Quiz clássico",
+    VERDADEIRO_FALSO: "Verdadeiro ou falso",
+    ASSOCIACAO: "Associação de colunas",
+    ORDENACAO: "Ordenação",
+    LACUNAS: "Preencher lacunas",
+};

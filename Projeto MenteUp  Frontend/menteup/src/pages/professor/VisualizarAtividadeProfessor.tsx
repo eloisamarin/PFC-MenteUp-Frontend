@@ -2,10 +2,10 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
     BookOpen,
-    Check,
     ChevronLeft,
     ChevronRight,
     FileQuestion,
+    Gamepad2,
     Pencil,
     TriangleAlert,
     Trophy,
@@ -14,13 +14,16 @@ import {
 } from "lucide-react";
 
 import ProfessorLayout from "../../components/professor/ProfessorLayout";
+import { PlayerAssociacao, PlayerPergunta } from "../../components/atividades/Players";
 import { apiFetch, lerErro } from "../../services/api";
+import { NOME_TIPO, type TipoAtividade } from "../../types/aluno";
 import styles from "./VisualizarAtividadeProfessor.module.css";
 
 interface Alternativa {
     id: number;
     texto: string;
     correta?: boolean;
+    ordem?: number;
 }
 
 interface Pergunta {
@@ -36,6 +39,7 @@ interface Atividade {
     descricao: string;
     pontuacao: number;
     status: string;
+    tipo?: TipoAtividade;
     turma?: {
         id: number;
         nome: string;
@@ -47,8 +51,6 @@ interface QuestionarioResponse {
     atividade?: Atividade;
     perguntas?: Pergunta[];
 }
-
-const LETRAS = "ABCDEFGH";
 
 const STATUS: Record<string, { rotulo: string; classe: string }> = {
     PENDENTE: { rotulo: "Rascunho", classe: "statusDraft" },
@@ -178,9 +180,11 @@ function VisualizarAtividadeProfessor() {
     }
 
     const status = STATUS[atividade.status] ?? { rotulo: atividade.status, classe: "statusClosed" };
+    const tipo = atividade.tipo ?? "QUIZ";
+    const associacao = tipo === "ASSOCIACAO";
     const pergunta = perguntas[indice];
-    const linhas = pergunta ? Math.ceil(pergunta.alternativas.length / 2) : 1;
-    const percentual = total ? Math.round(((indice + 1) / total) * 100) : 0;
+    const percentual = associacao ? 100 : total ? Math.round(((indice + 1) / total) * 100) : 0;
+    const paraPlayer = (p: Pergunta) => ({ ...p, texto: p.texto ?? p.enunciado ?? "" });
 
     return (
         <ProfessorLayout compacto>
@@ -220,6 +224,13 @@ function VisualizarAtividadeProfessor() {
                             <strong>{total}</strong>
                         </span>
                     </div>
+                    <div className={styles.infoStat}>
+                        <Gamepad2 size={18} className={styles.indigo} />
+                        <span>
+                            <small>Template</small>
+                            <strong>{NOME_TIPO[tipo] ?? tipo}</strong>
+                        </span>
+                    </div>
                 </div>
             </header>
 
@@ -237,11 +248,11 @@ function VisualizarAtividadeProfessor() {
                     </button>
                 </section>
             ) : (
-                <section className={styles.card} aria-labelledby="pergunta-texto">
+                <section className={styles.card}>
                     <header className={styles.cardHeader}>
                         <span className={styles.subject}>Perguntas da atividade</span>
                         <span className={styles.counter}>
-                            Questão {indice + 1} de {total}
+                            {associacao ? `${total} pares` : `Questão ${indice + 1} de ${total}`}
                         </span>
                     </header>
 
@@ -256,65 +267,53 @@ function VisualizarAtividadeProfessor() {
                         <div className={styles.fill} style={{ width: `${percentual}%` }} />
                     </div>
 
-                    <p className={styles.hint}>Confira as perguntas e alternativas cadastradas:</p>
-                    <h2 id="pergunta-texto" className={styles.question}>
-                        {pergunta.texto ?? pergunta.enunciado}
-                    </h2>
+                    {associacao ? (
+                        <PlayerAssociacao
+                            titulo="Ligações corretas"
+                            perguntas={perguntas.map(paraPlayer)}
+                            ligacoes={{}}
+                            gabarito
+                        />
+                    ) : (
+                        <PlayerPergunta tipo={tipo} pergunta={paraPlayer(pergunta)} valor={[]} gabarito />
+                    )}
 
-                    <ul
-                        className={styles.options}
-                        style={{ gridTemplateRows: `repeat(${linhas}, auto)` }}
-                    >
-                        {pergunta.alternativas?.map((alternativa, i) => (
-                            <li
-                                key={alternativa.id}
-                                className={`${styles.option} ${alternativa.correta ? styles.optionCorrect : ""}`}
+                    {!associacao && (
+                        <footer className={styles.footer}>
+                            <button
+                                type="button"
+                                className={styles.navButton}
+                                onClick={() => setIndice((i) => i - 1)}
+                                disabled={indice === 0}
                             >
-                                <span className={styles.letter}>{LETRAS[i] ?? i + 1}</span>
-                                <span className={styles.optionText}>{alternativa.texto}</span>
-                                {alternativa.correta && (
-                                    <span className={styles.correctBadge}>
-                                        <Check size={14} /> Correta
-                                    </span>
-                                )}
-                            </li>
-                        ))}
-                    </ul>
+                                <ChevronLeft size={16} /> Anterior
+                            </button>
 
-                    <footer className={styles.footer}>
-                        <button
-                            type="button"
-                            className={styles.navButton}
-                            onClick={() => setIndice((i) => i - 1)}
-                            disabled={indice === 0}
-                        >
-                            <ChevronLeft size={16} /> Anterior
-                        </button>
+                            <nav className={styles.dots} aria-label="Ir para a pergunta">
+                                {perguntas.map((p, i) => (
+                                    <button
+                                        key={p.id ?? i}
+                                        type="button"
+                                        className={`${styles.dot} ${i === indice ? styles.dotActive : ""}`}
+                                        onClick={() => setIndice(i)}
+                                        aria-label={`Pergunta ${i + 1}`}
+                                        aria-current={i === indice ? "step" : undefined}
+                                    >
+                                        {i + 1}
+                                    </button>
+                                ))}
+                            </nav>
 
-                        <nav className={styles.dots} aria-label="Ir para a pergunta">
-                            {perguntas.map((p, i) => (
-                                <button
-                                    key={p.id ?? i}
-                                    type="button"
-                                    className={`${styles.dot} ${i === indice ? styles.dotActive : ""}`}
-                                    onClick={() => setIndice(i)}
-                                    aria-label={`Pergunta ${i + 1}`}
-                                    aria-current={i === indice ? "step" : undefined}
-                                >
-                                    {i + 1}
-                                </button>
-                            ))}
-                        </nav>
-
-                        <button
-                            type="button"
-                            className={styles.navButton}
-                            onClick={() => setIndice((i) => i + 1)}
-                            disabled={indice === total - 1}
-                        >
-                            Próxima <ChevronRight size={16} />
-                        </button>
-                    </footer>
+                            <button
+                                type="button"
+                                className={styles.navButton}
+                                onClick={() => setIndice((i) => i + 1)}
+                                disabled={indice === total - 1}
+                            >
+                                Próxima <ChevronRight size={16} />
+                            </button>
+                        </footer>
+                    )}
                 </section>
             )}
         </ProfessorLayout>

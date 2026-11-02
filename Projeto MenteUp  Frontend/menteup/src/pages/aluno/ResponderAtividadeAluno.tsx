@@ -11,6 +11,15 @@ import {
 
 import AlunoLayout from "../../components/aluno/AlunoLayout";
 import { apiFetch, lerErro } from "../../services/api";
+import {
+    PlayerAssociacao,
+    PlayerPergunta,
+    corpoResposta,
+    respostaCompleta,
+    valorInicial,
+    type Valor,
+} from "../../components/atividades/Players";
+import { NOME_TIPO, type TipoAtividade } from "../../types/aluno";
 import styles from "./ResponderAtividadeAluno.module.css";
 
 interface AlternativaResponse {
@@ -43,6 +52,7 @@ interface AtividadeResponse {
     status: "PENDENTE" | "EM_ANDAMENTO" | "CONCLUIDO";
     usuario: UsuarioResponse | null;
     dataCriacao?: string;
+    tipo?: TipoAtividade;
 }
 
 interface ResultadoAtividadeResponse {
@@ -55,7 +65,8 @@ interface ResultadoAtividadeResponse {
 
 interface RespostaProgressoResponse {
     perguntaId: number;
-    alternativaId: number;
+    alternativaId: number | null;
+    alternativasIds?: number[] | null;
 }
 
 interface ProgressoAtividadeResponse {
@@ -82,13 +93,16 @@ function ResponderAtividadeAluno() {
     const [carregando, setCarregando] = useState(true);
     const [erro, setErro] = useState("");
 
-    const [respostas, setRespostas] = useState<Record<number, number>>({});
+    const [respostas, setRespostas] = useState<Record<number, Valor>>({});
     const [indice, setIndice] = useState(0);
-    const [selecionada, setSelecionada] = useState<number | null>(null);
+    const [rascunho, setRascunho] = useState<Valor>([]);
+    const [ligacoes, setLigacoes] = useState<Record<number, number | null>>({});
     const [enviando, setEnviando] = useState(false);
 
     const atividade = questionario?.atividade;
     const perguntas = questionario?.perguntas ?? [];
+    const tipo: TipoAtividade = atividade?.tipo ?? "QUIZ";
+    const associacao = tipo === "ASSOCIACAO";
     const meuResultado = questionario?.meuResultado ?? null;
 
     const enviada = meuResultado !== null;
@@ -96,8 +110,11 @@ function ResponderAtividadeAluno() {
     const podeResponder = atividade?.status === "EM_ANDAMENTO" && !enviada;
 
     const pergunta = perguntas[indice];
-    const ultima = indice === perguntas.length - 1;
-    const respondidas = perguntas.filter((p) => respostas[p.id] !== undefined).length;
+    const ultima = associacao || indice === perguntas.length - 1;
+    const respondidas = associacao
+        ? perguntas.filter((p) => ligacoes[p.id] != null).length
+        : perguntas.filter((p) => respostas[p.id] !== undefined).length;
+    const completa = associacao ? respondidas === perguntas.length : respostaCompleta(rascunho);
     const percentual = perguntas.length ? Math.round((respondidas / perguntas.length) * 100) : 0;
 
     useEffect(() => {
@@ -126,11 +143,14 @@ function ResponderAtividadeAluno() {
                 setErro("");
                 setQuestionario(dados);
 
-                const salvas: Record<number, number> = {};
+                const salvas: Record<number, Valor> = {};
                 dados.meuProgresso?.respostas.forEach((r) => {
-                    salvas[r.perguntaId] = r.alternativaId;
+                    salvas[r.perguntaId] = r.alternativasIds ?? [r.alternativaId];
                 });
                 setRespostas(salvas);
+                setLigacoes(
+                    Object.fromEntries(dados.perguntas.map((p) => [p.id, salvas[p.id]?.[0] ?? null]))
+                );
 
                 const primeiraAberta = dados.perguntas.findIndex((p) => salvas[p.id] === undefined);
                 setIndice(primeiraAberta === -1 ? Math.max(0, dados.perguntas.length - 1) : primeiraAberta);
@@ -145,14 +165,14 @@ function ResponderAtividadeAluno() {
     }, [id, navigate]);
 
     useEffect(() => {
-        if (pergunta) setSelecionada(respostas[pergunta.id] ?? null);
+        if (pergunta) setRascunho(respostas[pergunta.id] ?? valorInicial(tipo, pergunta));
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [indice, pergunta?.id]);
 
-    async function salvarResposta(perguntaId: number, alternativaId: number) {
+    async function salvarResposta(perguntaId: number, valor: Valor) {
         const resposta = await apiFetch(`/atividades/${id}/progresso`, {
             method: "PUT",
-            body: JSON.stringify({ perguntaId, alternativaId }),
+            body: JSON.stringify(corpoResposta(tipo, perguntaId, valor)),
         });
 
         if (!resposta.ok) {
@@ -160,10 +180,10 @@ function ResponderAtividadeAluno() {
             throw new Error(erroApi.mensagem);
         }
 
-        setRespostas((atuais) => ({ ...atuais, [perguntaId]: alternativaId }));
+        setRespostas((atuais) => ({ ...atuais, [perguntaId]: valor }));
     }
 
-    async function finalizarAtividade(todas: Record<number, number>) {
+    async function finalizarAtividade(todas: Record<number, Valor>) {
         const faltando = perguntas.findIndex((p) => todas[p.id] === undefined);
         if (faltando !== -1) {
             setIndice(faltando);
@@ -185,18 +205,31 @@ function ResponderAtividadeAluno() {
     }
 
     const confirmar = useCallback(async () => {
-        if (!podeResponder || !pergunta || selecionada === null || enviando) return;
+        if (!podeResponder || !pergunta || !completa || enviando) return;
 
         try {
             setEnviando(true);
             setErro("");
 
-            if (respostas[pergunta.id] !== selecionada) {
-                await salvarResposta(pergunta.id, selecionada);
+            if (associacao) {
+                const todas: Record<number, Valor> = { ...respostas };
+                for (const p of perguntas) {
+                    const valor: Valor = [ligacoes[p.id]];
+                    if (JSON.stringify(respostas[p.id]) !== JSON.stringify(valor)) {
+                        await salvarResposta(p.id, valor);
+                    }
+                    todas[p.id] = valor;
+                }
+                await finalizarAtividade(todas);
+                return;
+            }
+
+            if (JSON.stringify(respostas[pergunta.id]) !== JSON.stringify(rascunho)) {
+                await salvarResposta(pergunta.id, rascunho);
             }
 
             if (ultima) {
-                await finalizarAtividade({ ...respostas, [pergunta.id]: selecionada });
+                await finalizarAtividade({ ...respostas, [pergunta.id]: rascunho });
             } else {
                 setIndice((i) => i + 1);
             }
@@ -207,7 +240,7 @@ function ResponderAtividadeAluno() {
             setEnviando(false);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [podeResponder, pergunta, selecionada, enviando, respostas, ultima]);
+    }, [podeResponder, pergunta, rascunho, ligacoes, completa, enviando, respostas, ultima]);
 
     useEffect(() => {
         if (!podeResponder || !pergunta) return;
@@ -216,8 +249,9 @@ function ResponderAtividadeAluno() {
         function onKey(e: KeyboardEvent) {
             if (e.ctrlKey || e.metaKey || e.altKey) return;
             const pos = LETRAS.indexOf(e.key.toUpperCase());
-            if (e.key.length === 1 && pos !== -1 && pos < alternativas.length) {
-                setSelecionada(alternativas[pos].id);
+            const escolhaPorLetra = tipo === "QUIZ" || tipo === "VERDADEIRO_FALSO";
+            if (escolhaPorLetra && e.key.length === 1 && pos !== -1 && pos < alternativas.length) {
+                setRascunho([alternativas[pos].id]);
             } else if (e.key === "Enter") {
                 confirmar();
             }
@@ -225,7 +259,7 @@ function ResponderAtividadeAluno() {
 
         window.addEventListener("keydown", onKey);
         return () => window.removeEventListener("keydown", onKey);
-    }, [podeResponder, pergunta, confirmar]);
+    }, [podeResponder, pergunta, confirmar, tipo]);
 
     const voltar = () => navigate("/aluno/atividades");
 
@@ -341,18 +375,14 @@ function ResponderAtividadeAluno() {
         );
     }
 
-    const linhas = Math.ceil(pergunta.alternativas.length / 2);
-
     return (
         <AlunoLayout compacto>
             {topo}
 
-            <section className={styles.card} aria-labelledby="pergunta-texto">
+            <section className={styles.card}>
                 <header className={styles.cardHeader}>
                     <span className={styles.subject}>{assunto}</span>
-                    <span className={styles.counter}>
-                        Questão {indice + 1} de {perguntas.length}
-                    </span>
+                    <span className={styles.typeBadge}>{NOME_TIPO[tipo]}</span>
                 </header>
 
                 <div
@@ -365,39 +395,32 @@ function ResponderAtividadeAluno() {
                 >
                     <div className={styles.fill} style={{ width: `${percentual}%` }} />
                 </div>
+                <span className={styles.counter}>
+                    {associacao
+                        ? `${respondidas} de ${perguntas.length} ligações`
+                        : `Questão ${indice + 1} de ${perguntas.length}`}
+                </span>
 
-                <p className={styles.hint}>Observe o que já aprendeu e escolha uma resposta:</p>
-                <h1 id="pergunta-texto" className={styles.question}>
-                    {pergunta.texto}
-                </h1>
-
-                <div
-                    className={styles.options}
-                    role="radiogroup"
-                    aria-labelledby="pergunta-texto"
-                    style={{ gridTemplateRows: `repeat(${linhas}, auto)` }}
-                >
-                    {pergunta.alternativas.map((alt, i) => {
-                        const marcada = selecionada === alt.id;
-                        return (
-                            <button
-                                key={alt.id}
-                                type="button"
-                                role="radio"
-                                aria-checked={marcada}
-                                className={`${styles.option} ${marcada ? styles.optionSelected : ""}`}
-                                onClick={() => setSelecionada(alt.id)}
-                            >
-                                <span className={styles.letter}>{LETRAS[i] ?? i + 1}</span>
-                                <span className={styles.optionText}>{alt.texto}</span>
-                            </button>
-                        );
-                    })}
-                </div>
+                {associacao ? (
+                    <PlayerAssociacao
+                        titulo={atividade.descricao || "Ligue cada item ao seu correspondente"}
+                        perguntas={perguntas}
+                        ligacoes={ligacoes}
+                        onChange={setLigacoes}
+                    />
+                ) : (
+                    <PlayerPergunta
+                        key={pergunta.id}
+                        tipo={tipo}
+                        pergunta={pergunta}
+                        valor={rascunho}
+                        onChange={setRascunho}
+                    />
+                )}
 
                 <footer className={styles.footer}>
                     <div className={styles.footerLeft}>
-                        {indice > 0 && (
+                        {indice > 0 && !associacao && (
                             <button
                                 type="button"
                                 className={styles.ghost}
@@ -420,7 +443,7 @@ function ResponderAtividadeAluno() {
                         type="button"
                         className={styles.confirm}
                         onClick={confirmar}
-                        disabled={selecionada === null || enviando}
+                        disabled={!completa || enviando}
                     >
                         {enviando
                             ? "Salvando..."
