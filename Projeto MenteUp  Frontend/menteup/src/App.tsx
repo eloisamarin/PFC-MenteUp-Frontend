@@ -9,10 +9,11 @@ import AtividadesAluno from "./pages/aluno/atividadesAluno";
 import TurmasAluno from "./pages/aluno/turmasAluno";
 import Ranking from "./pages/aluno/Ranking";
 import ResponderAtividadesAluno from "./pages/aluno/ResponderAtividadeAluno";
+import DesafiosAluno from "./pages/aluno/desafiosAluno";
+import JogarDesafio from "./pages/aluno/JogarDesafio";
 
 import DashboardProfessor from "./pages/professor/dashboardProfessor.tsx";
 import AtividadesProfessor from "./pages/professor/atividadesProfessor";
-import Turmas from "./pages/professor/turma";
 import VisualizarAtividadeProfessor from "./pages/professor/VisualizarAtividadeProfessor";
 import EditarAtividadeProfessor from "./pages/professor/EditarAtividadeProfessor";
 import CriarAtividadeProfessor from "./pages/professor/CriarAtividadeProfessor";
@@ -26,6 +27,12 @@ import DeletarAtividadeAdministrador from "./pages/Administrador/DeletarAtividad
 import CriarAtividadeAdministrador from "./pages/Administrador/CriarAtividadeAdministrador";
 import AtividadesAdministrador from "./pages/Administrador/AtividadesAdministrador";
 import LogsAdministrador from "./pages/Administrador/LogsAdministrador.tsx";
+
+import TurmasGestao from "./pages/gestao/TurmasGestao";
+import DetalheTurma from "./pages/gestao/DetalheTurma";
+import DesafiosGestao from "./pages/gestao/DesafiosGestao";
+import CriarDesafio from "./pages/gestao/CriarDesafio";
+import ConduzirDesafio from "./pages/gestao/ConduzirDesafio";
 
 import PrivateRoute from "./routes/privateRoute";
 import Verificar2FA from "./pages/Verificar2FA.tsx";
@@ -132,6 +139,23 @@ function App() {
                 }
             />
 
+            <Route
+                path="/aluno/desafios"
+                element={
+                    <PrivateRoute permitido={["ALUNO"]}>
+                        <DesafiosAluno/>
+                    </PrivateRoute>
+                }
+            />
+            <Route
+                path="/aluno/desafios/:id"
+                element={
+                    <PrivateRoute permitido={["ALUNO"]}>
+                        <JogarDesafio/>
+                    </PrivateRoute>
+                }
+            />
+
             {/* PROFESSOR */}
             <Route
                 path="/professor/dashboard"
@@ -155,7 +179,47 @@ function App() {
                 path="/professor/turmas"
                 element={
                     <PrivateRoute permitido={["PROFESSOR"]}>
-                        <Turmas />
+                        <TurmasGestao perfil="PROFESSOR"/>
+                    </PrivateRoute>
+                }
+            />
+            <Route
+                path="/professor/turmas/:id"
+                element={
+                    <PrivateRoute permitido={["PROFESSOR"]}>
+                        <DetalheTurma perfil="PROFESSOR"/>
+                    </PrivateRoute>
+                }
+            />
+            <Route
+                path="/professor/desafios"
+                element={
+                    <PrivateRoute permitido={["PROFESSOR"]}>
+                        <DesafiosGestao perfil="PROFESSOR"/>
+                    </PrivateRoute>
+                }
+            />
+            <Route
+                path="/professor/desafios/criar"
+                element={
+                    <PrivateRoute permitido={["PROFESSOR"]}>
+                        <CriarDesafio perfil="PROFESSOR"/>
+                    </PrivateRoute>
+                }
+            />
+            <Route
+                path="/professor/desafios/:id/editar"
+                element={
+                    <PrivateRoute permitido={["PROFESSOR"]}>
+                        <CriarDesafio perfil="PROFESSOR"/>
+                    </PrivateRoute>
+                }
+            />
+            <Route
+                path="/professor/desafios/:id"
+                element={
+                    <PrivateRoute permitido={["PROFESSOR"]}>
+                        <ConduzirDesafio perfil="PROFESSOR"/>
                     </PrivateRoute>
                 }
             />
@@ -190,6 +254,54 @@ function App() {
             />
 
             {/* ADMINISTRADOR */}
+            <Route
+                path="/administrador/turmas"
+                element={
+                    <PrivateRoute permitido={["ADMINISTRADOR"]}>
+                        <TurmasGestao perfil="ADMINISTRADOR"/>
+                    </PrivateRoute>
+                }
+            />
+            <Route
+                path="/administrador/turmas/:id"
+                element={
+                    <PrivateRoute permitido={["ADMINISTRADOR"]}>
+                        <DetalheTurma perfil="ADMINISTRADOR"/>
+                    </PrivateRoute>
+                }
+            />
+            <Route
+                path="/administrador/desafios"
+                element={
+                    <PrivateRoute permitido={["ADMINISTRADOR"]}>
+                        <DesafiosGestao perfil="ADMINISTRADOR"/>
+                    </PrivateRoute>
+                }
+            />
+            <Route
+                path="/administrador/desafios/criar"
+                element={
+                    <PrivateRoute permitido={["ADMINISTRADOR"]}>
+                        <CriarDesafio perfil="ADMINISTRADOR"/>
+                    </PrivateRoute>
+                }
+            />
+            <Route
+                path="/administrador/desafios/:id/editar"
+                element={
+                    <PrivateRoute permitido={["ADMINISTRADOR"]}>
+                        <CriarDesafio perfil="ADMINISTRADOR"/>
+                    </PrivateRoute>
+                }
+            />
+            <Route
+                path="/administrador/desafios/:id"
+                element={
+                    <PrivateRoute permitido={["ADMINISTRADOR"]}>
+                        <ConduzirDesafio perfil="ADMINISTRADOR"/>
+                    </PrivateRoute>
+                }
+            />
             <Route
                 path="/administrador/dashboard"
                 element={

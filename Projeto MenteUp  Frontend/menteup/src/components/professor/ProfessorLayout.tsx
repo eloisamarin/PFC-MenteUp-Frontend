@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { BookOpen, LayoutGrid, Plus, Users } from "lucide-react";
+import { BookOpen, LayoutGrid, Plus, Users, Zap } from "lucide-react";
 
 import AppLayout, { type ItemMenu } from "../layout/AppLayout";
 import EngajamentoCard from "./EngajamentoCard";
@@ -9,6 +9,7 @@ const MENU: ItemMenu[] = [
     { rotulo: "Visão geral", icone: <LayoutGrid size={20} />, para: "/professor/dashboard" },
     { rotulo: "Criar atividade", icone: <Plus size={20} />, para: "/professor/atividades/criar" },
     { rotulo: "Atividades", icone: <BookOpen size={20} />, para: "/professor/atividades", exato: true },
+    { rotulo: "Desafios", icone: <Zap size={20} />, para: "/professor/desafios" },
     { rotulo: "Turmas", icone: <Users size={20} />, para: "/professor/turmas" },
 ];
 

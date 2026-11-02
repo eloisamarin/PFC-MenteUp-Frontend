@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { BookOpen, Eye, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { BookOpen, Eye, Pencil, Plus, Search, Trash2, Users, Zap } from "lucide-react";
 import { apiFetch } from "../../services/api";
 
 type Atividade = {
@@ -55,8 +55,14 @@ function AtividadesAdministrador() {
         <nav className="mt-6 space-y-2 px-3">
           <button onClick={() => navigate("/administrador/dashboard")} className="w-full rounded-lg px-4 py-3 text-left text-sm text-slate-300 hover:bg-white/10">Dashboard</button>
           <button onClick={() => navigate("/administrador/usuarios")} className="w-full rounded-lg px-4 py-3 text-left text-sm text-slate-300 hover:bg-white/10">Usuários</button>
+          <button onClick={() => navigate("/administrador/turmas")} className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left text-sm text-slate-300 hover:bg-white/10">
+            <Users size={17} /> Turmas
+          </button>
           <button onClick={() => navigate("/administrador/atividades")} className="flex w-full items-center gap-3 rounded-lg bg-white/10 px-4 py-3 text-left text-sm font-medium text-white">
             <BookOpen size={17} /> Atividades
+          </button>
+          <button onClick={() => navigate("/administrador/desafios")} className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left text-sm text-slate-300 hover:bg-white/10">
+            <Zap size={17} /> Desafios
           </button>
         </nav>
       </aside>
