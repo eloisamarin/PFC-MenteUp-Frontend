@@ -1518,3 +1518,133 @@
   background-color: #f5f3ff;
   color: #4f46e5;
 }
+
+
+
+/* ========================================
+   Desempenho da Turma
+======================================== */
+
+.header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.title {
+    margin: 0;
+    font-size: 1.75rem;
+    color: var(--mu-text);
+}
+
+.subtitle {
+    margin: 4px 0 0;
+    color: var(--mu-text-muted);
+}
+
+.selectLabel {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 0.875rem;
+    color: var(--mu-text-muted);
+}
+
+.select {
+    min-width: 220px;
+    padding: 10px 12px;
+    border: 1px solid var(--mu-border-input);
+    border-radius: var(--mu-radius-sm);
+    background: var(--mu-input-bg);
+    color: var(--mu-text);
+}
+
+.error {
+    margin-bottom: 16px;
+    padding: 12px 16px;
+    border: 1px solid var(--mu-danger);
+    border-radius: var(--mu-radius-md);
+    color: var(--mu-danger);
+}
+
+.stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.stat {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 20px;
+    border: 1px solid var(--mu-border);
+    border-radius: var(--mu-radius-lg);
+    background: var(--mu-surface);
+    box-shadow: var(--mu-shadow-card);
+}
+
+.statIcon {
+    color: var(--mu-teal);
+}
+
+.statValue {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--mu-text);
+}
+
+.statLabel {
+    font-size: 0.875rem;
+    color: var(--mu-text-muted);
+}
+
+.card {
+    padding: 20px;
+    border: 1px solid var(--mu-border);
+    border-radius: var(--mu-radius-lg);
+    background: var(--mu-surface);
+    overflow-x: auto;
+}
+
+.cardTitle {
+    margin: 0 0 16px;
+    font-size: 1.1rem;
+    color: var(--mu-text);
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.table th {
+    padding: 10px 12px;
+    text-align: left;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    color: var(--mu-text-muted);
+    border-bottom: 1px solid var(--mu-border);
+}
+
+.table td {
+    padding: 12px;
+    color: var(--mu-text);
+    border-bottom: 1px solid var(--mu-border);
+}
+
+.numero {
+    text-align: right;
+}
+
+.semAtividade {
+    color: var(--mu-danger);
+}
+
+.empty {
+    color: var(--mu-text-muted);
+}

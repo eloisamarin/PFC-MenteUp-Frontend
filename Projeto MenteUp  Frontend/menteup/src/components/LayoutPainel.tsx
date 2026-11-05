@@ -4,6 +4,7 @@ import {
     BookOpen,
     LayoutDashboard,
     ScrollText,
+    TrendingUp,
     Trophy,
     UserCog,
     Users,
@@ -31,6 +32,7 @@ function itensDoPerfil(perfil: Perfil): ItemMenu[] {
         {rotulo: "Turmas", rota: `${base}/turmas`, icone: Users},
         {rotulo: "Atividades", rota: `${base}/atividades`, icone: BookOpen},
         {rotulo: "Desafios", rota: `${base}/desafios`, icone: Zap},
+        {rotulo: "Desempenho", rota: `${base}/desempenho`, icone: TrendingUp},
     ];
 
     const inicio: ItemMenu = {rotulo: "Dashboard", rota: `${base}/dashboard`, icone: LayoutDashboard};
@@ -45,6 +47,7 @@ function itensDoPerfil(perfil: Perfil): ItemMenu[] {
             {rotulo: "Usuários", rota: `${base}/usuarios`, icone: UserCog},
             ...comuns,
             {rotulo: "Logs", rota: `${base}/logs`, icone: ScrollText},
+            {rotulo: "Desempenho", rota: `${base}/desempenho`, icone: TrendingUp},
         ];
     }
 
