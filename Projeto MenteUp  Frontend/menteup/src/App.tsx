@@ -33,6 +33,7 @@ import DetalheTurma from "./pages/Desafio/DetalheTurma.tsx";
 import DesafiosGestao from "./pages/Desafio/DesafiosGestao.tsx";
 import CriarDesafio from "./pages/Desafio/CriarDesafio.tsx";
 import ConduzirDesafio from "./pages/Desafio/ConduzirDesafio.tsx";
+import DesempenhoAluno from "./pages/Desempenho/DesempenhoAluno.tsx";
 
 import PrivateRoute from "./routes/privateRoute";
 import Verificar2FA from "./pages/Verificar2FA.tsx";
@@ -255,6 +256,14 @@ function App() {
 
                     />
                     <Route
+                        path="/professor/desempenho/:turmaId/alunos/:alunoId"
+                        element={
+                            <PrivateRoute permitido={["PROFESSOR"]}>
+                                <DesempenhoAluno perfil="PROFESSOR" />
+                            </PrivateRoute>
+                        }
+                    />
+                    <Route
                         path="/professor/desempenho"
                         element={
                             <PrivateRoute permitido={["PROFESSOR"]}>
@@ -372,6 +381,14 @@ function App() {
                         element={
                             <PrivateRoute permitido={["ADMINISTRADOR"]}>
                                 <LogsAdministrador />
+                            </PrivateRoute>
+                        }
+                    />
+                    <Route
+                        path="/administrador/desempenho/:turmaId/alunos/:alunoId"
+                        element={
+                            <PrivateRoute permitido={["ADMINISTRADOR"]}>
+                                <DesempenhoAluno perfil="ADMINISTRADOR" />
                             </PrivateRoute>
                         }
                     />

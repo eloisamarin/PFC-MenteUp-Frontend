@@ -1,15 +1,16 @@
-import {useEffect, useState} from "react";
-import {BookOpen, Percent, TrendingUp, Users, type LucideIcon} from "lucide-react";
+import { useEffect, useState } from "react";
+import { BookOpen, Percent, TrendingUp, Users, type LucideIcon } from "lucide-react";
 import LayoutPainel from "../../components/LayoutPainel";
-import {apiFetch, lerErro} from "../../services/api";
-import type {PerfilGestao} from "../../services/turmaDesafio";
-import type {DesempenhoDaTurma, TurmaResumo} from "../../types/desempenho";
+import { apiFetch, lerErro } from "../../services/api";
+import { ROTA_BASE, type PerfilGestao } from "../../services/turmaDesafio";
+import type { DesempenhoDaTurma, TurmaResumo } from "../../types/desempenho";
+import { Link } from "react-router-dom";
 
 /*
  * - Professor: o seletor mostra só as turmas dele (a API filtra em /turmas/minhas).
  * - Administrador: o seletor mostra todas as turmas.
  */
-function Desempenho({perfil}: { perfil: PerfilGestao }) {
+function Desempenho({ perfil }: { perfil: PerfilGestao }) {
     const [turmas, setTurmas] = useState<TurmaResumo[]>([]);
     const [turmaId, setTurmaId] = useState<number | null>(null);
     const [desempenho, setDesempenho] = useState<DesempenhoDaTurma | null>(null);
@@ -116,10 +117,10 @@ function Desempenho({perfil}: { perfil: PerfilGestao }) {
             {desempenho && !carregando && (
                 <>
                     <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
-                        <Cartao icone={Users} valor={desempenho.totalAlunos} rotulo="Alunos"/>
-                        <Cartao icone={BookOpen} valor={desempenho.totalAtividades} rotulo="Atividades publicadas"/>
-                        <Cartao icone={TrendingUp} valor={desempenho.mediaPontuacao.toLocaleString("pt-BR")} rotulo="Média de pontuação"/>
-                        <Cartao icone={Percent} valor={`${desempenho.taxaParticipacao}%`} rotulo="Participação"/>
+                        <Cartao icone={Users} valor={desempenho.totalAlunos} rotulo="Alunos" />
+                        <Cartao icone={BookOpen} valor={desempenho.totalAtividades} rotulo="Atividades publicadas" />
+                        <Cartao icone={TrendingUp} valor={desempenho.mediaPontuacao.toLocaleString("pt-BR")} rotulo="Média de pontuação" />
+                        <Cartao icone={Percent} valor={`${desempenho.taxaParticipacao}%`} rotulo="Participação" />
                     </div>
 
                     <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
@@ -138,7 +139,14 @@ function Desempenho({perfil}: { perfil: PerfilGestao }) {
                                 <tbody>
                                     {desempenho.alunos.map((aluno) => (
                                         <tr key={aluno.alunoId} className="border-t hover:bg-slate-50">
-                                            <td className="px-5 py-4 font-semibold">{aluno.nomeAluno}</td>
+                                            <td className="px-5 py-4 font-semibold">
+                                                <Link
+                                                    to={`${ROTA_BASE[perfil]}/desempenho/${desempenho.turmaId}/alunos/${aluno.alunoId}`}
+                                                    className="text-indigo-600 hover:underline"
+                                                >
+                                                    {aluno.nomeAluno}
+                                                </Link>
+                                            </td>
                                             <td className="px-5 py-4 text-right">{aluno.pontuacao}</td>
                                             <td className="px-5 py-4 text-right">{aluno.acertos}</td>
                                             <td className={`px-5 py-4 text-right ${aluno.atividadesConcluidas === 0 ? "font-semibold text-red-500" : ""}`}>
@@ -157,10 +165,10 @@ function Desempenho({perfil}: { perfil: PerfilGestao }) {
 }
 
 // Cartão de resumo da turma (alunos, atividades, média, participação)
-function Cartao({icone: Icone, valor, rotulo}: { icone: LucideIcon; valor: number | string; rotulo: string }) {
+function Cartao({ icone: Icone, valor, rotulo }: { icone: LucideIcon; valor: number | string; rotulo: string }) {
     return (
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-            <Icone size={22} className="mb-2 text-indigo-500"/>
+            <Icone size={22} className="mb-2 text-indigo-500" />
             <p className="text-2xl font-semibold">{valor}</p>
             <p className="text-sm text-slate-400">{rotulo}</p>
         </div>
