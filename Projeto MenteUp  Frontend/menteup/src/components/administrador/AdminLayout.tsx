@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Activity, BookOpen, TrendingUp, Trophy, Users, UserCog, Zap } from "lucide-react";
+import { Activity, BookOpen, CircleUser, TrendingUp, Trophy, Users, UserCog, Zap } from "lucide-react";
 
 import AppLayout, { type ItemMenu } from "../layout/AppLayout";
 
@@ -11,6 +11,7 @@ const MENU: ItemMenu[] = [
     { rotulo: "Desafios", icone: <Zap size={20} />, para: "/administrador/desafios" },
     { rotulo: "Desempenho", icone: <TrendingUp size={20} />, para: "/administrador/desempenho" },
     { rotulo: "Ranking", icone: <Trophy size={20} />, para: "/administrador/ranking" },
+    { rotulo: "Meu perfil", icone: <CircleUser size={20} />, para: "/administrador/perfil" },
 ];
 
 interface AdminLayoutProps {

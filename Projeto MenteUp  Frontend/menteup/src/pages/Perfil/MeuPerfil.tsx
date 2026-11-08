@@ -1,8 +1,9 @@
 import {createContext, useContext, useEffect, useState, type FormEvent, type ReactNode} from "react";
 import {useNavigate} from "react-router-dom";
 import {KeyRound, Mail, ShieldAlert, Users} from "lucide-react";
-import LayoutPainel from "../../components/LayoutPainel";
 import AlunoLayout from "../../components/aluno/AlunoLayout";
+import ProfessorLayout from "../../components/professor/ProfessorLayout";
+import AdminLayout from "../../components/administrador/AdminLayout";
 import ConfirmarExclusao from "../../components/ConfirmarExclusao";
 import Avatar, {EscolherAvatar} from "../../components/Avatar";
 import {apiFetch, lerErro} from "../../services/api";
@@ -28,9 +29,9 @@ const NOME_PERFIL: Record<string, string> = {
 };
 
 /*
- * A tela é a mesma para os três perfis; só muda a aparência.
- * Professor e administrador usam o painel claro (Tailwind);
- * o aluno usa o visual escuro da "Jornada do aluno" (igual à tela de Atividades).
+ * A tela é a mesma para os três perfis, todos com o visual escuro novo.
+ * O que muda é o menu lateral: AlunoLayout, ProfessorLayout ou AdminLayout.
+ * (ESTILO_PADRAO, o painel claro antigo, ficou só como modelo do tipo Estilo.)
  */
 const ESTILO_PADRAO = {
     escuro: false,
@@ -111,15 +112,23 @@ const ESTILO_ALUNO: Estilo = {
 const EstiloContext = createContext<Estilo>(ESTILO_PADRAO);
 const useEstilo = () => useContext(EstiloContext);
 
+// Menu lateral de cada perfil (o mesmo das outras telas dele)
 function Moldura({perfil, children}: { perfil: Perfil; children: ReactNode }) {
     if (perfil === "ALUNO") return <AlunoLayout>{children}</AlunoLayout>;
-    return <LayoutPainel perfil={perfil}>{children}</LayoutPainel>;
+    if (perfil === "PROFESSOR") return <ProfessorLayout>{children}</ProfessorLayout>;
+    return <AdminLayout>{children}</AdminLayout>;
 }
+
+const SOBRETITULO: Record<Perfil, string> = {
+    ALUNO: "Sua jornada",
+    PROFESSOR: "Espaço do professor",
+    ADMINISTRADOR: "Central administrativa",
+};
 
 function MeuPerfil({perfil}: { perfil: Perfil }) {
     const [dados, setDados] = useState<PerfilUsuario | null>(null);
     const [erro, setErro] = useState<string | null>(null);
-    const s = perfil === "ALUNO" ? ESTILO_ALUNO : ESTILO_PADRAO;
+    const s = ESTILO_ALUNO; // visual escuro para os três perfis
 
     useEffect(() => {
         async function carregar() {
@@ -144,7 +153,7 @@ function MeuPerfil({perfil}: { perfil: Perfil }) {
         <EstiloContext.Provider value={s}>
             <Moldura perfil={perfil}>
                 <header className={s.header}>
-                    <span className={s.eyebrow}>Sua jornada</span>
+                    <span className={s.eyebrow}>{SOBRETITULO[perfil]}</span>
                     <h1 className={s.title}>Meu perfil</h1>
                     <p className={s.subtitle}>Seus dados, sua senha e a exclusão da conta.</p>
                 </header>

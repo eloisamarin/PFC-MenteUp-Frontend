@@ -1,13 +1,18 @@
 import {useEffect, useMemo, useState} from "react";
-import {Check, LogOut, Plus, Search, Users} from "lucide-react";
+import {Check, Clock, LogOut, Plus, Search, Users, X} from "lucide-react";
 
 import AlunoLayout from "../../components/aluno/AlunoLayout";
 import {apiFetch, lerErro} from "../../services/api.ts";
 import styles from "./turmasAluno.module.css";
 
-interface Turma {
+// Resposta de GET /alunos/me/turmas/disponiveis
+interface TurmaDoAluno {
     id: number;
     nome: string;
+    professor: string | null;
+    matriculado: boolean;
+    solicitacaoPendenteId: number | null;
+    solicitacaoPendenteTipo: "ENTRADA" | "SAIDA" | null;
 }
 
 type Filtro = "TODAS" | "MINHAS" | "DISPONIVEIS";
@@ -18,82 +23,94 @@ const FILTROS: { id: Filtro; rotulo: string }[] = [
     {id: "DISPONIVEIS", rotulo: "Disponíveis"},
 ];
 
+/*
+ * O aluno não entra nem sai da turma sozinho: ele envia um PEDIDO,
+ * e o professor da turma (ou um administrador) aprova ou recusa.
+ */
 function TurmasAluno() {
-    const [turmas, setTurmas] = useState<Turma[]>([]);
-    const [minhasIds, setMinhaIds] = useState<number[]>([]);
+    const [turmas, setTurmas] = useState<TurmaDoAluno[]>([]);
     const [carregando, setCarregando] = useState(true);
     const [processando, setProcessando] = useState<number | null>(null);
     const [erro, setErro] = useState("");
+    const [aviso, setAviso] = useState("");
     const [filtro, setFiltro] = useState<Filtro>("TODAS");
     const [busca, setBusca] = useState("");
+    const [versao, setVersao] = useState(0);
 
     useEffect(() => {
         async function carregar() {
             try {
-                const [respostaTurmas, respostaMinhas] = await Promise.all([
-                    apiFetch("/turmas/all"),
-                    apiFetch("/alunos/me/turmas"),
-                ]);
-                if (!respostaTurmas.ok || !respostaMinhas.ok) {
+                const resposta = await apiFetch("/alunos/me/turmas/disponiveis");
+
+                if (!resposta.ok) {
                     throw new Error("Falha ao consultar as turmas.");
                 }
 
-                const todas: Turma[] = await respostaTurmas.json();
-                const minhas: Turma[] = await respostaMinhas.json();
-
-                setTurmas(todas);
-                setMinhaIds(minhas.map((turma) => turma.id));
+                setTurmas(await resposta.json());
             } catch (error) {
                 console.error("Erro ao buscar as turmas:", error);
-                setErro("Não foi possivel carregar as turmas.");
+                setErro("Não foi possível carregar as turmas.");
             } finally {
                 setCarregando(false);
             }
         }
 
         carregar();
-    }, []);
+    }, [versao]);
 
     const contagem = useMemo(() => {
-        const minhas = turmas.filter((turma) => minhasIds.includes(turma.id)).length;
+        const minhas = turmas.filter((turma) => turma.matriculado).length;
         return {TODAS: turmas.length, MINHAS: minhas, DISPONIVEIS: turmas.length - minhas};
-    }, [turmas, minhasIds]);
+    }, [turmas]);
 
     const turmasFiltradas = useMemo(() => {
         const termo = busca.trim().toLowerCase();
         return turmas.filter((turma) => {
-            const matriculado = minhasIds.includes(turma.id);
             const passaFiltro =
                 filtro === "TODAS" ||
-                (filtro === "MINHAS" && matriculado) ||
-                (filtro === "DISPONIVEIS" && !matriculado);
+                (filtro === "MINHAS" && turma.matriculado) ||
+                (filtro === "DISPONIVEIS" && !turma.matriculado);
             return passaFiltro && (!termo || turma.nome.toLowerCase().includes(termo));
         });
-    }, [turmas, minhasIds, filtro, busca]);
+    }, [turmas, filtro, busca]);
 
-    async function alterarMatricula(turma: Turma) {
-        const matriculado = minhasIds.includes(turma.id);
+    // Envia o pedido de entrada ou de saída
+    async function solicitar(turma: TurmaDoAluno) {
+        const tipo = turma.matriculado ? "SAIDA" : "ENTRADA";
 
+        await executar(turma, () => apiFetch("/alunos/me/solicitacoes", {
+            method: "POST",
+            body: JSON.stringify({turmaId: turma.id, tipo}),
+        }), tipo === "ENTRADA"
+            ? `Pedido para entrar em "${turma.nome}" enviado. Aguarde a aprovação do professor.`
+            : `Pedido para sair de "${turma.nome}" enviado. Aguarde a aprovação do professor.`);
+    }
+
+    // Desiste de um pedido que ainda não foi respondido
+    async function cancelar(turma: TurmaDoAluno) {
+        await executar(turma, () => apiFetch(`/alunos/me/solicitacoes/${turma.solicitacaoPendenteId}`, {
+            method: "DELETE",
+        }), `Pedido da turma "${turma.nome}" cancelado.`);
+    }
+
+    async function executar(turma: TurmaDoAluno, chamada: () => Promise<Response>, mensagemSucesso: string) {
         try {
             setProcessando(turma.id);
             setErro("");
+            setAviso("");
 
-            const resposta = await apiFetch(
-                `/alunos/me/turmas/${turma.id}`,
-                {method: matriculado ? "DELETE" : "POST"}
-            );
+            const resposta = await chamada();
+
             if (!resposta.ok) {
-                const erroApi = await lerErro(resposta, "Não foi possivel atualizar a matricula.");
-                setErro(erroApi.mensagem);
+                setErro((await lerErro(resposta, "Não foi possível enviar o pedido.")).mensagem);
                 return;
             }
-            setMinhaIds((atuais) =>
-                matriculado
-                    ? atuais.filter((id) => id !== turma.id)
-                    : [...atuais, turma.id]);
+
+            setAviso(mensagemSucesso);
+            setVersao((atual) => atual + 1);
         } catch (error) {
-            console.error("Erro ao atualizar matricula:", error);
-            setErro("Não foi possivel atualizar a matricula.");
+            console.error("Erro ao enviar o pedido:", error);
+            setErro("Não foi possível enviar o pedido.");
         } finally {
             setProcessando(null);
         }
@@ -105,7 +122,7 @@ function TurmasAluno() {
                 <span className={styles.eyebrow}>Sua jornada</span>
                 <h1 className={styles.title}>Turmas</h1>
                 <p className={styles.subtitle}>
-                    Entre nas turmas das suas aulas para participar das atividades e dos desafios delas.
+                    Peça para entrar nas turmas das suas aulas. O professor da turma aprova o seu pedido.
                 </p>
             </header>
 
@@ -143,6 +160,12 @@ function TurmasAluno() {
                 </div>
             )}
 
+            {aviso && (
+                <div className={styles.aviso} role="status">
+                    {aviso}
+                </div>
+            )}
+
             {carregando ? (
                 <div className={styles.grid}>
                     {[0, 1, 2].map((i) => (
@@ -166,54 +189,83 @@ function TurmasAluno() {
                 </div>
             ) : (
                 <div className={styles.grid}>
-                    {turmasFiltradas.map((turma) => {
-                        const matriculado = minhasIds.includes(turma.id);
-                        const ocupado = processando === turma.id;
-
-                        return (
-                            <article
-                                key={turma.id}
-                                className={`${styles.card} ${matriculado ? styles.cardMatriculado : ""}`}
-                            >
-                                <div className={styles.cardTop}>
-                                    <span className={styles.icon}>
-                                        <Users size={22}/>
-                                    </span>
-                                    {matriculado ? (
-                                        <span className={`${styles.badge} ${styles.badgeOn}`}>
-                                            <Check size={14}/> Matriculado
-                                        </span>
-                                    ) : (
-                                        <span className={`${styles.badge} ${styles.badgeOff}`}>Disponível</span>
-                                    )}
-                                </div>
-
-                                <div className={styles.cardBody}>
-                                    <h2 className={styles.cardTitle} title={turma.nome}>
-                                        {turma.nome}
-                                    </h2>
-                                    <p className={styles.cardHint}>
-                                        {matriculado
-                                            ? "Você vê as atividades e desafios desta turma."
-                                            : "Entre para ver as atividades e desafios desta turma."}
-                                    </p>
-                                </div>
-
-                                <button
-                                    type="button"
-                                    onClick={() => alterarMatricula(turma)}
-                                    disabled={ocupado}
-                                    className={matriculado ? styles.secondaryButton : styles.primaryButton}
-                                >
-                                    {matriculado ? <LogOut size={16}/> : <Plus size={16}/>}
-                                    {ocupado ? "Aguarde..." : matriculado ? "Sair da turma" : "Entrar na turma"}
-                                </button>
-                            </article>
-                        );
-                    })}
+                    {turmasFiltradas.map((turma) => (
+                        <CartaoTurma
+                            key={turma.id}
+                            turma={turma}
+                            ocupado={processando === turma.id}
+                            onSolicitar={() => solicitar(turma)}
+                            onCancelar={() => cancelar(turma)}
+                        />
+                    ))}
                 </div>
             )}
         </AlunoLayout>
+    );
+}
+
+function CartaoTurma({turma, ocupado, onSolicitar, onCancelar}: {
+    turma: TurmaDoAluno;
+    ocupado: boolean;
+    onSolicitar: () => void;
+    onCancelar: () => void;
+}) {
+    const pendente = turma.solicitacaoPendenteTipo;
+
+    // Selo do canto: situação do aluno nesta turma
+    const selo = pendente ? (
+        <span className={`${styles.badge} ${styles.badgeWait}`}>
+            <Clock size={14}/> {pendente === "ENTRADA" ? "Aguardando aprovação" : "Saída solicitada"}
+        </span>
+    ) : turma.matriculado ? (
+        <span className={`${styles.badge} ${styles.badgeOn}`}>
+            <Check size={14}/> Matriculado
+        </span>
+    ) : (
+        <span className={`${styles.badge} ${styles.badgeOff}`}>Disponível</span>
+    );
+
+    const dica = pendente === "ENTRADA"
+        ? "Seu pedido foi enviado. Assim que o professor aprovar, a turma aparece para você."
+        : pendente === "SAIDA"
+            ? "Você continua na turma até o professor aprovar a saída."
+            : turma.matriculado
+                ? "Você vê as atividades e desafios desta turma."
+                : "Peça para entrar e ver as atividades e desafios desta turma.";
+
+    return (
+        <article className={`${styles.card} ${turma.matriculado ? styles.cardMatriculado : ""}`}>
+            <div className={styles.cardTop}>
+                <span className={styles.icon}>
+                    <Users size={22}/>
+                </span>
+                {selo}
+            </div>
+
+            <div className={styles.cardBody}>
+                <h2 className={styles.cardTitle} title={turma.nome}>
+                    {turma.nome}
+                </h2>
+                {turma.professor && <p className={styles.cardHint}>Professor(a): {turma.professor}</p>}
+                <p className={styles.cardHint}>{dica}</p>
+            </div>
+
+            {pendente ? (
+                <button type="button" onClick={onCancelar} disabled={ocupado} className={styles.secondaryButton}>
+                    <X size={16}/> {ocupado ? "Aguarde..." : "Cancelar pedido"}
+                </button>
+            ) : (
+                <button
+                    type="button"
+                    onClick={onSolicitar}
+                    disabled={ocupado}
+                    className={turma.matriculado ? styles.secondaryButton : styles.primaryButton}
+                >
+                    {turma.matriculado ? <LogOut size={16}/> : <Plus size={16}/>}
+                    {ocupado ? "Aguarde..." : turma.matriculado ? "Pedir para sair" : "Pedir para entrar"}
+                </button>
+            )}
+        </article>
     );
 }
 

@@ -1,6 +1,6 @@
 import {useEffect, useState, type FormEvent} from "react";
 import {useNavigate, useParams} from "react-router-dom";
-import {ArrowLeft, BookOpen, Plus, UserMinus, UserPlus, Users, Zap} from "lucide-react";
+import {ArrowLeft, BookOpen, Check, Inbox, Plus, UserMinus, UserPlus, Users, X, Zap} from "lucide-react";
 import ConfirmarExclusao from "../../components/ConfirmarExclusao";
 import {BadgeStatusDesafio} from "../../components/ComponentesDesafio";
 import {apiFetch, lerErro} from "../../services/api";
@@ -15,6 +15,15 @@ import {
 import {LayoutGestao} from "./TurmasGestao";
 import styles from "./TurmasGestao.module.css";
 
+// Pedido de um aluno para entrar ou sair da turma (GET /turmas/{id}/solicitacoes)
+interface Solicitacao {
+    id: number;
+    alunoId: number;
+    alunoNome: string;
+    tipo: "ENTRADA" | "SAIDA";
+    criadaEm: string;
+}
+
 function DetalheTurma({perfil}: { perfil: PerfilGestao }) {
     const {id} = useParams<{ id: string }>();
     const navigate = useNavigate();
@@ -23,6 +32,8 @@ function DetalheTurma({perfil}: { perfil: PerfilGestao }) {
     const [turma, setTurma] = useState<TurmaDetalhe | null>(null);
     const [desafios, setDesafios] = useState<Desafio[]>([]);
     const [usuarios, setUsuarios] = useState<AlunoTurma[]>([]);
+    const [solicitacoes, setSolicitacoes] = useState<Solicitacao[]>([]);
+    const [respondendo, setRespondendo] = useState<number | null>(null);
     const [buscaAluno, setBuscaAluno] = useState("");
     const [nomeDesafio, setNomeDesafio] = useState("");
     const [vinculando, setVinculando] = useState<number | null>(null);
@@ -35,10 +46,11 @@ function DetalheTurma({perfil}: { perfil: PerfilGestao }) {
     useEffect(() => {
         async function carregar() {
             try {
-                const [respostaTurma, respostaDesafios, respostaUsuarios] = await Promise.all([
+                const [respostaTurma, respostaDesafios, respostaUsuarios, respostaSolicitacoes] = await Promise.all([
                     apiFetch(`/turmas/${id}`),
                     apiFetch("/desafios"),
                     apiFetch("/usuarios/all"),
+                    apiFetch(`/turmas/${id}/solicitacoes`),
                 ]);
 
                 if (!respostaTurma.ok) {
@@ -56,6 +68,9 @@ function DetalheTurma({perfil}: { perfil: PerfilGestao }) {
                 if (respostaUsuarios.ok) {
                     setUsuarios(await respostaUsuarios.json());
                 }
+
+                // Pedidos pendentes: só o professor da turma ou um administrador recebe (senão, 403)
+                setSolicitacoes(respostaSolicitacoes.ok ? await respostaSolicitacoes.json() : []);
             } catch (error) {
                 console.error("Erro ao carregar a turma:", error);
                 setErro("Não foi possível carregar a turma.");
@@ -87,6 +102,29 @@ function DetalheTurma({perfil}: { perfil: PerfilGestao }) {
             setErro("Não foi possível adicionar o aluno.");
         } finally {
             setVinculando(null);
+        }
+    }
+
+    // Aprova ou recusa o pedido de um aluno
+    async function responderSolicitacao(solicitacao: Solicitacao, acao: "aprovar" | "recusar") {
+        try {
+            setRespondendo(solicitacao.id);
+            setErro("");
+
+            const resposta = await apiFetch(`/turmas/${id}/solicitacoes/${solicitacao.id}/${acao}`, {method: "PUT"});
+
+            if (!resposta.ok) {
+                const erroApi = await lerErro(resposta, "Não foi possível responder ao pedido.");
+                setErro(erroApi.mensagem);
+                return;
+            }
+
+            setVersao((atual) => atual + 1);
+        } catch (error) {
+            console.error("Erro ao responder ao pedido:", error);
+            setErro("Não foi possível responder ao pedido.");
+        } finally {
+            setRespondendo(null);
         }
     }
 
@@ -219,6 +257,41 @@ function DetalheTurma({perfil}: { perfil: PerfilGestao }) {
                                 </li>
                             ))}
                         </ul>
+                    )}
+
+                    {solicitacoes.length > 0 && (
+                        <div className={styles.suggestions}>
+                            <p className={styles.muted}>
+                                <Inbox size={14}/> {contagem(solicitacoes.length, "pedido aguardando resposta", "pedidos aguardando resposta")}
+                            </p>
+                            <ul className={styles.people}>
+                                {solicitacoes.map((solicitacao) => (
+                                    <li key={solicitacao.id} className={styles.person}>
+                                        <span className={styles.personInfo}>
+                                            <strong>{solicitacao.alunoNome}</strong>
+                                            <small>{solicitacao.tipo === "ENTRADA" ? "Quer entrar na turma" : "Quer sair da turma"}</small>
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={() => responderSolicitacao(solicitacao, "aprovar")}
+                                            disabled={respondendo === solicitacao.id}
+                                            className={styles.smallButton}
+                                        >
+                                            <Check size={14}/> Aprovar
+                                        </button>
+                                        <button
+                                            type="button"
+                                            title={`Recusar o pedido de ${solicitacao.alunoNome}`}
+                                            onClick={() => responderSolicitacao(solicitacao, "recusar")}
+                                            disabled={respondendo === solicitacao.id}
+                                            className={`${styles.iconButton} ${styles.iconDanger}`}
+                                        >
+                                            <X size={17}/>
+                                        </button>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
                     )}
 
                     {turma.alunos.length === 0 ? (
