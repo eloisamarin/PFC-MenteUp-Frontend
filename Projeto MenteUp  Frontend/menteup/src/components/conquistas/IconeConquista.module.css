@@ -1,0 +1,63 @@
+.icone {
+  --cor: var(--mu-gold);
+  box-sizing: border-box;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+}
+
+.sm {
+  width: 32px;
+  height: 32px;
+}
+
+.md {
+  width: 40px;
+  height: 40px;
+}
+
+.lg {
+  width: 96px;
+  height: 96px;
+}
+
+.bronze {
+  --cor: var(--mu-bronze);
+}
+
+.prata {
+  --cor: var(--mu-silver);
+}
+
+.ouro {
+  --cor: var(--mu-gold);
+}
+
+.especial {
+  --cor: var(--mu-lilac);
+}
+
+.ganha {
+  background: var(--cor);
+  color: #12134e;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--cor) 30%, transparent);
+}
+
+.especial.ganha {
+  background: linear-gradient(135deg, var(--mu-lilac) 0%, var(--mu-violet) 100%);
+  color: #fff;
+}
+
+.pendente {
+  background: var(--mu-app-glass);
+  border: 1px dashed var(--mu-app-glass-border);
+  color: var(--mu-app-muted);
+  opacity: 0.75;
+}
+
+.lg.ganha {
+  box-shadow:
+    0 0 0 6px color-mix(in srgb, var(--cor) 25%, transparent),
+    0 0 48px color-mix(in srgb, var(--cor) 55%, transparent);
+}

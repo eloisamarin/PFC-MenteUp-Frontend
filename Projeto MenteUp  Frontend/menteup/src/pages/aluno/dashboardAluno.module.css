@@ -383,6 +383,25 @@
   font-variant-numeric: tabular-nums;
 }
 
+.semDesafio {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.semDesafio strong {
+  font-family: var(--mu-font-display);
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 28px;
+}
+
+.semDesafio span {
+  font-size: 14px;
+  color: var(--mu-app-muted);
+}
+
 .challengeXp {
   font-size: 16px;
   font-weight: 700;

@@ -1,7 +1,8 @@
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import {useNavigate, useParams} from "react-router-dom";
 import {ArrowLeft, Check, Hourglass, Trophy, X} from "lucide-react";
 import AlunoLayout from "../../components/aluno/AlunoLayout";
+import {useConquistas} from "../../hooks/useConquistas";
 import {BadgeStatusDesafio, BarraTempo, IconeDesafio, TabelaRanking} from "../../components/ComponentesDesafio";
 import {useEstadoDesafio} from "../../hooks/useEstadoDesafio";
 import {apiFetch, lerErro} from "../../services/api";
@@ -23,6 +24,16 @@ function JogarDesafio() {
     const {estado, ranking, erro, setErro, carregando, atualizar} = useEstadoDesafio(id);
     const [escolha, setEscolha] = useState<Escolha | null>(null);
     const [enviando, setEnviando] = useState(false);
+
+    const {verificarNovas} = useConquistas();
+    const desafioEncerrado = estado?.status === "ENCERRADO";
+
+    // Quando o desafio termina, os pontos viram XP e podem liberar conquistas
+    useEffect(() => {
+        if (desafioEncerrado) {
+            void verificarNovas();
+        }
+    }, [desafioEncerrado, verificarNovas]);
 
     const meuId = usuarioLogado().id;
     const minhaPosicao = ranking.find((linha) => linha.usuarioId === meuId);

@@ -1,5 +1,5 @@
 import {useEffect, useMemo, useState} from "react";
-import {Check, ChevronLeft, ChevronRight, Ellipsis, GraduationCap, Search, ShieldCheck, User, Users, X} from "lucide-react";
+import {ChevronLeft, ChevronRight, Ellipsis, GraduationCap, Search, ShieldCheck, User, Users, X} from "lucide-react";
 import AdminLayout from "../../components/administrador/AdminLayout";
 import {apiFetch} from "../../services/api";
 import {iniciais} from "../../services/usuarioLogado";
@@ -14,8 +14,6 @@ interface UsuarioApi {
     nomeUsuario: string;
     usuario: string;
     tipoUsuario?: string;
-    status?: string;
-    ativo?: boolean;
     dataCadastro?: string;
     dataCriacao?: string;
     criadoEm?: string;
@@ -38,7 +36,6 @@ interface Usuario {
     nome: string;
     email: string;
     tipo: Tipo;
-    ativo: boolean;
     cadastro: string | null;
     ultimoAcesso: string | null;
     turmas: string[];
@@ -53,12 +50,6 @@ const TIPO: Record<Tipo, { rotulo: string; classe: string; icone: typeof User }>
 function tipoDe(valor?: string): Tipo {
     const v = valor?.toUpperCase();
     return v === "PROFESSOR" || v === "ADMINISTRADOR" ? v : "ALUNO";
-}
-
-function ativoDe(u: UsuarioApi) {
-    if (typeof u.ativo === "boolean") return u.ativo;
-    if (u.status) return u.status.toUpperCase() === "ATIVO";
-    return true;
 }
 
 function identificador(id: number) {
@@ -82,21 +73,12 @@ function BadgeTipo({tipo}: { tipo: Tipo }) {
     );
 }
 
-function BadgeSituacao({ativo}: { ativo: boolean }) {
-    return (
-        <span className={`${styles.badge} ${ativo ? styles.badgeMint : styles.badgeCoral}`}>
-            {ativo ? <Check size={13}/> : <X size={13}/>} {ativo ? "Ativo" : "Inativo"}
-        </span>
-    );
-}
-
 function Usuarios() {
     const [usuarios, setUsuarios] = useState<Usuario[]>([]);
     const [carregando, setCarregando] = useState(true);
     const [erro, setErro] = useState("");
     const [busca, setBusca] = useState("");
     const [perfil, setPerfil] = useState("");
-    const [situacao, setSituacao] = useState("");
     const [pagina, setPagina] = useState(0);
     const [detalhe, setDetalhe] = useState<Usuario | null>(null);
 
@@ -127,7 +109,6 @@ function Usuarios() {
                     nome: u.nomeUsuario,
                     email: u.usuario,
                     tipo: tipoDe(u.tipoUsuario),
-                    ativo: ativoDe(u),
                     cadastro: u.dataCadastro ?? u.dataCriacao ?? u.criadoEm ?? null,
                     ultimoAcesso: ultimo.get(u.id) ?? null,
                     turmas: turmas
@@ -159,9 +140,8 @@ function Usuarios() {
         return usuarios.filter((u) =>
             (!termo || u.nome.toLowerCase().includes(termo) || u.email.toLowerCase().includes(termo))
             && (!perfil || u.tipo === perfil)
-            && (!situacao || (situacao === "ATIVO") === u.ativo)
         );
-    }, [usuarios, busca, perfil, situacao]);
+    }, [usuarios, busca, perfil]);
 
     const totalPaginas = Math.max(1, Math.ceil(filtrados.length / POR_PAGINA));
     const paginaAtual = Math.min(pagina, totalPaginas - 1);
@@ -169,12 +149,12 @@ function Usuarios() {
     const inicio = filtrados.length ? paginaAtual * POR_PAGINA + 1 : 0;
     const fim = paginaAtual * POR_PAGINA + visiveis.length;
 
-    const ativos = usuarios.filter((u) => u.ativo).length;
+    const contar = (tipo: Tipo) => usuarios.filter((u) => u.tipo === tipo).length;
     const resumo = [
         {valor: usuarios.length, rotulo: "Usuários cadastrados", icone: <Users size={22}/>, cor: styles.corLilas},
-        {valor: ativos, rotulo: "Contas ativas", icone: <Check size={22}/>, cor: styles.corMint},
-        {valor: usuarios.length - ativos, rotulo: "Contas inativas", icone: <X size={22}/>, cor: styles.corCoral},
-        {valor: usuarios.filter((u) => u.tipo === "PROFESSOR").length, rotulo: "Professores", icone: <GraduationCap size={22}/>, cor: styles.corOuro},
+        {valor: contar("ALUNO"), rotulo: "Alunos", icone: <User size={22}/>, cor: styles.corMint},
+        {valor: contar("PROFESSOR"), rotulo: "Professores", icone: <GraduationCap size={22}/>, cor: styles.corOuro},
+        {valor: contar("ADMINISTRADOR"), rotulo: "Administradores", icone: <ShieldCheck size={22}/>, cor: styles.corCoral},
     ];
 
     function filtrar(acao: () => void) {
@@ -188,7 +168,7 @@ function Usuarios() {
                 <div>
                     <span className={styles.eyebrow}>Administração</span>
                     <h1 className={styles.title}>Gestão de usuários</h1>
-                    <p className={styles.subtitle}>Contas, perfis e situação dos usuários do MenteUp.</p>
+                    <p className={styles.subtitle}>Contas e perfis dos usuários do MenteUp.</p>
                 </div>
             </header>
 
@@ -222,11 +202,6 @@ function Usuarios() {
                     <option value="PROFESSOR">Professor</option>
                     <option value="ADMINISTRADOR">Administrador</option>
                 </select>
-                <select value={situacao} onChange={(e) => filtrar(() => setSituacao(e.target.value))} className={styles.select} aria-label="Situação">
-                    <option value="">Todas as situações</option>
-                    <option value="ATIVO">Ativo</option>
-                    <option value="INATIVO">Inativo</option>
-                </select>
             </div>
 
             {erro && <div className={styles.error} role="alert">{erro}</div>}
@@ -239,7 +214,6 @@ function Usuarios() {
                                 <th>Nome</th>
                                 <th>E-mail</th>
                                 <th>Tipo de usuário</th>
-                                <th>Situação</th>
                                 <th>Último acesso</th>
                                 <th aria-label="Mais informações"/>
                             </tr>
@@ -247,7 +221,7 @@ function Usuarios() {
                         <tbody>
                             {(carregando || visiveis.length === 0) && (
                                 <tr>
-                                    <td colSpan={6} className={styles.emptyCell}>
+                                    <td colSpan={5} className={styles.emptyCell}>
                                         {carregando ? "Carregando usuários..." : "Nenhum usuário encontrado."}
                                     </td>
                                 </tr>
@@ -265,7 +239,6 @@ function Usuarios() {
                                     </td>
                                     <td className={styles.muted}>{u.email}</td>
                                     <td><BadgeTipo tipo={u.tipo}/></td>
-                                    <td><BadgeSituacao ativo={u.ativo}/></td>
                                     <td className={`${styles.muted} ${styles.nowrap}`}>{formatar(u.ultimoAcesso)}</td>
                                     <td>
                                         <button
@@ -325,7 +298,6 @@ function Usuarios() {
                         <p className={styles.modalSubtitle}>Informações cadastrais da conta selecionada.</p>
                         <div className={styles.modalHead}>
                             <strong>{detalhe.nome}</strong>
-                            <BadgeSituacao ativo={detalhe.ativo}/>
                         </div>
                         <dl className={styles.details}>
                             <div><dt>Identificador</dt><dd>{identificador(detalhe.id)}</dd></div>

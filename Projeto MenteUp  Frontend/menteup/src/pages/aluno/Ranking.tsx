@@ -4,7 +4,8 @@ import { Crown, RotateCw, Trophy } from "lucide-react";
 import AlunoLayout from "../../components/aluno/AlunoLayout";
 import AdminLayout from "../../components/administrador/AdminLayout";
 import { apiFetch } from "../../services/api";
-import { calcularNivel, proximaLiga, XP_POR_NIVEL } from "../../services/nivel";
+import { useConquistas } from "../../hooks/useConquistas";
+import { infoNivel } from "../../services/conquistasInfo";
 import { idDoUsuario, iniciais, nomeCurto, obterUsuarioLogado } from "../../services/usuarioLogado";
 import type { RankingAluno } from "../../types/aluno";
 import styles from "./Ranking.module.css";
@@ -24,6 +25,7 @@ export default function Ranking({ perfil = "ALUNO" }: { perfil?: "ALUNO" | "ADMI
     const [erro, setErro] = useState("");
 
     const meuId = idDoUsuario(obterUsuarioLogado());
+    const { resumo } = useConquistas();
 
     useEffect(() => {
         carregarRanking();
@@ -56,20 +58,19 @@ export default function Ranking({ perfil = "ALUNO" }: { perfil?: "ALUNO" | "ADMI
         return { posicao: indice + 1, dados: ranking[indice], acima: ranking[indice - 1] ?? null };
     }, [ranking, meuId]);
 
-    const nivelMeu = calcularNivel(meu?.dados.pontuacaoTotal ?? 0);
-    const liga = proximaLiga(nivelMeu.nivel);
+    const nivelMeu = infoNivel(resumo);
 
     function textoPosicao() {
         if (!meu) return "Conclua uma atividade para entrar no ranking e começar a subir!";
         if (meu.posicao === 1) return "Você está no topo! Continue no seu ritmo para manter a liderança.";
         const falta = (meu.acima?.pontuacaoTotal ?? 0) - meu.dados.pontuacaoTotal;
-        return `Faltam ${fmt(Math.max(falta, 1))} XP para alcançar ${nomeCurto(meu.acima?.nomeUsuario)} no ${meu.posicao - 1}º lugar.`;
+        return `Faltam ${fmt(Math.max(falta, 1))} pontos para alcançar ${nomeCurto(meu.acima?.nomeUsuario)} no ${meu.posicao - 1}º lugar.`;
     }
 
-    function textoLiga() {
-        if (!liga) return "Você chegou à liga mais alta. Parabéns!";
-        const xpNecessario = (liga.aPartirDe - 1) * XP_POR_NIVEL;
-        return `Chegue ao nível ${liga.aPartirDe} (${fmt(xpNecessario)} XP) para avançar à liga ${liga.titulo}.`;
+    function textoNivel() {
+        if (!resumo) return "Carregando...";
+        if (!nivelMeu.proximo) return "Você chegou ao nível mais alto. Parabéns!";
+        return `Faltam ${fmt(nivelMeu.faltamXp)} XP para chegar a ${nivelMeu.proximo.nome}.`;
     }
 
     const conteudo = (
@@ -79,7 +80,7 @@ export default function Ranking({ perfil = "ALUNO" }: { perfil?: "ALUNO" | "ADMI
                 <h1 className={styles.title}>Ranking geral</h1>
                 <p className={styles.subtitle}>
                     {admin
-                        ? "Classificação geral dos alunos por XP e atividades concluídas."
+                        ? "Classificação geral dos alunos por pontos e atividades concluídas."
                         : "Compare seu progresso de forma saudável e celebre cada avanço da turma."}
                 </p>
             </header>
@@ -126,9 +127,10 @@ export default function Ranking({ perfil = "ALUNO" }: { perfil?: "ALUNO" | "ADMI
                                                 <span className={styles.podiumAvatar}>{iniciais(aluno.nomeUsuario)}</span>
                                                 <strong className={styles.podiumName}>{nomeCurto(aluno.nomeUsuario)}</strong>
                                                 <span className={styles.podiumLevel}>
-                                                    Nível {calcularNivel(aluno.pontuacaoTotal).nivel}
+                                                    {aluno.atividadesConcluidas}{" "}
+                                                    {aluno.atividadesConcluidas === 1 ? "atividade" : "atividades"}
                                                 </span>
-                                                <span className={styles.podiumXp}>{fmt(aluno.pontuacaoTotal)} XP</span>
+                                                <span className={styles.podiumXp}>{fmt(aluno.pontuacaoTotal)} pts</span>
                                                 {souEu && <span className={styles.youChip}>Você</span>}
                                             </div>
                                             <div className={styles.pedestal}>
@@ -167,7 +169,6 @@ export default function Ranking({ perfil = "ALUNO" }: { perfil?: "ALUNO" | "ADMI
                                 {ranking.slice(3).map((aluno, index) => {
                                     const posicao = index + 4;
                                     const souEu = aluno.usuarioId === meuId;
-                                    const { nivel } = calcularNivel(aluno.pontuacaoTotal);
 
                                     return (
                                         <li
@@ -183,13 +184,13 @@ export default function Ranking({ perfil = "ALUNO" }: { perfil?: "ALUNO" | "ADMI
                                                     {souEu && " (você)"}
                                                 </span>
                                                 <span className={styles.meta}>
-                                                    Nível {nivel} · {aluno.atividadesConcluidas}{" "}
+                                                    {aluno.atividadesConcluidas}{" "}
                                                     {aluno.atividadesConcluidas === 1
                                                         ? "atividade concluída"
                                                         : "atividades concluídas"}
                                                 </span>
                                             </span>
-                                            <span className={styles.xp}>{fmt(aluno.pontuacaoTotal)} XP</span>
+                                            <span className={styles.xp}>{fmt(aluno.pontuacaoTotal)} pts</span>
                                         </li>
                                     );
                                 })}
@@ -209,9 +210,9 @@ export default function Ranking({ perfil = "ALUNO" }: { perfil?: "ALUNO" | "ADMI
                         </section>
 
                         <section className={styles.card}>
-                            <h2 className={styles.sideLabel}>Liga atual</h2>
-                            <strong className={styles.league}>{nivelMeu.titulo}</strong>
-                            <p className={styles.sideText}>{carregando ? "Carregando..." : textoLiga()}</p>
+                            <h2 className={styles.sideLabel}>Seu nível</h2>
+                            <strong className={styles.league}>{nivelMeu.atual?.nome ?? "Início da jornada"}</strong>
+                            <p className={styles.sideText}>{textoNivel()}</p>
                         </section>
                     </aside>
                 )}
@@ -221,5 +222,5 @@ export default function Ranking({ perfil = "ALUNO" }: { perfil?: "ALUNO" | "ADMI
 
     if (admin) return <AdminLayout>{conteudo}</AdminLayout>;
 
-    return <AlunoLayout xp={carregando ? null : (meu?.dados.pontuacaoTotal ?? null)}>{conteudo}</AlunoLayout>;
+    return <AlunoLayout>{conteudo}</AlunoLayout>;
 }

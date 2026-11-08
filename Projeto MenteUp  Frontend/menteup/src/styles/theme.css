@@ -44,6 +44,10 @@
   --mu-coral: #eb6456;
   --mu-lilac: #c27aff;
 
+  /* Cores de raridade das conquistas */
+  --mu-bronze: #cd7f32;
+  --mu-silver: #a8a9ad;
+
   --mu-radius-xl: 22px;
   --mu-radius-2xl: 26px;
   --mu-radius-btn: 18px;

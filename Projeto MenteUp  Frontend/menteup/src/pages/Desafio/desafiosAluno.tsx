@@ -70,10 +70,7 @@ function DesafiosAluno() {
                 <div className={base.empty}>
                     <IconeDesafio tamanho={36}/>
                     <p><strong>Nenhum desafio por aqui</strong></p>
-                    <p>Os desafios aparecem quando você entra em uma turma.</p>
-                    <button type="button" onClick={() => navigate("/aluno/turmas")} className={base.primaryButton}>
-                        Ver turmas
-                    </button>
+                    <p>Os desafios aparecem quando o professor adicionar você a uma turma.</p>
                 </div>
             ) : (
                 <ul className={base.list}>

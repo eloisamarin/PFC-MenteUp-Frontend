@@ -6,8 +6,8 @@ import Cadastro from "./pages/cadastro";
 
 import DashboardAluno from "./pages/aluno/dashboardAluno";
 import AtividadesAluno from "./pages/aluno/atividadesAluno";
-import TurmasAluno from "./pages/aluno/turmasAluno";
 import Ranking from "./pages/aluno/Ranking";
+import Conquistas from "./pages/aluno/Conquistas";
 import ResponderAtividadesAluno from "./pages/aluno/ResponderAtividadeAluno";
 import DesafiosAluno from "./pages/Desafio/desafiosAluno.tsx";
 import JogarDesafio from "./pages/Desafio/JogarDesafio.tsx";
@@ -105,15 +105,6 @@ function App() {
                     />
 
                     <Route
-                        path="/aluno/turmas"
-                        element={
-                            <PrivateRoute permitido={["ALUNO"]}>
-                                <TurmasAluno />
-                            </PrivateRoute>
-                        }
-                    />
-
-                    <Route
                         path="/aluno/atividades"
                         element={
                             <PrivateRoute permitido={["ALUNO"]}>
@@ -127,6 +118,15 @@ function App() {
                         element={
                             <PrivateRoute permitido={["ALUNO"]}>
                                 <Ranking />
+                            </PrivateRoute>
+                        }
+                    />
+
+                    <Route
+                        path="/aluno/conquistas"
+                        element={
+                            <PrivateRoute permitido={["ALUNO"]}>
+                                <Conquistas />
                             </PrivateRoute>
                         }
                     />

@@ -161,14 +161,7 @@ function AtividadesAluno() {
                     {itens.length === 0 ? (
                         <>
                             <strong>Nenhuma atividade por aqui ainda</strong>
-                            <span>Entre em uma turma para ver as atividades dela.</span>
-                            <button
-                                type="button"
-                                className={styles.primaryButton}
-                                onClick={() => navigate("/aluno/turmas")}
-                            >
-                                Ver turmas <ChevronRight size={16} />
-                            </button>
+                            <span>As atividades aparecem quando o professor adicionar você a uma turma.</span>
                         </>
                     ) : (
                         <>

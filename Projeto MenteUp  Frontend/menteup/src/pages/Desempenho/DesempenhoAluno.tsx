@@ -2,6 +2,7 @@ import {useEffect, useState} from "react";
 import {Link, useParams} from "react-router-dom";
 import {ArrowLeft, BookOpen, Check, MessageSquare, X} from "lucide-react";
 import {IconeDesafio} from "../../components/ComponentesDesafio";
+import ConquistasDoAluno from "../../components/conquistas/ConquistasDoAluno";
 import {apiFetch, lerErro} from "../../services/api";
 import {ROTA_BASE, type PerfilGestao} from "../../services/turmaDesafio";
 import type {AtividadeDoAluno, ComentarioSalvo, DesempenhoIndividual, QuestaoAluno} from "../../types/desempenho";
@@ -142,6 +143,8 @@ function DesempenhoAluno({perfil}: { perfil: PerfilGestao }) {
 
                     <div className={styles.stack}>
                         <GraficoAproveitamento barras={barras}/>
+
+                        {alunoId && <ConquistasDoAluno key={alunoId} alunoId={alunoId}/>}
 
                         <section className={dash.card}>
                             <header className={dash.cardHeader}>
