@@ -1,12 +1,14 @@
-import {useEffect, useState, type FormEvent} from "react";
+import {createContext, useContext, useEffect, useState, type FormEvent, type ReactNode} from "react";
 import {useNavigate} from "react-router-dom";
 import {KeyRound, Mail, ShieldAlert, Users} from "lucide-react";
 import LayoutPainel from "../../components/LayoutPainel";
+import AlunoLayout from "../../components/aluno/AlunoLayout";
 import ConfirmarExclusao from "../../components/ConfirmarExclusao";
 import Avatar, {EscolherAvatar} from "../../components/Avatar";
 import {apiFetch, lerErro} from "../../services/api";
 import {sair} from "../../services/usuarioLogado";
 import type {Perfil} from "../../services/turmaDesafio";
+import aluno from "./perfilAluno.module.css";
 
 
 // Resposta de GET /usuarios/me
@@ -25,9 +27,99 @@ const NOME_PERFIL: Record<string, string> = {
     ADMINISTRADOR: "Administrador",
 };
 
+/*
+ * A tela é a mesma para os três perfis; só muda a aparência.
+ * Professor e administrador usam o painel claro (Tailwind);
+ * o aluno usa o visual escuro da "Jornada do aluno" (igual à tela de Atividades).
+ */
+const ESTILO_PADRAO = {
+    escuro: false,
+    header: "mb-6",
+    eyebrow: "hidden",
+    title: "text-2xl font-semibold",
+    subtitle: "mt-1 text-sm text-slate-400",
+    erroGeral: "mb-5 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-600",
+    carregando: "py-12 text-center text-sm text-slate-400",
+    conteudo: "flex max-w-2xl flex-col gap-6",
+    secao: "rounded-xl border border-slate-200 bg-white p-6 shadow-sm",
+    secaoPerigo: "rounded-xl border border-red-200 bg-white p-6 shadow-sm",
+    tituloSecao: "mb-4 flex items-center gap-2 font-semibold",
+    tituloPerigo: "mb-2 flex items-center gap-2 font-semibold text-red-600",
+    identidade: "mb-5 flex items-center gap-4",
+    nome: "text-lg font-semibold",
+    badgePerfil: "rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-semibold text-indigo-600",
+    linkFoto: "mt-2 block text-sm font-medium text-purple-600 hover:underline",
+    painelAvatar: "mb-5 rounded-lg border border-slate-200 p-4",
+    painelAvatarTitulo: "mb-3 text-sm font-medium text-slate-600",
+    dados: "grid gap-4 text-sm sm:grid-cols-2",
+    dt: "mb-1 flex items-center gap-1 text-slate-400",
+    dd: "font-medium",
+    ddAjuda: "mt-0.5 text-xs text-slate-400",
+    listaTurmas: "flex flex-wrap gap-2",
+    chipTurma: "rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600",
+    vazio: "text-slate-400",
+    form: "flex flex-col gap-3",
+    label: "mb-1 block text-sm font-medium",
+    input: "w-full rounded-lg border border-slate-200 px-3 py-2 text-sm",
+    ajuda: "mt-1 text-xs text-slate-400",
+    texto: "mb-3 text-sm text-slate-500",
+    textoErro: "text-sm text-red-600",
+    textoSucesso: "text-sm text-emerald-600",
+    botaoPrimario: "self-start rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 px-5 py-2 text-sm font-semibold text-white disabled:opacity-50",
+    botaoPerigo: "mt-3 rounded-lg border border-red-300 px-5 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50",
+};
+
+type Estilo = typeof ESTILO_PADRAO;
+
+const ESTILO_ALUNO: Estilo = {
+    escuro: true,
+    header: aluno.header,
+    eyebrow: aluno.eyebrow,
+    title: aluno.title,
+    subtitle: aluno.subtitle,
+    erroGeral: aluno.erroGeral,
+    carregando: aluno.carregando,
+    conteudo: aluno.conteudo,
+    secao: aluno.secao,
+    secaoPerigo: aluno.secaoPerigo,
+    tituloSecao: aluno.tituloSecao,
+    tituloPerigo: aluno.tituloPerigo,
+    identidade: aluno.identidade,
+    nome: aluno.nome,
+    badgePerfil: aluno.badgePerfil,
+    linkFoto: aluno.linkFoto,
+    painelAvatar: aluno.painelAvatar,
+    painelAvatarTitulo: aluno.painelAvatarTitulo,
+    dados: aluno.dados,
+    dt: aluno.dt,
+    dd: aluno.dd,
+    ddAjuda: aluno.ddAjuda,
+    listaTurmas: aluno.listaTurmas,
+    chipTurma: aluno.chipTurma,
+    vazio: aluno.vazio,
+    form: aluno.form,
+    label: aluno.label,
+    input: aluno.input,
+    ajuda: aluno.ajuda,
+    texto: aluno.texto,
+    textoErro: aluno.textoErro,
+    textoSucesso: aluno.textoSucesso,
+    botaoPrimario: aluno.botaoPrimario,
+    botaoPerigo: aluno.botaoPerigo,
+};
+
+const EstiloContext = createContext<Estilo>(ESTILO_PADRAO);
+const useEstilo = () => useContext(EstiloContext);
+
+function Moldura({perfil, children}: { perfil: Perfil; children: ReactNode }) {
+    if (perfil === "ALUNO") return <AlunoLayout>{children}</AlunoLayout>;
+    return <LayoutPainel perfil={perfil}>{children}</LayoutPainel>;
+}
+
 function MeuPerfil({perfil}: { perfil: Perfil }) {
     const [dados, setDados] = useState<PerfilUsuario | null>(null);
     const [erro, setErro] = useState<string | null>(null);
+    const s = perfil === "ALUNO" ? ESTILO_ALUNO : ESTILO_PADRAO;
 
     useEffect(() => {
         async function carregar() {
@@ -49,26 +141,27 @@ function MeuPerfil({perfil}: { perfil: Perfil }) {
     }, []);
 
     return (
-        <LayoutPainel perfil={perfil}>
-            <div className="mb-6">
-                <h1 className="text-2xl font-semibold">Meu perfil</h1>
-                <p className="mt-1 text-sm text-slate-400">Seus dados, sua senha e a exclusão da conta.</p>
-            </div>
+        <EstiloContext.Provider value={s}>
+            <Moldura perfil={perfil}>
+                <header className={s.header}>
+                    <span className={s.eyebrow}>Sua jornada</span>
+                    <h1 className={s.title}>Meu perfil</h1>
+                    <p className={s.subtitle}>Seus dados, sua senha e a exclusão da conta.</p>
+                </header>
 
-            {erro && (
-                <div className="mb-5 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-600">{erro}</div>
-            )}
+                {erro && <div className={s.erroGeral} role="alert">{erro}</div>}
 
-            {!dados && !erro && <p className="py-12 text-center text-sm text-slate-400">Carregando perfil...</p>}
+                {!dados && !erro && <p className={s.carregando}>Carregando perfil...</p>}
 
-            {dados && (
-                <div className="flex max-w-2xl flex-col gap-6">
-                    <DadosPessoais dados={dados} onAvatarAlterado={(avatar) => setDados({...dados, avatar})}/>
-                    <AlterarSenha/>
-                    <ExcluirConta administrador={dados.tipoUsuario === "ADMINISTRADOR"}/>
-                </div>
-            )}
-        </LayoutPainel>
+                {dados && (
+                    <div className={s.conteudo}>
+                        <DadosPessoais dados={dados} onAvatarAlterado={(avatar) => setDados({...dados, avatar})}/>
+                        <AlterarSenha/>
+                        <ExcluirConta administrador={dados.tipoUsuario === "ADMINISTRADOR"}/>
+                    </div>
+                )}
+            </Moldura>
+        </EstiloContext.Provider>
     );
 }
 
@@ -87,6 +180,7 @@ function DadosPessoais({dados, onAvatarAlterado}: {
     dados: PerfilUsuario;
     onAvatarAlterado: (avatar: string) => void;
 }) {
+    const s = useEstilo();
     const rotuloTurmas = dados.tipoUsuario === "PROFESSOR" ? "Turmas que leciona" : "Minhas turmas";
     const [escolhendo, setEscolhendo] = useState(false);
     const [salvando, setSalvando] = useState(false);
@@ -118,18 +212,18 @@ function DadosPessoais({dados, onAvatarAlterado}: {
     }
 
     return (
-        <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="mb-5 flex items-center gap-4">
+        <section className={s.secao}>
+            <div className={s.identidade}>
                 <Avatar avatar={dados.avatar} nome={dados.nome} tamanho="grande"/>
                 <div>
-                    <p className="text-lg font-semibold">{dados.nome}</p>
-                    <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-semibold text-indigo-600">
+                    <p className={s.nome}>{dados.nome}</p>
+                    <span className={s.badgePerfil}>
                         {NOME_PERFIL[dados.tipoUsuario] ?? dados.tipoUsuario}
                     </span>
                     <button
                         type="button"
                         onClick={() => setEscolhendo((aberto) => !aberto)}
-                        className="mt-2 block text-sm font-medium text-purple-600 hover:underline"
+                        className={s.linkFoto}
                     >
                         {escolhendo ? "Fechar" : dados.avatar ? "Trocar foto" : "Escolher foto"}
                     </button>
@@ -137,30 +231,31 @@ function DadosPessoais({dados, onAvatarAlterado}: {
             </div>
 
             {escolhendo && (
-                <div className="mb-5 rounded-lg border border-slate-200 p-4">
-                    <p className="mb-3 text-sm font-medium text-slate-600">Escolha sua foto de perfil</p>
-                    <EscolherAvatar atual={dados.avatar} salvando={salvando} onEscolher={escolherAvatar}/>
-                    {erroAvatar && <p className="mt-3 text-sm text-red-600">{erroAvatar}</p>}
+                <div className={s.painelAvatar}>
+                    <p className={s.painelAvatarTitulo}>Escolha sua foto de perfil</p>
+                    <EscolherAvatar atual={dados.avatar} salvando={salvando} onEscolher={escolherAvatar}
+                                    escuro={s.escuro}/>
+                    {erroAvatar && <p className={`mt-3 ${s.textoErro}`}>{erroAvatar}</p>}
                 </div>
             )}
 
-            <dl className="grid gap-4 text-sm sm:grid-cols-2">
+            <dl className={s.dados}>
                 <div>
-                    <dt className="mb-1 flex items-center gap-1 text-slate-400"><Mail size={14}/> E-mail</dt>
-                    <dd className="font-medium">{dados.emailAnonimizado}</dd>
-                    <dd className="mt-0.5 text-xs text-slate-400">Parte do e-mail fica oculta para proteger seus dados.</dd>
+                    <dt className={s.dt}><Mail size={14}/> E-mail</dt>
+                    <dd className={s.dd}>{dados.emailAnonimizado}</dd>
+                    <dd className={s.ddAjuda}>Parte do e-mail fica oculta para proteger seus dados.</dd>
                 </div>
 
                 {dados.tipoUsuario !== "ADMINISTRADOR" && (
                     <div>
-                        <dt className="mb-1 flex items-center gap-1 text-slate-400"><Users size={14}/> {rotuloTurmas}</dt>
-                        <dd>
+                        <dt className={s.dt}><Users size={14}/> {rotuloTurmas}</dt>
+                        <dd className={s.dd}>
                             {dados.turmas.length === 0 ? (
-                                <span className="text-slate-400">Nenhuma turma</span>
+                                <span className={s.vazio}>Nenhuma turma</span>
                             ) : (
-                                <ul className="flex flex-wrap gap-2">
+                                <ul className={s.listaTurmas}>
                                     {dados.turmas.map((turma) => (
-                                        <li key={turma.id} className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
+                                        <li key={turma.id} className={s.chipTurma}>
                                             {turma.nome}
                                         </li>
                                     ))}
@@ -176,6 +271,7 @@ function DadosPessoais({dados, onAvatarAlterado}: {
 
 // Troca de senha: pede a atual e confirma a nova antes de enviar
 function AlterarSenha() {
+    const s = useEstilo();
     const [senhaAtual, setSenhaAtual] = useState("");
     const [novaSenha, setNovaSenha] = useState("");
     const [confirmacao, setConfirmacao] = useState("");
@@ -216,10 +312,10 @@ function AlterarSenha() {
     }
 
     return (
-        <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="mb-4 flex items-center gap-2 font-semibold"><KeyRound size={18}/> Alterar senha</h2>
+        <section className={s.secao}>
+            <h2 className={s.tituloSecao}><KeyRound size={18}/> Alterar senha</h2>
 
-            <form onSubmit={enviar} className="flex flex-col gap-3">
+            <form onSubmit={enviar} className={s.form}>
                 <CampoSenha id="senha-atual" rotulo="Senha atual" valor={senhaAtual} aoMudar={setSenhaAtual}
                             autoComplete="current-password"/>
                 <CampoSenha id="nova-senha" rotulo="Nova senha" valor={novaSenha} aoMudar={setNovaSenha}
@@ -227,15 +323,11 @@ function AlterarSenha() {
                 <CampoSenha id="confirmar-senha" rotulo="Confirme a nova senha" valor={confirmacao} aoMudar={setConfirmacao}
                             autoComplete="new-password"/>
 
-                {confirmacaoDiferente && <p className="text-sm text-red-600">As senhas não conferem.</p>}
-                {erro && <p className="text-sm text-red-600">{erro}</p>}
-                {sucesso && <p className="text-sm text-emerald-600">Senha alterada com sucesso.</p>}
+                {confirmacaoDiferente && <p className={s.textoErro}>As senhas não conferem.</p>}
+                {erro && <p className={s.textoErro}>{erro}</p>}
+                {sucesso && <p className={s.textoSucesso}>Senha alterada com sucesso.</p>}
 
-                <button
-                    type="submit"
-                    disabled={!podeEnviar}
-                    className="self-start rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 px-5 py-2 text-sm font-semibold text-white disabled:opacity-50"
-                >
+                <button type="submit" disabled={!podeEnviar} className={s.botaoPrimario}>
                     {salvando ? "Salvando..." : "Salvar nova senha"}
                 </button>
             </form>
@@ -251,24 +343,27 @@ function CampoSenha({id, rotulo, valor, aoMudar, autoComplete, ajuda}: {
     autoComplete: string;
     ajuda?: string;
 }) {
+    const s = useEstilo();
+
     return (
         <div>
-            <label htmlFor={id} className="mb-1 block text-sm font-medium">{rotulo}</label>
+            <label htmlFor={id} className={s.label}>{rotulo}</label>
             <input
                 id={id}
                 type="password"
                 value={valor}
                 onChange={(evento) => aoMudar(evento.target.value)}
                 autoComplete={autoComplete}
-                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                className={s.input}
             />
-            {ajuda && <p className="mt-1 text-xs text-slate-400">{ajuda}</p>}
+            {ajuda && <p className={s.ajuda}>{ajuda}</p>}
         </div>
     );
 }
 
 // Exclusão dos dados: anonimiza na hora, depois de confirmar com a senha
 function ExcluirConta({administrador}: { administrador: boolean }) {
+    const s = useEstilo();
     const navigate = useNavigate();
     const [senha, setSenha] = useState("");
     const [confirmando, setConfirmando] = useState(false);
@@ -303,16 +398,16 @@ function ExcluirConta({administrador}: { administrador: boolean }) {
     }
 
     return (
-        <section className="rounded-xl border border-red-200 bg-white p-6 shadow-sm">
-            <h2 className="mb-2 flex items-center gap-2 font-semibold text-red-600"><ShieldAlert size={18}/> Excluir meus dados</h2>
+        <section className={s.secaoPerigo}>
+            <h2 className={s.tituloPerigo}><ShieldAlert size={18}/> Excluir meus dados</h2>
 
             {administrador ? (
-                <p className="text-sm text-slate-500">
+                <p className={s.texto}>
                     Contas de administrador não podem ser excluídas por aqui, para o sistema não ficar sem administração.
                 </p>
             ) : (
                 <>
-                    <p className="mb-3 text-sm text-slate-500">
+                    <p className={s.texto}>
                         Seu nome e e-mail serão apagados e você sairá das turmas. Suas notas continuam nas estatísticas,
                         mas sem identificar você. <strong>Essa ação não pode ser desfeita.</strong>
                     </p>
@@ -320,13 +415,13 @@ function ExcluirConta({administrador}: { administrador: boolean }) {
                     <CampoSenha id="senha-exclusao" rotulo="Digite sua senha para confirmar" valor={senha}
                                 aoMudar={setSenha} autoComplete="current-password"/>
 
-                    {erro && <p className="mt-2 text-sm text-red-600">{erro}</p>}
+                    {erro && <p className={`mt-2 ${s.textoErro}`}>{erro}</p>}
 
                     <button
                         type="button"
                         onClick={() => setConfirmando(true)}
                         disabled={senha === "" || processando}
-                        className="mt-3 rounded-lg border border-red-300 px-5 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50"
+                        className={s.botaoPerigo}
                     >
                         Excluir meus dados
                     </button>

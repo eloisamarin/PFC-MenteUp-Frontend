@@ -56,10 +56,14 @@ interface EscolherAvatarProps {
     atual?: string | null;
     salvando: boolean;
     onEscolher: (codigo: string) => void;
+    // Para fundos escuros (telas do aluno)
+    escuro?: boolean;
 }
 
 // Grade com as 10 opções; a escolhida fica com contorno roxo
-export function EscolherAvatar({atual, salvando, onEscolher}: EscolherAvatarProps) {
+export function EscolherAvatar({atual, salvando, onEscolher, escuro = false}: EscolherAvatarProps) {
+    const corOpcao = escuro ? "text-[#c3d4e0] hover:bg-white/10" : "text-slate-600 hover:bg-slate-50";
+
     return (
         <div className="grid grid-cols-5 gap-3">
             {AVATARES.map((opcao) => {
@@ -73,7 +77,7 @@ export function EscolherAvatar({atual, salvando, onEscolher}: EscolherAvatarProp
                         disabled={salvando}
                         aria-pressed={selecionado}
                         title={opcao.nome}
-                        className={`flex flex-col items-center gap-1 rounded-xl p-2 text-xs text-slate-600 transition hover:bg-slate-50 disabled:opacity-50 ${
+                        className={`flex flex-col items-center gap-1 rounded-xl p-2 text-xs ${corOpcao} transition disabled:opacity-50 ${
                             selecionado ? "ring-2 ring-purple-500" : ""
                         }`}
                     >

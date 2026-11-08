@@ -1,12 +1,22 @@
-import {useEffect, useState} from "react";
+import {useEffect, useMemo, useState} from "react";
+import {Check, LogOut, Plus, Search, Users} from "lucide-react";
+
+import AlunoLayout from "../../components/aluno/AlunoLayout";
 import {apiFetch, lerErro} from "../../services/api.ts";
-import {Users} from "lucide-react";
-import LayoutPainel from "../../components/LayoutPainel";
+import styles from "./turmasAluno.module.css";
 
 interface Turma {
     id: number;
     nome: string;
 }
+
+type Filtro = "TODAS" | "MINHAS" | "DISPONIVEIS";
+
+const FILTROS: { id: Filtro; rotulo: string }[] = [
+    {id: "TODAS", rotulo: "Todas"},
+    {id: "MINHAS", rotulo: "Minhas turmas"},
+    {id: "DISPONIVEIS", rotulo: "Disponíveis"},
+];
 
 function TurmasAluno() {
     const [turmas, setTurmas] = useState<Turma[]>([]);
@@ -14,6 +24,8 @@ function TurmasAluno() {
     const [carregando, setCarregando] = useState(true);
     const [processando, setProcessando] = useState<number | null>(null);
     const [erro, setErro] = useState("");
+    const [filtro, setFiltro] = useState<Filtro>("TODAS");
+    const [busca, setBusca] = useState("");
 
     useEffect(() => {
         async function carregar() {
@@ -42,6 +54,23 @@ function TurmasAluno() {
         carregar();
     }, []);
 
+    const contagem = useMemo(() => {
+        const minhas = turmas.filter((turma) => minhasIds.includes(turma.id)).length;
+        return {TODAS: turmas.length, MINHAS: minhas, DISPONIVEIS: turmas.length - minhas};
+    }, [turmas, minhasIds]);
+
+    const turmasFiltradas = useMemo(() => {
+        const termo = busca.trim().toLowerCase();
+        return turmas.filter((turma) => {
+            const matriculado = minhasIds.includes(turma.id);
+            const passaFiltro =
+                filtro === "TODAS" ||
+                (filtro === "MINHAS" && matriculado) ||
+                (filtro === "DISPONIVEIS" && !matriculado);
+            return passaFiltro && (!termo || turma.nome.toLowerCase().includes(termo));
+        });
+    }, [turmas, minhasIds, filtro, busca]);
+
     async function alterarMatricula(turma: Turma) {
         const matriculado = minhasIds.includes(turma.id);
 
@@ -69,114 +98,122 @@ function TurmasAluno() {
             setProcessando(null);
         }
     }
+
     return (
-        <LayoutPainel perfil="ALUNO">
-
-            <div className="mb-7">
-
-                <h1 className="text-2xl font-bold text-gray-800">
-                    Turmas
-                </h1>
-
-                <p className="text-sm text-gray-500 mt-1">
+        <AlunoLayout>
+            <header className={styles.header}>
+                <span className={styles.eyebrow}>Sua jornada</span>
+                <h1 className={styles.title}>Turmas</h1>
+                <p className={styles.subtitle}>
                     Entre nas turmas das suas aulas para participar das atividades e dos desafios delas.
                 </p>
+            </header>
 
+            <div className={styles.toolbar}>
+                <div className={styles.tabs} role="tablist" aria-label="Filtrar turmas">
+                    {FILTROS.map((f) => (
+                        <button
+                            key={f.id}
+                            type="button"
+                            role="tab"
+                            aria-selected={filtro === f.id}
+                            className={`${styles.tab} ${filtro === f.id ? styles.tabActive : ""}`}
+                            onClick={() => setFiltro(f.id)}
+                        >
+                            {f.rotulo}
+                            {!carregando && <span className={styles.tabCount}>{contagem[f.id]}</span>}
+                        </button>
+                    ))}
+                </div>
+
+                <label className={styles.search}>
+                    <Search size={16}/>
+                    <input
+                        type="search"
+                        placeholder="Buscar turma..."
+                        value={busca}
+                        onChange={(event) => setBusca(event.target.value)}
+                    />
+                </label>
             </div>
 
             {erro && (
-                <div className="mb-5 bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">
+                <div className={styles.error} role="alert">
                     {erro}
                 </div>
             )}
 
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+            {carregando ? (
+                <div className={styles.grid}>
+                    {[0, 1, 2].map((i) => (
+                        <div key={i} className={`${styles.card} ${styles.skeleton}`}/>
+                    ))}
+                </div>
+            ) : turmasFiltradas.length === 0 ? (
+                <div className={styles.empty}>
+                    <Users size={40}/>
+                    {turmas.length === 0 ? (
+                        <>
+                            <strong>Nenhuma turma disponível</strong>
+                            <span>Quando um professor criar uma turma, ela aparecerá aqui.</span>
+                        </>
+                    ) : (
+                        <>
+                            <strong>Nenhuma turma encontrada</strong>
+                            <span>Tente outro filtro ou outro termo de busca.</span>
+                        </>
+                    )}
+                </div>
+            ) : (
+                <div className={styles.grid}>
+                    {turmasFiltradas.map((turma) => {
+                        const matriculado = minhasIds.includes(turma.id);
+                        const ocupado = processando === turma.id;
 
-                {carregando ? (
+                        return (
+                            <article
+                                key={turma.id}
+                                className={`${styles.card} ${matriculado ? styles.cardMatriculado : ""}`}
+                            >
+                                <div className={styles.cardTop}>
+                                    <span className={styles.icon}>
+                                        <Users size={22}/>
+                                    </span>
+                                    {matriculado ? (
+                                        <span className={`${styles.badge} ${styles.badgeOn}`}>
+                                            <Check size={14}/> Matriculado
+                                        </span>
+                                    ) : (
+                                        <span className={`${styles.badge} ${styles.badgeOff}`}>Disponível</span>
+                                    )}
+                                </div>
 
-                    <div className="py-16 text-center text-gray-500">
-                        Carregando turmas...
-                    </div>
+                                <div className={styles.cardBody}>
+                                    <h2 className={styles.cardTitle} title={turma.nome}>
+                                        {turma.nome}
+                                    </h2>
+                                    <p className={styles.cardHint}>
+                                        {matriculado
+                                            ? "Você vê as atividades e desafios desta turma."
+                                            : "Entre para ver as atividades e desafios desta turma."}
+                                    </p>
+                                </div>
 
-                ) : turmas.length === 0 ? (
-
-                    <div className="py-16 text-center">
-
-                        <Users
-                            size={40}
-                            className="mx-auto text-gray-300 mb-3"
-                        />
-
-                        <p className="font-semibold text-gray-600">
-                            Nenhuma turma disponível
-                        </p>
-
-                        <p className="text-sm text-gray-400 mt-1">
-                            Quando um professor criar uma turma, ela aparecerá aqui.
-                        </p>
-
-                    </div>
-
-                ) : (
-
-                    <ul>
-
-                        {turmas.map((turma) => {
-                            const matriculado = minhasIds.includes(turma.id);
-
-                            return (
-
-                                <li
-                                    key={turma.id}
-                                    className="flex items-center justify-between px-6 py-4 border-b border-gray-100 last:border-b-0"
+                                <button
+                                    type="button"
+                                    onClick={() => alterarMatricula(turma)}
+                                    disabled={ocupado}
+                                    className={matriculado ? styles.secondaryButton : styles.primaryButton}
                                 >
-
-                                    <div className="flex items-center gap-3">
-
-                                        <div className="w-9 h-9 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center">
-                                            <Users size={16} />
-                                        </div>
-
-                                        <div>
-
-                                            <p className="font-semibold text-gray-800">
-                                                {turma.nome}
-                                            </p>
-
-                                            {matriculado && (
-                                                <span className="inline-flex mt-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700">
-                                                    Matriculado
-                                                </span>
-                                            )}
-
-                                        </div>
-
-                                    </div>
-
-                                    <button
-                                        onClick={() => alterarMatricula(turma)}
-                                        disabled={processando === turma.id}
-                                        className={`px-4 py-2 rounded-lg text-sm font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed ${
-                                            matriculado
-                                                ? "border border-gray-200 text-gray-600 hover:bg-gray-100"
-                                                : "bg-[#5b4cff] text-white hover:bg-[#4a3de0]"
-                                        }`}
-                                    >
-                                        {matriculado ? "Sair da turma" : "Entrar na turma"}
-                                    </button>
-
-                                </li>
-
-                            );
-                        })}
-
-                    </ul>
-
-                )}
-
-            </div>
-
-        </LayoutPainel>
+                                    {matriculado ? <LogOut size={16}/> : <Plus size={16}/>}
+                                    {ocupado ? "Aguarde..." : matriculado ? "Sair da turma" : "Entrar na turma"}
+                                </button>
+                            </article>
+                        );
+                    })}
+                </div>
+            )}
+        </AlunoLayout>
     );
 }
 
