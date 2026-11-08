@@ -13,7 +13,7 @@ import {
     Zap,
 } from "lucide-react";
 
-import ProfessorLayout from "../../components/professor/ProfessorLayout";
+import ProfessorLayout, { useAreaBase } from "../../components/layout/AreaLayout";
 import { PlayerAssociacao, PlayerPergunta } from "../../components/atividades/Players";
 import { apiFetch, lerErro } from "../../services/api";
 import { NOME_TIPO, type TipoAtividade } from "../../types/aluno";
@@ -61,6 +61,7 @@ const STATUS: Record<string, { rotulo: string; classe: string }> = {
 function VisualizarAtividadeProfessor() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const area = useAreaBase();
 
     const [atividade, setAtividade] = useState<Atividade | null>(null);
     const [carregando, setCarregando] = useState(true);
@@ -124,7 +125,7 @@ function VisualizarAtividadeProfessor() {
         return () => window.removeEventListener("keydown", onKey);
     }, [total]);
 
-    const voltar = () => navigate("/professor/atividades");
+    const voltar = () => navigate(`${area}/atividades`);
 
     const topo = (
         <div className={styles.topRow}>
@@ -136,7 +137,7 @@ function VisualizarAtividadeProfessor() {
                     <button
                         type="button"
                         className={styles.editButton}
-                        onClick={() => navigate(`/professor/atividades/editar/${atividade.id}`)}
+                        onClick={() => navigate(`${area}/atividades/editar/${atividade.id}`)}
                     >
                         <Pencil size={16} /> Editar
                     </button>
@@ -242,7 +243,7 @@ function VisualizarAtividadeProfessor() {
                     <button
                         type="button"
                         className={styles.primary}
-                        onClick={() => navigate(`/professor/atividades/editar/${atividade.id}`)}
+                        onClick={() => navigate(`${area}/atividades/editar/${atividade.id}`)}
                     >
                         <Pencil size={16} /> Adicionar perguntas
                     </button>

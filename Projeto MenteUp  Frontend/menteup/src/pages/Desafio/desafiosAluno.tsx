@@ -1,10 +1,12 @@
 import {useEffect, useState} from "react";
 import {useNavigate} from "react-router-dom";
-import {Zap} from "lucide-react";
-import LayoutPainel from "../../components/LayoutPainel";
-import {BadgeStatusDesafio} from "../../components/ComponentesDesafio";
+import {Play, Trophy} from "lucide-react";
+import AlunoLayout from "../../components/aluno/AlunoLayout";
+import {BadgeStatusDesafio, IconeDesafio} from "../../components/ComponentesDesafio";
 import {apiFetch} from "../../services/api";
 import {contagem, type Desafio, type StatusDesafio} from "../../services/turmaDesafio";
+import base from "./TurmasGestao.module.css";
+import styles from "./Desafios.module.css";
 
 const INTERVALO_LISTA_MS = 5000;
 
@@ -43,8 +45,6 @@ function DesafiosAluno() {
         }
 
         carregar();
-
-        // Um desafio pode começar enquanto o aluno está nesta tela
         const intervalo = setInterval(carregar, INTERVALO_LISTA_MS);
 
         return () => clearInterval(intervalo);
@@ -53,61 +53,64 @@ function DesafiosAluno() {
     const ordenados = [...desafios].sort((a, b) => ORDEM_STATUS[a.status] - ORDEM_STATUS[b.status]);
 
     return (
-        <LayoutPainel perfil="ALUNO">
-            <div className="mb-6">
-                <h1 className="text-2xl font-semibold">Desafios</h1>
-                <p className="mt-1 text-sm text-slate-400">
-                    Responda rápido: acertos mais velozes valem mais pontos.
-                </p>
-            </div>
+        <AlunoLayout>
+            <header className={base.header}>
+                <span className={base.eyebrow}>Quizzes ao vivo</span>
+                <h1 className={`${base.title} ${styles.titleWithIcon}`}>
+                    Desafios <IconeDesafio tamanho={36}/>
+                </h1>
+                <p className={base.subtitle}>Responda rápido: acertos mais velozes valem mais pontos.</p>
+            </header>
 
-            {erro && (
-                <div className="mb-5 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-600">{erro}</div>
-            )}
+            {erro && <div className={base.error} role="alert">{erro}</div>}
 
             {carregando ? (
-                <p className="py-12 text-center text-sm text-slate-400">Carregando desafios...</p>
+                <p className={base.empty}>Carregando desafios...</p>
             ) : ordenados.length === 0 ? (
-                <div className="rounded-xl border border-slate-200 bg-white py-12 text-center shadow-sm">
-                    <Zap size={36} className="mx-auto mb-3 text-slate-300"/>
-                    <p className="font-semibold text-slate-600">Nenhum desafio por aqui</p>
-                    <p className="mt-1 text-sm text-slate-400">
-                        Os desafios aparecem quando você entra em uma turma.
-                    </p>
-                    <button
-                        onClick={() => navigate("/aluno/turmas")}
-                        className="mt-4 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 px-4 py-2 text-sm font-semibold text-white"
-                    >
+                <div className={base.empty}>
+                    <IconeDesafio tamanho={36}/>
+                    <p><strong>Nenhum desafio por aqui</strong></p>
+                    <p>Os desafios aparecem quando você entra em uma turma.</p>
+                    <button type="button" onClick={() => navigate("/aluno/turmas")} className={base.primaryButton}>
                         Ver turmas
                     </button>
                 </div>
             ) : (
-                <ul className="grid gap-4 md:grid-cols-2">
-                    {ordenados.map((desafio) => (
-                        <li key={desafio.id} className="flex flex-col rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                            <div className="flex items-start justify-between gap-3">
-                                <h2 className="min-w-0 break-words font-semibold">{desafio.titulo}</h2>
-                                <BadgeStatusDesafio status={desafio.status}/>
-                            </div>
-                            <p className="mt-1 text-sm text-slate-500">{desafio.descricao}</p>
-                            <p className="mt-2 flex-1 text-xs text-slate-400">
-                                {desafio.turma.nome} · {contagem(desafio.totalPerguntas, "pergunta", "perguntas")}
-                            </p>
-                            <button
-                                onClick={() => navigate(`/aluno/desafios/${desafio.id}`)}
-                                className={`mt-4 rounded-lg px-4 py-2.5 text-sm font-semibold ${
-                                    desafio.status === "ENCERRADO"
-                                        ? "border border-slate-200 text-slate-600 hover:bg-slate-50"
-                                        : "bg-gradient-to-r from-indigo-500 to-purple-600 text-white"
-                                }`}
-                            >
-                                {ACAO_STATUS[desafio.status]}
-                            </button>
-                        </li>
-                    ))}
+                <ul className={base.list}>
+                    {ordenados.map((desafio) => {
+                        const encerrado = desafio.status === "ENCERRADO";
+                        const abrir = () => navigate(`/aluno/desafios/${desafio.id}`);
+                        return (
+                            <li key={desafio.id} className={`${base.card} ${base.row}`}>
+                                <span className={`${base.avatar} ${styles.avatarDesafio}`}>
+                                    <IconeDesafio tamanho={26}/>
+                                </span>
+                                <button type="button" onClick={abrir} className={base.rowMain}>
+                                    <span className={styles.rowTitle}>
+                                        <strong>{desafio.titulo}</strong>
+                                        <BadgeStatusDesafio status={desafio.status}/>
+                                    </span>
+                                    <small>
+                                        {desafio.turma.nome} · {contagem(desafio.totalPerguntas, "pergunta", "perguntas")}
+                                        {desafio.descricao && ` · ${desafio.descricao}`}
+                                    </small>
+                                </button>
+                                <div className={base.actions}>
+                                    <button
+                                        type="button"
+                                        onClick={abrir}
+                                        className={`${encerrado ? base.ghostButton : base.primaryButton} ${styles.rowAction}`}
+                                    >
+                                        {encerrado ? <Trophy size={16}/> : <Play size={16}/>}
+                                        {ACAO_STATUS[desafio.status]}
+                                    </button>
+                                </div>
+                            </li>
+                        );
+                    })}
                 </ul>
             )}
-        </LayoutPainel>
+        </AlunoLayout>
     );
 }
 

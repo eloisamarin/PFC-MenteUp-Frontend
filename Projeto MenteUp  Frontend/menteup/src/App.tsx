@@ -17,13 +17,11 @@ import AtividadesProfessor from "./pages/professor/atividadesProfessor";
 import VisualizarAtividadeProfessor from "./pages/professor/VisualizarAtividadeProfessor";
 import EditarAtividadeProfessor from "./pages/professor/EditarAtividadeProfessor";
 import CriarAtividadeProfessor from "./pages/professor/CriarAtividadeProfessor";
-import DeletarAtividadeProfessor from "./pages/professor/DeletarAtividadeProfessor";
 
 import DashboardAdmin from "./pages/Administrador/DashboardAdministrador.tsx";
 import Usuarios from "./pages/Administrador/usuario";
 import VisualizarAtividadeAdministrador from "./pages/Administrador/VisualizarAtividadeAdministrador";
 import EditarAtividadeAdministrador from "./pages/Administrador/EditarAtividadeAdministrador";
-import DeletarAtividadeAdministrador from "./pages/Administrador/DeletarAtividadeAdministrador";
 import CriarAtividadeAdministrador from "./pages/Administrador/CriarAtividadeAdministrador";
 import AtividadesAdministrador from "./pages/Administrador/AtividadesAdministrador";
 import LogsAdministrador from "./pages/Administrador/LogsAdministrador.tsx";
@@ -250,11 +248,7 @@ function App() {
                             </PrivateRoute>
                         }
                     />
-                    <Route
-                        path="/professor/atividades/deletar/:id"
-                        element={<DeletarAtividadeProfessor />}
 
-                    />
                     <Route
                         path="/professor/desempenho/:turmaId/alunos/:alunoId"
                         element={
@@ -371,12 +365,6 @@ function App() {
                         }
                     />
                     <Route
-                        path="/administrador/atividades/deletar/:id"
-                        element={<DeletarAtividadeAdministrador />}
-
-                    />
-
-                    <Route
                         path="/administrador/logs"
                         element={
                             <PrivateRoute permitido={["ADMINISTRADOR"]}>
@@ -397,6 +385,14 @@ function App() {
                         element={
                             <PrivateRoute permitido={["ADMINISTRADOR"]}>
                                 <Desempenho perfil="ADMINISTRADOR" />
+                            </PrivateRoute>
+                        }
+                    />
+                    <Route
+                        path="/administrador/ranking"
+                        element={
+                            <PrivateRoute permitido={["ADMINISTRADOR"]}>
+                                <Ranking perfil="ADMINISTRADOR" />
                             </PrivateRoute>
                         }
                     />

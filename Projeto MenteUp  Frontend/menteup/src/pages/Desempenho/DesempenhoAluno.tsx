@@ -1,12 +1,13 @@
 import {useEffect, useState} from "react";
 import {Link, useParams} from "react-router-dom";
-import {ArrowLeft, BookOpen, Check, MessageSquare, Target, X, Zap, type LucideIcon} from "lucide-react";
-import LayoutPainel from "../../components/LayoutPainel";
+import {ArrowLeft, BookOpen, Check, MessageSquare, X} from "lucide-react";
+import {IconeDesafio} from "../../components/ComponentesDesafio";
 import {apiFetch, lerErro} from "../../services/api";
 import {ROTA_BASE, type PerfilGestao} from "../../services/turmaDesafio";
 import type {AtividadeDoAluno, ComentarioSalvo, DesempenhoIndividual, QuestaoAluno} from "../../types/desempenho";
-
-
+import {LayoutGestao} from "../Desafio/TurmasGestao";
+import dash from "../professor/dashboardProfessor.module.css";
+import styles from "./Desempenho.module.css";
 
 const NOME_TIPO: Record<string, string> = {
     QUIZ: "Quiz",
@@ -16,7 +17,6 @@ const NOME_TIPO: Record<string, string> = {
     LACUNAS: "Lacunas",
 };
 
-// Uma barra do gráfico: atividade ou desafio, com o percentual de acerto
 interface Barra {
     chave: string;
     rotulo: string;
@@ -65,7 +65,6 @@ function DesempenhoAluno({perfil}: { perfil: PerfilGestao }) {
         carregar();
     }, [turmaId, alunoId]);
 
-    // Atualiza o comentário na tela depois de salvar, sem recarregar tudo
     function aoSalvarComentario(salvo: ComentarioSalvo) {
         setDados((atual) => atual && {
             ...atual,
@@ -99,104 +98,136 @@ function DesempenhoAluno({perfil}: { perfil: PerfilGestao }) {
         : 0;
 
     return (
-        <LayoutPainel perfil={perfil}>
-            <Link to={`${base}/desempenho`} className="mb-4 inline-flex items-center gap-2 text-sm text-slate-500 hover:text-indigo-600">
+        <LayoutGestao perfil={perfil}>
+            <Link to={`${base}/desempenho`} className={styles.back}>
                 <ArrowLeft size={16}/> Voltar para a turma
             </Link>
 
-            {carregando && <p className="py-12 text-center text-sm text-slate-400">Carregando desempenho...</p>}
-
-            {erro && (
-                <div className="mb-5 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-600">{erro}</div>
+            {carregando && (
+                <section className={dash.card}>
+                    <p className={dash.empty}>Carregando desempenho...</p>
+                </section>
             )}
+
+            {erro && <div className={dash.error} role="alert">{erro}</div>}
 
             {dados && (
                 <>
-                    <div className="mb-6">
-                        <h1 className="text-2xl font-semibold">{dados.nomeAluno}</h1>
-                        <p className="mt-1 text-sm text-slate-400">{dados.nomeTurma}</p>
+                    <header className={dash.hero}>
+                        <div>
+                            <span className={dash.eyebrow}>{dados.nomeTurma}</span>
+                            <h1 className={dash.title}>{dados.nomeAluno}</h1>
+                            <p className={dash.subtitle}>Atividades, desafios e respostas deste aluno na turma.</p>
+                        </div>
+                    </header>
+
+                    <div className={dash.stats}>
+                        <div className={dash.stat}>
+                            <strong className={dash.indigo}>{dados.atividades.length}</strong>
+                            <span>Atividades concluídas</span>
+                        </div>
+                        <div className={dash.stat}>
+                            <strong className={dash.gold}>{dados.desafios.length}</strong>
+                            <span>Desafios respondidos</span>
+                        </div>
+                        <div className={dash.stat}>
+                            <strong className={dash.coral}>{totalAcertos} / {totalPerguntas}</strong>
+                            <span>Perguntas acertadas</span>
+                        </div>
+                        <div className={dash.stat}>
+                            <strong className={styles.mint}>{percentual(totalAcertos, totalPerguntas)}%</strong>
+                            <span>Aproveitamento geral</span>
+                        </div>
                     </div>
 
-                    <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
-                        <Cartao icone={BookOpen} valor={dados.atividades.length} rotulo="Atividades concluídas"/>
-                        <Cartao icone={Zap} valor={dados.desafios.length} rotulo="Desafios respondidos"/>
-                        <Cartao icone={Check} valor={`${totalAcertos} / ${totalPerguntas}`} rotulo="Perguntas acertadas"/>
-                        <Cartao icone={Target} valor={`${percentual(totalAcertos, totalPerguntas)}%`} rotulo="Aproveitamento geral"/>
+                    <div className={styles.stack}>
+                        <GraficoAproveitamento barras={barras}/>
+
+                        <section className={dash.card}>
+                            <header className={dash.cardHeader}>
+                                <h2 className={`${dash.cardTitle} ${styles.titleIcon}`}>
+                                    <BookOpen size={20} className={dash.indigo}/> Atividades
+                                </h2>
+                                <span className={dash.cardNote}>{dados.atividades.length} concluídas</span>
+                            </header>
+                            {dados.atividades.length === 0 ? (
+                                <p className={dash.empty}>O aluno ainda não concluiu atividades nesta turma.</p>
+                            ) : (
+                                <div className={styles.items}>
+                                    {dados.atividades.map((atividade) => (
+                                        <CartaoAtividade
+                                            key={atividade.resultadoId}
+                                            atividade={atividade}
+                                            turmaId={dados.turmaId}
+                                            aoSalvarComentario={aoSalvarComentario}
+                                        />
+                                    ))}
+                                </div>
+                            )}
+                        </section>
+
+                        <section className={dash.card}>
+                            <header className={dash.cardHeader}>
+                                <h2 className={`${dash.cardTitle} ${styles.titleIcon}`}>
+                                    <IconeDesafio tamanho={22}/> Desafios
+                                </h2>
+                                <span className={dash.cardNote}>{dados.desafios.length} respondidos</span>
+                            </header>
+                            {dados.desafios.length === 0 ? (
+                                <p className={dash.empty}>O aluno ainda não respondeu desafios nesta turma.</p>
+                            ) : (
+                                <div className={styles.items}>
+                                    {dados.desafios.map((desafio) => (
+                                        <article key={desafio.desafioId} className={styles.item}>
+                                            <div className={styles.itemHeader}>
+                                                <h3 className={styles.itemTitle}>{desafio.titulo}</h3>
+                                                <span className={styles.itemMeta}>
+                                                    {desafio.acertos} de {desafio.totalPerguntas} acertos · {desafio.pontos} pontos
+                                                </span>
+                                            </div>
+                                            <ListaQuestoes questoes={desafio.questoes}/>
+                                        </article>
+                                    ))}
+                                </div>
+                            )}
+                        </section>
                     </div>
-
-                    <GraficoAproveitamento barras={barras}/>
-
-                    <h2 className="mb-3 mt-8 text-lg font-semibold">Atividades</h2>
-                    {dados.atividades.length === 0 ? (
-                        <p className="text-sm text-slate-400">O aluno ainda não concluiu atividades nesta turma.</p>
-                    ) : (
-                        <div className="flex flex-col gap-4">
-                            {dados.atividades.map((atividade) => (
-                                <CartaoAtividade
-                                    key={atividade.resultadoId}
-                                    atividade={atividade}
-                                    turmaId={dados.turmaId}
-                                    aoSalvarComentario={aoSalvarComentario}
-                                />
-                            ))}
-                        </div>
-                    )}
-
-                    <h2 className="mb-3 mt-8 text-lg font-semibold">Desafios</h2>
-                    {dados.desafios.length === 0 ? (
-                        <p className="text-sm text-slate-400">O aluno ainda não respondeu desafios nesta turma.</p>
-                    ) : (
-                        <div className="flex flex-col gap-4">
-                            {dados.desafios.map((desafio) => (
-                                <section key={desafio.desafioId} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                                    <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                                        <h3 className="font-semibold">{desafio.titulo}</h3>
-                                        <span className="text-sm text-slate-500">
-                                            {desafio.acertos} de {desafio.totalPerguntas} acertos · {desafio.pontos} pontos
-                                        </span>
-                                    </div>
-                                    <ListaQuestoes questoes={desafio.questoes}/>
-                                </section>
-                            ))}
-                        </div>
-                    )}
                 </>
             )}
-        </LayoutPainel>
+        </LayoutGestao>
     );
 }
 
-// Gráfico de barras em CSS: uma barra por atividade (azul) ou desafio (amarela), com o % de acerto
 function GraficoAproveitamento({barras}: { barras: Barra[] }) {
     return (
-        <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-                <h2 className="font-semibold">Aproveitamento por atividade e desafio</h2>
-                <div className="flex gap-4 text-xs text-slate-500">
-                    <span className="flex items-center gap-1"><span className="h-3 w-3 rounded-sm bg-indigo-500"/> Atividade</span>
-                    <span className="flex items-center gap-1"><span className="h-3 w-3 rounded-sm bg-amber-400"/> Desafio</span>
+        <section className={dash.card}>
+            <header className={dash.cardHeader}>
+                <h2 className={dash.cardTitle}>Aproveitamento por atividade e desafio</h2>
+                <div className={styles.legend}>
+                    <span><i className={styles.legendAtividade}/> Atividade</span>
+                    <span><i className={styles.legendDesafio}/> Desafio</span>
                 </div>
-            </div>
+            </header>
 
             {barras.length === 0 ? (
-                <p className="py-8 text-center text-sm text-slate-400">Sem dados para o gráfico ainda.</p>
+                <p className={dash.empty}>Sem dados para o gráfico ainda.</p>
             ) : (
                 <div
-                    className="flex h-56 items-end gap-3 overflow-x-auto"
+                    className={`${dash.chart} ${styles.chart}`}
                     role="img"
                     aria-label={barras.map((b) => `${b.rotulo}: ${b.percentual}%`).join("; ")}
                 >
                     {barras.map((barra) => (
-                        <div key={barra.chave} className="flex h-full min-w-14 flex-1 flex-col items-center justify-end gap-1">
-                            <span className="text-xs font-semibold text-slate-600">{barra.percentual}%</span>
-                            <div
-                                className={`w-full max-w-12 rounded-t-md ${barra.origem === "atividade" ? "bg-indigo-500" : "bg-amber-400"}`}
-                                style={{height: `${Math.max(barra.percentual, 2)}%`}}
-                                title={`${barra.rotulo}: ${barra.percentual}%`}
-                            />
-                            <span className="w-full truncate text-center text-xs text-slate-500" title={barra.rotulo}>
-                                {barra.rotulo}
-                            </span>
+                        <div key={barra.chave} className={`${dash.barCol} ${styles.barCol}`}>
+                            <span className={dash.barValue}>{barra.percentual}%</span>
+                            <div className={dash.barTrack}>
+                                <div
+                                    className={`${dash.bar} ${barra.origem === "desafio" ? styles.barDesafio : ""}`}
+                                    style={{height: `${Math.max(barra.percentual, 2)}%`}}
+                                    title={`${barra.rotulo}: ${barra.percentual}%`}
+                                />
+                            </div>
+                            <span className={dash.barLabel} title={barra.rotulo}>{barra.rotulo}</span>
                         </div>
                     ))}
                 </div>
@@ -205,22 +236,19 @@ function GraficoAproveitamento({barras}: { barras: Barra[] }) {
     );
 }
 
-// Uma atividade concluída: nota, perguntas e o comentário do professor
 function CartaoAtividade({atividade, turmaId, aoSalvarComentario}: {
     atividade: AtividadeDoAluno;
     turmaId: number;
     aoSalvarComentario: (salvo: ComentarioSalvo) => void;
 }) {
     return (
-        <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="font-semibold">{atividade.titulo}</h3>
-                    <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-semibold text-indigo-600">
-                        {NOME_TIPO[atividade.tipo] ?? atividade.tipo}
-                    </span>
+        <article className={styles.item}>
+            <div className={styles.itemHeader}>
+                <div className={styles.itemTitleRow}>
+                    <h3 className={styles.itemTitle}>{atividade.titulo}</h3>
+                    <span className={styles.tipo}>{NOME_TIPO[atividade.tipo] ?? atividade.tipo}</span>
                 </div>
-                <span className="text-sm text-slate-500">
+                <span className={styles.itemMeta}>
                     {atividade.acertos} de {atividade.totalQuestoes} acertos
                     · {atividade.pontuacao} / {atividade.pontuacaoMaxima} pontos
                     {atividade.concluidaEm && ` · ${formatarData(atividade.concluidaEm)}`}
@@ -228,7 +256,7 @@ function CartaoAtividade({atividade, turmaId, aoSalvarComentario}: {
             </div>
 
             {atividade.questoes.length === 0 ? (
-                <p className="text-sm text-slate-400">
+                <p className={dash.empty}>
                     Detalhe por pergunta indisponível: esta atividade foi concluída antes dessa informação ser registrada.
                 </p>
             ) : (
@@ -236,31 +264,30 @@ function CartaoAtividade({atividade, turmaId, aoSalvarComentario}: {
             )}
 
             <ComentarioAtividade atividade={atividade} turmaId={turmaId} aoSalvar={aoSalvarComentario}/>
-        </section>
+        </article>
     );
 }
 
-// Cada pergunta com ✓ ou ✗, a resposta do aluno e, quando houver, a correta
 function ListaQuestoes({questoes}: { questoes: QuestaoAluno[] }) {
     return (
-        <ul className="flex flex-col gap-2">
+        <ul className={styles.questions}>
             {questoes.map((questao, indice) => (
-                <li key={indice} className="flex gap-3 rounded-lg bg-slate-50 p-3 text-sm">
+                <li key={indice} className={styles.question}>
                     <span
-                        className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${
-                            questao.correta === null ? "bg-slate-200 text-slate-500"
-                                : questao.correta ? "bg-emerald-100 text-emerald-600" : "bg-red-100 text-red-500"}`}
+                        className={`${styles.mark} ${
+                            questao.correta === null ? styles.markNeutral
+                                : questao.correta ? styles.markRight : styles.markWrong}`}
                         aria-label={questao.correta === null ? "Sem correção" : questao.correta ? "Acertou" : "Errou"}
                     >
                         {questao.correta === false ? <X size={14}/> : <Check size={14}/>}
                     </span>
-                    <div className="min-w-0">
-                        <p className="font-medium">{questao.enunciado}</p>
+                    <div className={styles.questionBody}>
+                        <p className={styles.questionText}>{questao.enunciado}</p>
                         {questao.respostaAluno && (
-                            <p className="text-slate-500">Resposta do aluno: {questao.respostaAluno}</p>
+                            <p className={styles.answer}>Resposta do aluno: {questao.respostaAluno}</p>
                         )}
                         {questao.correta === false && questao.respostaCorreta && (
-                            <p className="text-emerald-600">Correta: {questao.respostaCorreta}</p>
+                            <p className={styles.correct}>Correta: {questao.respostaCorreta}</p>
                         )}
                     </div>
                 </li>
@@ -269,7 +296,6 @@ function ListaQuestoes({questoes}: { questoes: QuestaoAluno[] }) {
     );
 }
 
-// Comentário opcional: o professor só escreve se quiser; pode editar depois
 function ComentarioAtividade({atividade, turmaId, aoSalvar}: {
     atividade: AtividadeDoAluno;
     turmaId: number;
@@ -306,13 +332,13 @@ function ComentarioAtividade({atividade, turmaId, aoSalvar}: {
 
     if (!editando) {
         return (
-            <div className="mt-4 border-t pt-4">
+            <div className={styles.comment}>
                 {atividade.comentario ? (
-                    <div className="rounded-lg bg-indigo-50 p-3 text-sm">
-                        <p className="mb-1 flex items-center gap-1 text-xs font-semibold text-indigo-600">
+                    <div className={styles.commentBox}>
+                        <p className={styles.commentAuthor}>
                             <MessageSquare size={14}/> Comentário de {atividade.comentadoPor}
                         </p>
-                        <p className="whitespace-pre-line text-slate-700">{atividade.comentario}</p>
+                        <p className={styles.commentText}>{atividade.comentario}</p>
                     </div>
                 ) : null}
                 <button
@@ -321,7 +347,7 @@ function ComentarioAtividade({atividade, turmaId, aoSalvar}: {
                         setTexto(atividade.comentario ?? "");
                         setEditando(true);
                     }}
-                    className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:underline"
+                    className={styles.linkButton}
                 >
                     <MessageSquare size={14}/> {atividade.comentario ? "Editar comentário" : "Adicionar comentário"}
                 </button>
@@ -330,8 +356,8 @@ function ComentarioAtividade({atividade, turmaId, aoSalvar}: {
     }
 
     return (
-        <div className="mt-4 border-t pt-4">
-            <label className="mb-1 block text-sm font-medium" htmlFor={`comentario-${atividade.resultadoId}`}>
+        <div className={styles.comment}>
+            <label className={styles.commentLabel} htmlFor={`comentario-${atividade.resultadoId}`}>
                 Comentário para o aluno
             </label>
             <textarea
@@ -340,39 +366,24 @@ function ComentarioAtividade({atividade, turmaId, aoSalvar}: {
                 onChange={(evento) => setTexto(evento.target.value)}
                 maxLength={1000}
                 rows={3}
-                className="w-full rounded-lg border border-slate-200 p-3 text-sm"
+                className={styles.textarea}
                 placeholder="Ex.: Ótimo trabalho! Revise a questão 3."
             />
-            <p className="text-right text-xs text-slate-400">{texto.length} / 1000</p>
-            {erro && <p className="text-sm text-red-600">{erro}</p>}
-            <div className="mt-2 flex gap-2">
+            <p className={styles.counter}>{texto.length} / 1000</p>
+            {erro && <p className={styles.commentError}>{erro}</p>}
+            <div className={styles.commentActions}>
                 <button
                     type="button"
                     onClick={salvar}
                     disabled={salvando || texto.trim() === ""}
-                    className="rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                    className={styles.saveButton}
                 >
                     {salvando ? "Salvando..." : "Salvar"}
                 </button>
-                <button
-                    type="button"
-                    onClick={() => setEditando(false)}
-                    className="rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50"
-                >
+                <button type="button" onClick={() => setEditando(false)} className={styles.cancelButton}>
                     Cancelar
                 </button>
             </div>
-        </div>
-    );
-}
-
-// Cartão de resumo, no mesmo estilo da tela da turma
-function Cartao({icone: Icone, valor, rotulo}: { icone: LucideIcon; valor: number | string; rotulo: string }) {
-    return (
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-            <Icone size={22} className="mb-2 text-indigo-500"/>
-            <p className="text-2xl font-semibold">{valor}</p>
-            <p className="text-sm text-slate-400">{rotulo}</p>
         </div>
     );
 }

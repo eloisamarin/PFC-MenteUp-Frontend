@@ -8,14 +8,6 @@ export const ROTA_BASE: Record<Perfil, string> = {
     ADMINISTRADOR: "/administrador",
 };
 
-// Cores fixas de cada alternativa, na mesma ordem na tela do professor e na do aluno
-export const CORES_ALTERNATIVA = [
-    "bg-rose-600",
-    "bg-blue-600",
-    "bg-amber-600",
-    "bg-emerald-600",
-];
-
 export const LETRAS_ALTERNATIVA = ["A", "B", "C", "D"];
 
 export interface TurmaResumo {

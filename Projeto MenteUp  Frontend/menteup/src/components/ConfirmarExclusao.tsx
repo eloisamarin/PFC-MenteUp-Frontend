@@ -1,6 +1,11 @@
+import {useEffect, type ReactNode} from "react";
+import {Trash2, TriangleAlert} from "lucide-react";
+
+import styles from "./ConfirmarExclusao.module.css";
+
 interface ConfirmarExclusaoProps {
     titulo: string;
-    mensagem: string;
+    mensagem: ReactNode;
     processando: boolean;
     rotuloConfirmar?: string;
     rotuloProcessando?: string;
@@ -17,27 +22,50 @@ function ConfirmarExclusao({
     onConfirmar,
     onCancelar,
 }: ConfirmarExclusaoProps) {
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" role="dialog" aria-modal="true">
-            <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
-                <h2 className="text-lg font-semibold text-slate-800">{titulo}</h2>
-                <p className="mt-2 text-sm text-slate-500">{mensagem}</p>
+    useEffect(() => {
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key === "Escape" && !processando) onCancelar();
+        };
+        window.addEventListener("keydown", onKey);
+        return () => window.removeEventListener("keydown", onKey);
+    }, [processando, onCancelar]);
 
-                <div className="mt-6 flex justify-end gap-3">
+    return (
+        <div className={styles.overlay} onClick={() => !processando && onCancelar()}>
+            <div
+                className={styles.dialog}
+                role="alertdialog"
+                aria-modal="true"
+                aria-labelledby="confirmar-exclusao-titulo"
+                aria-describedby="confirmar-exclusao-texto"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <span className={styles.icon}>
+                    <TriangleAlert size={28}/>
+                </span>
+                <h2 id="confirmar-exclusao-titulo" className={styles.title}>
+                    {titulo}
+                </h2>
+                <p id="confirmar-exclusao-texto" className={styles.text}>
+                    {mensagem}
+                </p>
+                <div className={styles.actions}>
                     <button
                         type="button"
+                        className={styles.cancelButton}
                         onClick={onCancelar}
                         disabled={processando}
-                        className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-60"
+                        autoFocus
                     >
                         Cancelar
                     </button>
                     <button
                         type="button"
+                        className={styles.dangerButton}
                         onClick={onConfirmar}
                         disabled={processando}
-                        className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60"
                     >
+                        <Trash2 size={16}/>
                         {processando ? rotuloProcessando : rotuloConfirmar}
                     </button>
                 </div>

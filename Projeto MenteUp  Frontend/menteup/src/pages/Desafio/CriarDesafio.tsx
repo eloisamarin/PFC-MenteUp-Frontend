@@ -1,15 +1,21 @@
-import {useEffect, useState, type FormEvent} from "react";
+import {useEffect, useState} from "react";
 import {useNavigate, useParams, useSearchParams} from "react-router-dom";
-import {ArrowLeft, Plus, Trash2} from "lucide-react";
-import LayoutPainel from "../../components/LayoutPainel";
+import {Check, ChevronLeft, ChevronRight, Plus, Timer, Trash2, X} from "lucide-react";
+import {IconeDesafio} from "../../components/ComponentesDesafio";
 import {apiFetch, lerErro} from "../../services/api";
-import {ROTA_BASE, type PerfilGestao, type TurmaResumo} from "../../services/turmaDesafio";
+import {contagem, ROTA_BASE, type PerfilGestao, type TurmaResumo} from "../../services/turmaDesafio";
+import {LayoutGestao} from "./TurmasGestao";
+import styles from "../professor/CriarAtividadeProfessor.module.css";
+import editor from "../../components/atividades/Editores.module.css";
+import desafioStyles from "./Desafios.module.css";
 
 const TEMPO_PADRAO = 30;
 const TEMPO_MINIMO = 5;
 const TEMPO_MAXIMO = 300;
 const MAXIMO_ALTERNATIVAS = 4;
 const MINIMO_ALTERNATIVAS = 2;
+const LETRAS = "ABCD";
+const ETAPAS = ["Informações", "Perguntas", "Revisão"];
 
 interface PerguntaForm {
     enunciado: string;
@@ -39,11 +45,14 @@ function paraFormulario(pergunta: PerguntaEdicao): PerguntaForm {
     };
 }
 
-function validar(titulo: string, descricao: string, turmaId: string, perguntas: PerguntaForm[]): string | null {
+function validarInformacoes(titulo: string, descricao: string, turmaId: string): string | null {
     if (titulo.trim().length < 5) return "O título deve ter no mínimo 5 caracteres.";
-    if (descricao.trim().length < 10) return "A descrição deve ter no mínimo 10 caracteres.";
     if (!turmaId) return "Selecione a turma do desafio.";
+    if (descricao.trim().length < 10) return "A descrição deve ter no mínimo 10 caracteres.";
+    return null;
+}
 
+function validarPerguntas(perguntas: PerguntaForm[]): string | null {
     for (const [indice, pergunta] of perguntas.entries()) {
         const numero = indice + 1;
 
@@ -67,11 +76,13 @@ function CriarDesafio({perfil}: { perfil: PerfilGestao }) {
     const editando = id !== undefined;
     const base = ROTA_BASE[perfil];
 
+    const [etapa, setEtapa] = useState(0);
     const [turmas, setTurmas] = useState<TurmaResumo[]>([]);
-    const [titulo, setTitulo] = useState("");
+    const [titulo, setTitulo] = useState(parametros.get("titulo") ?? "");
     const [descricao, setDescricao] = useState("");
     const [turmaId, setTurmaId] = useState(parametros.get("turma") ?? "");
     const [perguntas, setPerguntas] = useState<PerguntaForm[]>([novaPergunta()]);
+    const [indice, setIndice] = useState(0);
     const [erro, setErro] = useState("");
     const [salvando, setSalvando] = useState(false);
     const [carregando, setCarregando] = useState(editando);
@@ -121,25 +132,26 @@ function CriarDesafio({perfil}: { perfil: PerfilGestao }) {
         carregarTurmas();
     }, []);
 
-    function alterarPergunta(indice: number, alteracao: Partial<PerguntaForm>) {
-        setPerguntas((atuais) => atuais.map((pergunta, i) =>
-            i === indice ? {...pergunta, ...alteracao} : pergunta
-        ));
+    const sair = () => navigate(`${base}/desafios`);
+    const pergunta = perguntas[indice] ?? perguntas[0];
+    const turma = turmas.find((t) => String(t.id) === turmaId);
+    const tempoTotal = perguntas.reduce((soma, p) => soma + (Number(p.tempoSegundos) || 0), 0);
+
+    function alterarPergunta(alteracao: Partial<PerguntaForm>) {
+        setErro("");
+        setPerguntas((atuais) => atuais.map((p, i) => (i === indice ? {...p, ...alteracao} : p)));
     }
 
-    function alterarAlternativa(indicePergunta: number, indiceAlternativa: number, texto: string) {
-        const pergunta = perguntas[indicePergunta];
-
-        alterarPergunta(indicePergunta, {
-            alternativas: pergunta.alternativas.map((atual, i) => i === indiceAlternativa ? texto : atual),
+    function alterarAlternativa(indiceAlternativa: number, texto: string) {
+        alterarPergunta({
+            alternativas: pergunta.alternativas.map((atual, i) => (i === indiceAlternativa ? texto : atual)),
         });
     }
 
-    function removerAlternativa(indicePergunta: number, indiceAlternativa: number) {
-        const pergunta = perguntas[indicePergunta];
+    function removerAlternativa(indiceAlternativa: number) {
         const correta = pergunta.indiceCorreta;
 
-        alterarPergunta(indicePergunta, {
+        alterarPergunta({
             alternativas: pergunta.alternativas.filter((_, i) => i !== indiceAlternativa),
             indiceCorreta: correta === null || correta === indiceAlternativa
                 ? null
@@ -147,12 +159,35 @@ function CriarDesafio({perfil}: { perfil: PerfilGestao }) {
         });
     }
 
-    async function salvar(event: FormEvent) {
-        event.preventDefault();
+    function adicionarPergunta() {
+        setPerguntas((atuais) => [...atuais, novaPergunta()]);
+        setIndice(perguntas.length);
+        setErro("");
+    }
 
+    function removerPergunta() {
+        setPerguntas((atuais) => atuais.filter((_, i) => i !== indice));
+        setIndice((atual) => Math.max(0, atual - 1));
+        setErro("");
+    }
+
+    function continuar() {
+        const problema = etapa === 0
+            ? validarInformacoes(titulo, descricao, turmaId)
+            : etapa === 1 ? validarPerguntas(perguntas) : null;
+        setErro(problema ?? "");
+        if (!problema) setEtapa((atual) => Math.min(atual + 1, ETAPAS.length - 1));
+    }
+
+    function voltar() {
+        setErro("");
+        if (etapa === 0) sair();
+        else setEtapa((atual) => atual - 1);
+    }
+
+    async function salvar() {
         const mensagemFalha = `Não foi possível ${editando ? "salvar" : "criar"} o desafio.`;
-
-        const problema = validar(titulo, descricao, turmaId, perguntas);
+        const problema = validarInformacoes(titulo, descricao, turmaId) ?? validarPerguntas(perguntas);
 
         if (problema) {
             setErro(problema);
@@ -169,12 +204,12 @@ function CriarDesafio({perfil}: { perfil: PerfilGestao }) {
                     titulo: titulo.trim(),
                     descricao: descricao.trim(),
                     turmaId: Number(turmaId),
-                    perguntas: perguntas.map((pergunta) => ({
-                        enunciado: pergunta.enunciado.trim(),
-                        tempoSegundos: pergunta.tempoSegundos,
-                        alternativas: pergunta.alternativas.map((texto, indice) => ({
+                    perguntas: perguntas.map((p) => ({
+                        enunciado: p.enunciado.trim(),
+                        tempoSegundos: p.tempoSegundos,
+                        alternativas: p.alternativas.map((texto, i) => ({
                             texto: texto.trim(),
-                            correta: indice === pergunta.indiceCorreta,
+                            correta: i === p.indiceCorreta,
                         })),
                     })),
                 }),
@@ -187,7 +222,7 @@ function CriarDesafio({perfil}: { perfil: PerfilGestao }) {
                 return;
             }
 
-            navigate(`${base}/desafios`);
+            sair();
         } catch (error) {
             console.error("Erro ao salvar desafio:", error);
             setErro(mensagemFalha);
@@ -196,161 +231,252 @@ function CriarDesafio({perfil}: { perfil: PerfilGestao }) {
         }
     }
 
-    const classeCampo = "w-full rounded-lg border border-slate-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-300";
+    const cabecalho = (
+        <header className={styles.header}>
+            <button type="button" className={styles.close} onClick={sair} aria-label="Cancelar">
+                <X size={18}/>
+            </button>
+            <div>
+                <span className={styles.eyebrow}>{editando ? "Editar desafio" : "Novo desafio"}</span>
+                <h1 className={`${styles.title} ${desafioStyles.titleWithIcon}`}>
+                    {editando ? "Ajuste o desafio" : "Crie um desafio ao vivo"} <IconeDesafio tamanho={32}/>
+                </h1>
+            </div>
+        </header>
+    );
+
+    if (carregando || erroCarregamento) {
+        return (
+            <LayoutGestao perfil={perfil}>
+                {cabecalho}
+                <section className={styles.card}>
+                    <h2 className={styles.cardTitle}>{carregando ? "Carregando desafio..." : "Não foi possível abrir"}</h2>
+                    <p className={styles.cardSubtitle}>{carregando ? "Aguarde enquanto buscamos os dados." : erroCarregamento}</p>
+                    {!carregando && (
+                        <button type="button" className={styles.ghostButton} onClick={sair}>
+                            <ChevronLeft size={16}/> Voltar para desafios
+                        </button>
+                    )}
+                </section>
+            </LayoutGestao>
+        );
+    }
 
     return (
-        <LayoutPainel perfil={perfil}>
-            <button onClick={() => navigate(`${base}/desafios`)} className="mb-4 flex items-center gap-2 text-sm text-slate-500 hover:text-slate-800">
-                <ArrowLeft size={16}/> Voltar para desafios
-            </button>
+        <LayoutGestao perfil={perfil}>
+            {cabecalho}
 
-            <h1 className="mb-6 text-2xl font-semibold">{editando ? "Editar desafio" : "Criar desafio"}</h1>
+            <ol className={styles.stepper}>
+                {ETAPAS.map((nome, i) => (
+                    <li
+                        key={nome}
+                        className={`${styles.step} ${i < etapa ? styles.stepDone : ""} ${i === etapa ? styles.stepCurrent : ""}`}
+                        aria-current={i === etapa ? "step" : undefined}
+                    >
+                        <span className={styles.stepNumber}>{i < etapa ? <Check size={16}/> : i + 1}</span>
+                        <span className={styles.stepName}>{nome}</span>
+                    </li>
+                ))}
+            </ol>
 
-            {carregando ? (
-                <p className="py-12 text-center text-sm text-slate-400">Carregando desafio...</p>
-            ) : erroCarregamento ? (
-                <div className="max-w-3xl rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-600">{erroCarregamento}</div>
-            ) : (
-            <form onSubmit={salvar} className="max-w-3xl space-y-6">
+            <section className={styles.card}>
+                {etapa === 0 && (
+                    <>
+                        <h2 className={styles.cardTitle}>Informações básicas</h2>
+                        <p className={styles.cardSubtitle}>Dê contexto para a turma entender o desafio.</p>
 
-                <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                    <label className="block text-sm font-medium">
-                        Título
-                        <input value={titulo} onChange={(event) => setTitulo(event.target.value)} maxLength={100} className={`mt-1 ${classeCampo}`}/>
-                    </label>
+                        <label className={styles.label} htmlFor="titulo">Título do desafio</label>
+                        <input
+                            id="titulo"
+                            className={styles.input}
+                            maxLength={100}
+                            placeholder="Ex.: Corrida das frações"
+                            value={titulo}
+                            onChange={(e) => setTitulo(e.target.value)}
+                        />
 
-                    <label className="block text-sm font-medium">
-                        Descrição
-                        <textarea value={descricao} onChange={(event) => setDescricao(event.target.value)} maxLength={1000} rows={3} className={`mt-1 ${classeCampo}`}/>
-                    </label>
-
-                    <label className="block text-sm font-medium">
-                        Turma
-                        <select value={turmaId} onChange={(event) => setTurmaId(event.target.value)} className={`mt-1 bg-white ${classeCampo}`}>
+                        <label className={styles.label} htmlFor="turma">Turma</label>
+                        <select id="turma" className={styles.input} value={turmaId} onChange={(e) => setTurmaId(e.target.value)}>
                             <option value="">Selecione uma turma</option>
-                            {turmas.map((turma) => (
-                                <option key={turma.id} value={turma.id}>{turma.nome}</option>
+                            {turmas.map((t) => (
+                                <option key={t.id} value={t.id}>{t.nome}</option>
                             ))}
                         </select>
-                    </label>
-                </div>
 
-                {perguntas.map((pergunta, indice) => (
-                    <fieldset key={indice} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                        <div className="mb-3 flex items-center justify-between">
-                            <legend className="font-semibold">Pergunta {indice + 1}</legend>
+                        <label className={styles.label} htmlFor="descricao">Descrição</label>
+                        <textarea
+                            id="descricao"
+                            className={styles.input}
+                            rows={3}
+                            maxLength={1000}
+                            placeholder="Explique o objetivo do desafio para os alunos."
+                            value={descricao}
+                            onChange={(e) => setDescricao(e.target.value)}
+                        />
+                    </>
+                )}
+
+                {etapa === 1 && pergunta && (
+                    <>
+                        <div className={styles.cardHeader}>
+                            <div>
+                                <h2 className={styles.cardTitle}>Monte as perguntas</h2>
+                                <p className={styles.cardSubtitle}>
+                                    Questão {indice + 1} de {perguntas.length} · cada pergunta tem o seu tempo
+                                </p>
+                            </div>
+                            <button type="button" className={styles.ghostButton} onClick={adicionarPergunta}>
+                                <Plus size={16}/> Adicionar
+                            </button>
+                        </div>
+
+                        <div className={editor.questionNav}>
+                            <nav className={editor.dots} aria-label="Perguntas">
+                                {perguntas.map((_, i) => (
+                                    <button
+                                        key={i}
+                                        type="button"
+                                        className={`${editor.dot} ${i === indice ? editor.dotActive : ""}`}
+                                        onClick={() => setIndice(i)}
+                                        aria-current={i === indice ? "step" : undefined}
+                                        aria-label={`Pergunta ${i + 1}`}
+                                    >
+                                        {i + 1}
+                                    </button>
+                                ))}
+                            </nav>
                             {perguntas.length > 1 && (
-                                <button
-                                    type="button"
-                                    title="Remover pergunta"
-                                    onClick={() => setPerguntas((atuais) => atuais.filter((_, i) => i !== indice))}
-                                    className="rounded p-2 text-slate-500 hover:bg-red-50 hover:text-red-600"
-                                >
-                                    <Trash2 size={17}/>
+                                <button type="button" className={editor.removeQuestion} onClick={removerPergunta}>
+                                    <Trash2 size={14}/> Remover pergunta
                                 </button>
                             )}
                         </div>
 
-                        <div className="grid gap-4 sm:grid-cols-[1fr_8rem]">
-                            <label className="block text-sm font-medium">
-                                Enunciado
+                        <div className={desafioStyles.enunciadoRow}>
+                            <div>
+                                <label className={editor.label} htmlFor="enunciado">Enunciado</label>
                                 <input
-                                    value={pergunta.enunciado}
-                                    onChange={(event) => alterarPergunta(indice, {enunciado: event.target.value})}
+                                    id="enunciado"
+                                    className={editor.input}
                                     maxLength={255}
-                                    className={`mt-1 ${classeCampo}`}
+                                    placeholder="Digite a pergunta..."
+                                    value={pergunta.enunciado}
+                                    onChange={(e) => alterarPergunta({enunciado: e.target.value})}
                                 />
-                            </label>
-                            <label className="block text-sm font-medium">
-                                Tempo (s)
-                                <input
-                                    type="number"
-                                    min={TEMPO_MINIMO}
-                                    max={TEMPO_MAXIMO}
-                                    value={pergunta.tempoSegundos}
-                                    onChange={(event) => alterarPergunta(indice, {tempoSegundos: Number(event.target.value)})}
-                                    className={`mt-1 ${classeCampo}`}
-                                />
-                            </label>
+                            </div>
+                            <div>
+                                <label className={editor.label} htmlFor="tempo">Tempo</label>
+                                <div className={desafioStyles.timeField}>
+                                    <Timer size={18} className={desafioStyles.timeIcon}/>
+                                    <input
+                                        id="tempo"
+                                        type="number"
+                                        min={TEMPO_MINIMO}
+                                        max={TEMPO_MAXIMO}
+                                        value={pergunta.tempoSegundos}
+                                        onChange={(e) => alterarPergunta({tempoSegundos: Number(e.target.value)})}
+                                        aria-describedby="tempo-ajuda"
+                                    />
+                                    <span>seg</span>
+                                </div>
+                            </div>
                         </div>
 
-                        <p className="mt-4 mb-2 text-sm font-medium">Alternativas (marque a correta)</p>
+                        <span id="tempo-ajuda" className={editor.helper}>
+                            Marque a bolinha da alternativa correta. O tempo vale entre {TEMPO_MINIMO} e {TEMPO_MAXIMO} segundos.
+                        </span>
 
-                        <div className="space-y-2">
-                            {pergunta.alternativas.map((alternativa, indiceAlternativa) => (
-                                <div key={indiceAlternativa} className="flex items-center gap-2">
-                                    <input
-                                        type="radio"
-                                        name={`correta-${indice}`}
-                                        checked={pergunta.indiceCorreta === indiceAlternativa}
-                                        onChange={() => alterarPergunta(indice, {indiceCorreta: indiceAlternativa})}
-                                        aria-label={`Alternativa ${indiceAlternativa + 1} é a correta`}
-                                        className="h-4 w-4 accent-indigo-600"
-                                    />
-                                    <input
-                                        value={alternativa}
-                                        onChange={(event) => alterarAlternativa(indice, indiceAlternativa, event.target.value)}
-                                        placeholder={`Alternativa ${indiceAlternativa + 1}`}
-                                        aria-label={`Texto da alternativa ${indiceAlternativa + 1}`}
-                                        className={classeCampo}
-                                    />
-                                    {pergunta.alternativas.length > MINIMO_ALTERNATIVAS && (
+                        <div className={editor.alternatives}>
+                            {pergunta.alternativas.map((alternativa, i) => {
+                                const correta = pergunta.indiceCorreta === i;
+                                return (
+                                    <div key={i} className={`${editor.alternative} ${correta ? editor.alternativeCorrect : ""}`}>
                                         <button
                                             type="button"
-                                            title="Remover alternativa"
-                                            onClick={() => removerAlternativa(indice, indiceAlternativa)}
-                                            className="rounded p-2 text-slate-500 hover:bg-red-50 hover:text-red-600"
+                                            className={editor.radio}
+                                            onClick={() => alterarPergunta({indiceCorreta: i})}
+                                            aria-label={`Marcar alternativa ${LETRAS[i]} como correta`}
+                                            aria-pressed={correta}
                                         >
-                                            <Trash2 size={16}/>
+                                            {correta && <Check size={12}/>}
                                         </button>
-                                    )}
-                                </div>
-                            ))}
+                                        <input
+                                            className={editor.inlineInput}
+                                            placeholder={`Alternativa ${LETRAS[i]}`}
+                                            value={alternativa}
+                                            onChange={(e) => alterarAlternativa(i, e.target.value)}
+                                        />
+                                        {pergunta.alternativas.length > MINIMO_ALTERNATIVAS && (
+                                            <button
+                                                type="button"
+                                                className={editor.iconButton}
+                                                onClick={() => removerAlternativa(i)}
+                                                aria-label={`Remover alternativa ${LETRAS[i]}`}
+                                            >
+                                                <X size={14}/>
+                                            </button>
+                                        )}
+                                    </div>
+                                );
+                            })}
                         </div>
 
                         {pergunta.alternativas.length < MAXIMO_ALTERNATIVAS && (
                             <button
                                 type="button"
-                                onClick={() => alterarPergunta(indice, {alternativas: [...pergunta.alternativas, ""]})}
-                                className="mt-3 flex items-center gap-1 text-sm font-semibold text-indigo-600 hover:underline"
+                                className={editor.addLink}
+                                onClick={() => alterarPergunta({alternativas: [...pergunta.alternativas, ""]})}
                             >
-                                <Plus size={15}/> Adicionar alternativa
+                                <Plus size={14}/> Adicionar alternativa
                             </button>
                         )}
-                    </fieldset>
-                ))}
-
-                <button
-                    type="button"
-                    onClick={() => setPerguntas((atuais) => [...atuais, novaPergunta()])}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-300 py-3 text-sm font-semibold text-slate-500 hover:border-indigo-300 hover:text-indigo-600"
-                >
-                    <Plus size={17}/> Adicionar pergunta
-                </button>
-
-                {erro && (
-                    <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-600">{erro}</div>
+                    </>
                 )}
 
-                <div className="flex justify-end gap-3">
-                    <button
-                        type="button"
-                        onClick={() => navigate(`${base}/desafios`)}
-                        className="rounded-lg border border-slate-200 bg-white px-5 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50"
-                    >
-                        Cancelar
+                {etapa === 2 && (
+                    <div className={styles.review}>
+                        <span className={styles.reviewIcon}>
+                            <IconeDesafio tamanho={28}/>
+                        </span>
+                        <h2 className={styles.reviewTitle}>{editando ? "Pronto para salvar" : "Desafio pronto"}</h2>
+                        <p className={styles.cardSubtitle}>
+                            {[titulo.trim(), contagem(perguntas.length, "pergunta", "perguntas"), turma?.nome].filter(Boolean).join(" · ")}
+                        </p>
+                        <dl className={styles.reviewBox}>
+                            <div>
+                                <dt>Turma</dt>
+                                <dd>{turma ? turma.nome : "-"}</dd>
+                            </div>
+                            <div>
+                                <dt>Perguntas</dt>
+                                <dd>{contagem(perguntas.length, "pergunta", "perguntas")}</dd>
+                            </div>
+                            <div>
+                                <dt>Tempo total</dt>
+                                <dd>{tempoTotal >= 60 ? `${Math.floor(tempoTotal / 60)} min ${tempoTotal % 60}s` : `${tempoTotal}s`}</dd>
+                            </div>
+                        </dl>
+                    </div>
+                )}
+
+                {erro && <p className={styles.error} role="alert">{erro}</p>}
+
+                <footer className={styles.footer}>
+                    <button type="button" className={styles.ghostButton} onClick={voltar} disabled={salvando}>
+                        <ChevronLeft size={16}/> Voltar
                     </button>
-                    <button
-                        type="submit"
-                        disabled={salvando}
-                        className="rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
-                    >
-                        {salvando ? "Salvando..." : editando ? "Salvar alterações" : "Salvar desafio"}
-                    </button>
-                </div>
-            </form>
-            )}
-        </LayoutPainel>
+                    {etapa < ETAPAS.length - 1 ? (
+                        <button type="button" className={styles.primaryButton} onClick={continuar}>
+                            Continuar <ChevronRight size={16}/>
+                        </button>
+                    ) : (
+                        <button type="button" className={styles.publishButton} onClick={salvar} disabled={salvando}>
+                            {salvando ? "Salvando..." : editando ? "Salvar alterações" : "Salvar desafio"} <ChevronRight size={16}/>
+                        </button>
+                    )}
+                </footer>
+            </section>
+        </LayoutGestao>
     );
 }
 

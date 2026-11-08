@@ -1,11 +1,13 @@
 import {useEffect, useState} from "react";
 import {useNavigate} from "react-router-dom";
-import {Pencil, Play, Plus, Trash2, Trophy, Zap} from "lucide-react";
-import LayoutPainel from "../../components/LayoutPainel";
+import {Pencil, Play, Plus, Trash2, Trophy} from "lucide-react";
 import ConfirmarExclusao from "../../components/ConfirmarExclusao";
-import {BadgeStatusDesafio} from "../../components/ComponentesDesafio";
+import {BadgeStatusDesafio, IconeDesafio} from "../../components/ComponentesDesafio";
 import {apiFetch, lerErro} from "../../services/api";
 import {contagem, ROTA_BASE, type Desafio, type PerfilGestao} from "../../services/turmaDesafio";
+import {LayoutGestao} from "./TurmasGestao";
+import styles from "./TurmasGestao.module.css";
+import desafioStyles from "./Desafios.module.css";
 
 function DesafiosGestao({perfil}: { perfil: PerfilGestao }) {
     const navigate = useNavigate();
@@ -61,79 +63,86 @@ function DesafiosGestao({perfil}: { perfil: PerfilGestao }) {
     }
 
     return (
-        <LayoutPainel perfil={perfil}>
-            <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-                <div>
-                    <h1 className="text-2xl font-semibold">Desafios</h1>
-                    <p className="mt-1 text-sm text-slate-400">Quizzes ao vivo: você conduz e a turma responde em tempo real.</p>
+        <LayoutGestao perfil={perfil}>
+            <header className={desafioStyles.headerRow}>
+                <div className={styles.header}>
+                    <span className={styles.eyebrow}>Quizzes ao vivo</span>
+                    <h1 className={`${styles.title} ${desafioStyles.titleWithIcon}`}>
+                        Desafios <IconeDesafio tamanho={36}/>
+                    </h1>
+                    <p className={styles.subtitle}>Você conduz e a turma responde em tempo real.</p>
                 </div>
-                <button
-                    onClick={() => navigate(`${base}/desafios/criar`)}
-                    className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-200"
-                >
+                <button type="button" onClick={() => navigate(`${base}/desafios/criar`)} className={styles.primaryButton}>
                     <Plus size={18}/> Criar desafio
                 </button>
-            </div>
+            </header>
 
-            {erro && (
-                <div className="mb-5 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-600">{erro}</div>
-            )}
+            {erro && <div className={styles.error} role="alert">{erro}</div>}
 
-            <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-                {carregando ? (
-                    <p className="py-12 text-center text-sm text-slate-400">Carregando desafios...</p>
-                ) : desafios.length === 0 ? (
-                    <div className="py-12 text-center">
-                        <Zap size={36} className="mx-auto mb-3 text-slate-300"/>
-                        <p className="text-sm text-slate-400">Nenhum desafio criado ainda.</p>
-                    </div>
-                ) : (
-                    <ul>
-                        {desafios.map((desafio) => (
-                            <li key={desafio.id} className="flex flex-wrap items-center gap-3 border-b px-5 py-4 last:border-b-0 hover:bg-slate-50">
-                                <div className="min-w-0 flex-1 basis-56">
-                                    <div className="flex flex-wrap items-center gap-2">
-                                        <p className="truncate font-semibold">{desafio.titulo}</p>
-                                        <BadgeStatusDesafio status={desafio.status}/>
-                                    </div>
-                                    <p className="mt-0.5 text-xs text-slate-400">
-                                        {desafio.turma.nome} · {contagem(desafio.totalPerguntas, "pergunta", "perguntas")}
-                                    </p>
-                                </div>
-
+            {carregando ? (
+                <p className={styles.empty}>Carregando desafios...</p>
+            ) : desafios.length === 0 ? (
+                <div className={styles.empty}>
+                    <IconeDesafio tamanho={36}/>
+                    <p>Nenhum desafio criado ainda.</p>
+                </div>
+            ) : (
+                <ul className={styles.list}>
+                    {desafios.map((desafio) => {
+                        const encerrado = desafio.status === "ENCERRADO";
+                        const aoVivo = desafio.status === "EM_ANDAMENTO";
+                        return (
+                            <li key={desafio.id} className={`${styles.card} ${styles.row}`}>
+                                <span className={`${styles.avatar} ${desafioStyles.avatarDesafio}`}>
+                                    <IconeDesafio tamanho={26}/>
+                                </span>
                                 <button
+                                    type="button"
                                     onClick={() => navigate(`${base}/desafios/${desafio.id}`)}
-                                    className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 hover:bg-white"
+                                    className={styles.rowMain}
                                 >
-                                    {desafio.status === "ENCERRADO" ? <Trophy size={16}/> : <Play size={16}/>}
-                                    {desafio.status === "ENCERRADO"
-                                        ? "Ver ranking"
-                                        : desafio.status === "EM_ANDAMENTO" ? "Conduzir" : "Abrir"}
+                                    <span className={desafioStyles.rowTitle}>
+                                        <strong>{desafio.titulo}</strong>
+                                        <BadgeStatusDesafio status={desafio.status}/>
+                                    </span>
+                                    <small>
+                                        {desafio.turma.nome} · {contagem(desafio.totalPerguntas, "pergunta", "perguntas")}
+                                    </small>
                                 </button>
-
-                                {desafio.status === "AGUARDANDO" && (
+                                <div className={styles.actions}>
                                     <button
-                                        title="Editar"
-                                        onClick={() => navigate(`${base}/desafios/${desafio.id}/editar`)}
-                                        className="rounded p-2 text-slate-500 hover:bg-indigo-50 hover:text-indigo-600"
+                                        type="button"
+                                        onClick={() => navigate(`${base}/desafios/${desafio.id}`)}
+                                        className={`${styles.ghostButton} ${desafioStyles.rowAction}`}
                                     >
-                                        <Pencil size={17}/>
+                                        {encerrado ? <Trophy size={16}/> : <Play size={16}/>}
+                                        {encerrado ? "Ver ranking" : aoVivo ? "Conduzir" : "Abrir"}
                                     </button>
-                                )}
-
-                                <button
-                                    title={desafio.status === "EM_ANDAMENTO" ? "Encerre o desafio para excluir" : "Excluir"}
-                                    onClick={() => setParaExcluir(desafio)}
-                                    disabled={desafio.status === "EM_ANDAMENTO"}
-                                    className="rounded p-2 text-slate-500 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
-                                >
-                                    <Trash2 size={17}/>
-                                </button>
+                                    {desafio.status === "AGUARDANDO" && (
+                                        <button
+                                            type="button"
+                                            title="Editar"
+                                            onClick={() => navigate(`${base}/desafios/${desafio.id}/editar`)}
+                                            className={styles.iconButton}
+                                        >
+                                            <Pencil size={17}/>
+                                        </button>
+                                    )}
+                                    <button
+                                        type="button"
+                                        title={aoVivo ? "Encerre o desafio para excluir" : "Excluir"}
+                                        onClick={() => setParaExcluir(desafio)}
+                                        disabled={aoVivo}
+                                        className={`${styles.iconButton} ${styles.iconDanger}`}
+                                    >
+                                        <Trash2 size={17}/>
+                                    </button>
+                                </div>
                             </li>
-                        ))}
-                    </ul>
-                )}
-            </div>
+                        );
+                    })}
+                </ul>
+            )}
 
             {paraExcluir && (
                 <ConfirmarExclusao
@@ -144,7 +153,7 @@ function DesafiosGestao({perfil}: { perfil: PerfilGestao }) {
                     onCancelar={() => setParaExcluir(null)}
                 />
             )}
-        </LayoutPainel>
+        </LayoutGestao>
     );
 }
 

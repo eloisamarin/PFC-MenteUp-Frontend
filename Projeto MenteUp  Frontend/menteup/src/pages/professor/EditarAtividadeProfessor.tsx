@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ChevronLeft, Eye, Lock, Plus, Save, X } from "lucide-react";
 
-import ProfessorLayout from "../../components/professor/ProfessorLayout";
+import ProfessorLayout, { useAreaBase } from "../../components/layout/AreaLayout";
 import {
     EditorPerguntas,
     SeletorTemplate,
@@ -101,6 +101,7 @@ function paraRequest(tipo: TipoAtividade, pergunta: Pergunta): PerguntaRequest {
 function EditarAtividadeProfessor() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const area = useAreaBase();
 
     const [titulo, setTitulo] = useState("");
     const [descricao, setDescricao] = useState("");
@@ -177,7 +178,7 @@ function EditarAtividadeProfessor() {
         carregarTurmas();
     }, []);
 
-    const sair = () => navigate("/professor/atividades");
+    const sair = () => navigate(`${area}/atividades`);
 
     function escolherTipo(novo: TipoAtividade) {
         if (novo === tipo) return;
@@ -257,7 +258,7 @@ function EditarAtividadeProfessor() {
             }
 
             setSucesso("Atividade atualizada com sucesso!");
-            setTimeout(() => navigate(`/professor/atividades/${id}`), 1000);
+            setTimeout(() => navigate(`${area}/atividades/${id}`), 1000);
         } catch (error) {
             console.error(error);
             setErro(error instanceof Error ? error.message : "Erro ao atualizar atividade.");
@@ -399,7 +400,7 @@ function EditarAtividadeProfessor() {
                     <div className={styles.locked}>
                         <Lock size={22} />
                         <p>Alunos já começaram a responder esta atividade, então as perguntas ficaram bloqueadas para edição.</p>
-                        <button type="button" className={styles.ghostButton} onClick={() => navigate(`/professor/atividades/${id}`)}>
+                        <button type="button" className={styles.ghostButton} onClick={() => navigate(`${area}/atividades/${id}`)}>
                             <Eye size={16} /> Ver perguntas
                         </button>
                     </div>

@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { BookOpen, CircleUser, House, Medal, Trophy, Users, Zap } from "lucide-react";
+import { BookOpen, CircleUser, House, Medal, Trophy, Users } from "lucide-react";
 
 import AppLayout, { type ItemMenu } from "../layout/AppLayout";
 import { apiFetch } from "../../services/api";
@@ -9,7 +9,6 @@ import type { RankingAluno } from "../../types/aluno";
 const MENU: ItemMenu[] = [
     { rotulo: "Jornada", icone: <House size={20} />, para: "/aluno/dashboard" },
     { rotulo: "Atividades", icone: <BookOpen size={20} />, para: "/aluno/atividades" },
-    { rotulo: "Desafios", icone: <Zap size={20} />, para: "/aluno/desafios" },
     { rotulo: "Turmas", icone: <Users size={20} />, para: "/aluno/turmas" },
     { rotulo: "Ranking", icone: <Trophy size={20} />, para: "/aluno/ranking" },
     { rotulo: "Conquistas", icone: <Medal size={20} /> },
