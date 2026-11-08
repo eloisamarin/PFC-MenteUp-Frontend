@@ -3,6 +3,8 @@ import { Routes, Route, useNavigate } from "react-router-dom";
 import Home from "./pages/home";
 import Login from "./pages/login";
 import Cadastro from "./pages/cadastro";
+import EsqueciSenha from "./pages/EsqueciSenha";
+import RedefinirSenha from "./pages/RedefinirSenha";
 
 import DashboardAluno from "./pages/aluno/dashboardAluno";
 import AtividadesAluno from "./pages/aluno/atividadesAluno";
@@ -42,6 +44,7 @@ import TermoAceite from "./pages/TermoAceite";
 import PoliticaPrivacidade from "./pages/PoliticaPrivacidade";
 import Footer from "./Footer";
 import Desempenho from "./pages/Desempenho/Desempenho.tsx";
+import MeuPerfil from "./pages/Perfil/MeuPerfil.tsx";
 
 
 import { useEffect } from "react";
@@ -74,12 +77,7 @@ function App() {
     }, [navigate]);
     useEffect(() => {
 
-        console.log("🔔 Registrando listener do FCM...");
-
         ouvirNotificacoesFCM();
-
-        console.log("🔔 Listener do FCM registrado!");
-
     }, []);
 
     return (
@@ -94,6 +92,8 @@ function App() {
                     <Route path="/login" element={<Login />} />
                     <Route path="/cadastro" element={<Cadastro />} />
                     <Route path="/verificar-2fa" element={<Verificar2FA />} />
+                    <Route path="/esqueci-senha" element={<EsqueciSenha />} />
+                    <Route path="/redefinir-senha" element={<RedefinirSenha />} />
 
 
                     {/* ALUNO */}
@@ -102,6 +102,14 @@ function App() {
                         element={
                             <PrivateRoute permitido={["ALUNO"]}>
                                 <DashboardAluno />
+                            </PrivateRoute>
+                        }
+                    />
+                    <Route
+                        path="/aluno/perfil"
+                        element={
+                            <PrivateRoute permitido={["ALUNO"]}>
+                                <MeuPerfil perfil="ALUNO" />
                             </PrivateRoute>
                         }
                     />
@@ -165,6 +173,14 @@ function App() {
                         element={
                             <PrivateRoute permitido={["PROFESSOR"]}>
                                 <DashboardProfessor />
+                            </PrivateRoute>
+                        }
+                    />
+                    <Route
+                        path="/professor/perfil"
+                        element={
+                            <PrivateRoute permitido={["PROFESSOR"]}>
+                                <MeuPerfil perfil="PROFESSOR" />
                             </PrivateRoute>
                         }
                     />
@@ -329,6 +345,16 @@ function App() {
                             </PrivateRoute>
                         }
                     />
+
+                    <Route
+                        path="/administrador/perfil"
+                        element={
+                            <PrivateRoute permitido={["ADMINISTRADOR"]}>
+                                <MeuPerfil perfil="ADMINISTRADOR" />
+                            </PrivateRoute>
+                        }
+                    />
+
 
                     <Route
                         path="/administrador/usuarios"

@@ -1,0 +1,351 @@
+import {useEffect, useState, type FormEvent} from "react";
+import {useNavigate} from "react-router-dom";
+import {KeyRound, Mail, ShieldAlert, Users} from "lucide-react";
+import LayoutPainel from "../../components/LayoutPainel";
+import ConfirmarExclusao from "../../components/ConfirmarExclusao";
+import Avatar, {EscolherAvatar} from "../../components/Avatar";
+import {apiFetch, lerErro} from "../../services/api";
+import {sair} from "../../services/usuarioLogado";
+import type {Perfil} from "../../services/turmaDesafio";
+
+
+// Resposta de GET /usuarios/me
+interface PerfilUsuario {
+    id: number;
+    nome: string;
+    emailAnonimizado: string;
+    tipoUsuario: string;
+    avatar: string | null;
+    turmas: { id: number; nome: string }[];
+}
+
+const NOME_PERFIL: Record<string, string> = {
+    ALUNO: "Aluno",
+    PROFESSOR: "Professor",
+    ADMINISTRADOR: "Administrador",
+};
+
+function MeuPerfil({perfil}: { perfil: Perfil }) {
+    const [dados, setDados] = useState<PerfilUsuario | null>(null);
+    const [erro, setErro] = useState<string | null>(null);
+
+    useEffect(() => {
+        async function carregar() {
+            try {
+                const resposta = await apiFetch("/usuarios/me");
+
+                if (!resposta.ok) {
+                    setErro((await lerErro(resposta, "Não foi possível carregar o perfil.")).mensagem);
+                    return;
+                }
+
+                setDados(await resposta.json());
+            } catch {
+                setErro("Não foi possível conectar ao servidor.");
+            }
+        }
+
+        carregar();
+    }, []);
+
+    return (
+        <LayoutPainel perfil={perfil}>
+            <div className="mb-6">
+                <h1 className="text-2xl font-semibold">Meu perfil</h1>
+                <p className="mt-1 text-sm text-slate-400">Seus dados, sua senha e a exclusão da conta.</p>
+            </div>
+
+            {erro && (
+                <div className="mb-5 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-600">{erro}</div>
+            )}
+
+            {!dados && !erro && <p className="py-12 text-center text-sm text-slate-400">Carregando perfil...</p>}
+
+            {dados && (
+                <div className="flex max-w-2xl flex-col gap-6">
+                    <DadosPessoais dados={dados} onAvatarAlterado={(avatar) => setDados({...dados, avatar})}/>
+                    <AlterarSenha/>
+                    <ExcluirConta administrador={dados.tipoUsuario === "ADMINISTRADOR"}/>
+                </div>
+            )}
+        </LayoutPainel>
+    );
+}
+
+// Atualiza o usuário salvo no login, para o cabeçalho mostrar a foto nova sem sair e entrar de novo
+function salvarAvatarNoLogin(avatar: string) {
+    try {
+        const usuario = JSON.parse(localStorage.getItem("usuario") ?? "{}");
+        localStorage.setItem("usuario", JSON.stringify({...usuario, avatar}));
+    } catch {
+        // Sem login salvo: o cabeçalho atualiza no próximo login
+    }
+}
+
+// Foto (avatar), nome, e-mail anonimizado, perfil e turmas
+function DadosPessoais({dados, onAvatarAlterado}: {
+    dados: PerfilUsuario;
+    onAvatarAlterado: (avatar: string) => void;
+}) {
+    const rotuloTurmas = dados.tipoUsuario === "PROFESSOR" ? "Turmas que leciona" : "Minhas turmas";
+    const [escolhendo, setEscolhendo] = useState(false);
+    const [salvando, setSalvando] = useState(false);
+    const [erroAvatar, setErroAvatar] = useState<string | null>(null);
+
+    async function escolherAvatar(avatar: string) {
+        setSalvando(true);
+        setErroAvatar(null);
+
+        try {
+            const resposta = await apiFetch("/usuarios/me/avatar", {
+                method: "PUT",
+                body: JSON.stringify({avatar}),
+            });
+
+            if (!resposta.ok) {
+                setErroAvatar((await lerErro(resposta, "Não foi possível trocar a foto.")).mensagem);
+                return;
+            }
+
+            salvarAvatarNoLogin(avatar);
+            onAvatarAlterado(avatar);
+            setEscolhendo(false);
+        } catch {
+            setErroAvatar("Não foi possível conectar ao servidor.");
+        } finally {
+            setSalvando(false);
+        }
+    }
+
+    return (
+        <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="mb-5 flex items-center gap-4">
+                <Avatar avatar={dados.avatar} nome={dados.nome} tamanho="grande"/>
+                <div>
+                    <p className="text-lg font-semibold">{dados.nome}</p>
+                    <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-semibold text-indigo-600">
+                        {NOME_PERFIL[dados.tipoUsuario] ?? dados.tipoUsuario}
+                    </span>
+                    <button
+                        type="button"
+                        onClick={() => setEscolhendo((aberto) => !aberto)}
+                        className="mt-2 block text-sm font-medium text-purple-600 hover:underline"
+                    >
+                        {escolhendo ? "Fechar" : dados.avatar ? "Trocar foto" : "Escolher foto"}
+                    </button>
+                </div>
+            </div>
+
+            {escolhendo && (
+                <div className="mb-5 rounded-lg border border-slate-200 p-4">
+                    <p className="mb-3 text-sm font-medium text-slate-600">Escolha sua foto de perfil</p>
+                    <EscolherAvatar atual={dados.avatar} salvando={salvando} onEscolher={escolherAvatar}/>
+                    {erroAvatar && <p className="mt-3 text-sm text-red-600">{erroAvatar}</p>}
+                </div>
+            )}
+
+            <dl className="grid gap-4 text-sm sm:grid-cols-2">
+                <div>
+                    <dt className="mb-1 flex items-center gap-1 text-slate-400"><Mail size={14}/> E-mail</dt>
+                    <dd className="font-medium">{dados.emailAnonimizado}</dd>
+                    <dd className="mt-0.5 text-xs text-slate-400">Parte do e-mail fica oculta para proteger seus dados.</dd>
+                </div>
+
+                {dados.tipoUsuario !== "ADMINISTRADOR" && (
+                    <div>
+                        <dt className="mb-1 flex items-center gap-1 text-slate-400"><Users size={14}/> {rotuloTurmas}</dt>
+                        <dd>
+                            {dados.turmas.length === 0 ? (
+                                <span className="text-slate-400">Nenhuma turma</span>
+                            ) : (
+                                <ul className="flex flex-wrap gap-2">
+                                    {dados.turmas.map((turma) => (
+                                        <li key={turma.id} className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
+                                            {turma.nome}
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </dd>
+                    </div>
+                )}
+            </dl>
+        </section>
+    );
+}
+
+// Troca de senha: pede a atual e confirma a nova antes de enviar
+function AlterarSenha() {
+    const [senhaAtual, setSenhaAtual] = useState("");
+    const [novaSenha, setNovaSenha] = useState("");
+    const [confirmacao, setConfirmacao] = useState("");
+    const [salvando, setSalvando] = useState(false);
+    const [erro, setErro] = useState<string | null>(null);
+    const [sucesso, setSucesso] = useState(false);
+
+    // Conferências feitas na tela, antes de chamar a API
+    const confirmacaoDiferente = confirmacao !== "" && confirmacao !== novaSenha;
+    const podeEnviar = senhaAtual !== "" && novaSenha.length >= 8 && confirmacao === novaSenha && !salvando;
+
+    async function enviar(evento: FormEvent) {
+        evento.preventDefault();
+        setSalvando(true);
+        setErro(null);
+        setSucesso(false);
+
+        try {
+            const resposta = await apiFetch("/usuarios/me/senha", {
+                method: "PUT",
+                body: JSON.stringify({senhaAtual, novaSenha}),
+            });
+
+            if (!resposta.ok) {
+                setErro((await lerErro(resposta, "Não foi possível alterar a senha.")).mensagem);
+                return;
+            }
+
+            setSucesso(true);
+            setSenhaAtual("");
+            setNovaSenha("");
+            setConfirmacao("");
+        } catch {
+            setErro("Não foi possível conectar ao servidor.");
+        } finally {
+            setSalvando(false);
+        }
+    }
+
+    return (
+        <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 className="mb-4 flex items-center gap-2 font-semibold"><KeyRound size={18}/> Alterar senha</h2>
+
+            <form onSubmit={enviar} className="flex flex-col gap-3">
+                <CampoSenha id="senha-atual" rotulo="Senha atual" valor={senhaAtual} aoMudar={setSenhaAtual}
+                            autoComplete="current-password"/>
+                <CampoSenha id="nova-senha" rotulo="Nova senha" valor={novaSenha} aoMudar={setNovaSenha}
+                            autoComplete="new-password" ajuda="Mínimo de 8 caracteres."/>
+                <CampoSenha id="confirmar-senha" rotulo="Confirme a nova senha" valor={confirmacao} aoMudar={setConfirmacao}
+                            autoComplete="new-password"/>
+
+                {confirmacaoDiferente && <p className="text-sm text-red-600">As senhas não conferem.</p>}
+                {erro && <p className="text-sm text-red-600">{erro}</p>}
+                {sucesso && <p className="text-sm text-emerald-600">Senha alterada com sucesso.</p>}
+
+                <button
+                    type="submit"
+                    disabled={!podeEnviar}
+                    className="self-start rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 px-5 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                >
+                    {salvando ? "Salvando..." : "Salvar nova senha"}
+                </button>
+            </form>
+        </section>
+    );
+}
+
+function CampoSenha({id, rotulo, valor, aoMudar, autoComplete, ajuda}: {
+    id: string;
+    rotulo: string;
+    valor: string;
+    aoMudar: (valor: string) => void;
+    autoComplete: string;
+    ajuda?: string;
+}) {
+    return (
+        <div>
+            <label htmlFor={id} className="mb-1 block text-sm font-medium">{rotulo}</label>
+            <input
+                id={id}
+                type="password"
+                value={valor}
+                onChange={(evento) => aoMudar(evento.target.value)}
+                autoComplete={autoComplete}
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+            />
+            {ajuda && <p className="mt-1 text-xs text-slate-400">{ajuda}</p>}
+        </div>
+    );
+}
+
+// Exclusão dos dados: anonimiza na hora, depois de confirmar com a senha
+function ExcluirConta({administrador}: { administrador: boolean }) {
+    const navigate = useNavigate();
+    const [senha, setSenha] = useState("");
+    const [confirmando, setConfirmando] = useState(false);
+    const [processando, setProcessando] = useState(false);
+    const [erro, setErro] = useState<string | null>(null);
+
+    async function excluir() {
+        setProcessando(true);
+        setErro(null);
+
+        try {
+            const resposta = await apiFetch("/usuarios/me/exclusao", {
+                method: "POST",
+                body: JSON.stringify({senha}),
+            });
+
+            if (!resposta.ok) {
+                setErro((await lerErro(resposta, "Não foi possível excluir os dados.")).mensagem);
+                setConfirmando(false);
+                return;
+            }
+
+            // A conta não existe mais: limpa o login salvo e volta para a entrada
+            sair();
+            navigate("/login", {replace: true});
+        } catch {
+            setErro("Não foi possível conectar ao servidor.");
+            setConfirmando(false);
+        } finally {
+            setProcessando(false);
+        }
+    }
+
+    return (
+        <section className="rounded-xl border border-red-200 bg-white p-6 shadow-sm">
+            <h2 className="mb-2 flex items-center gap-2 font-semibold text-red-600"><ShieldAlert size={18}/> Excluir meus dados</h2>
+
+            {administrador ? (
+                <p className="text-sm text-slate-500">
+                    Contas de administrador não podem ser excluídas por aqui, para o sistema não ficar sem administração.
+                </p>
+            ) : (
+                <>
+                    <p className="mb-3 text-sm text-slate-500">
+                        Seu nome e e-mail serão apagados e você sairá das turmas. Suas notas continuam nas estatísticas,
+                        mas sem identificar você. <strong>Essa ação não pode ser desfeita.</strong>
+                    </p>
+
+                    <CampoSenha id="senha-exclusao" rotulo="Digite sua senha para confirmar" valor={senha}
+                                aoMudar={setSenha} autoComplete="current-password"/>
+
+                    {erro && <p className="mt-2 text-sm text-red-600">{erro}</p>}
+
+                    <button
+                        type="button"
+                        onClick={() => setConfirmando(true)}
+                        disabled={senha === "" || processando}
+                        className="mt-3 rounded-lg border border-red-300 px-5 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50"
+                    >
+                        Excluir meus dados
+                    </button>
+                </>
+            )}
+
+            {confirmando && (
+                <ConfirmarExclusao
+                    titulo="Excluir seus dados?"
+                    mensagem="Você será desconectado e não poderá mais entrar com esta conta."
+                    processando={processando}
+                    rotuloConfirmar="Sim, excluir"
+                    rotuloProcessando="Excluindo..."
+                    onConfirmar={excluir}
+                    onCancelar={() => setConfirmando(false)}
+                />
+            )}
+        </section>
+    );
+}
+
+export default MeuPerfil;

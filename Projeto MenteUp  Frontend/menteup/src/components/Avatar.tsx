@@ -1,0 +1,91 @@
+/*
+ * Foto de perfil: um dos 10 animais. O back-end guarda só o código (ex.: "PANDA");
+ * o desenho (emoji) e a cor de fundo ficam aqui.
+ */
+const AVATARES = [
+    {codigo: "CACHORRO", emoji: "🐶", nome: "Cachorro", fundo: "bg-amber-100"},
+    {codigo: "GATO", emoji: "🐱", nome: "Gato", fundo: "bg-orange-100"},
+    {codigo: "RAPOSA", emoji: "🦊", nome: "Raposa", fundo: "bg-red-100"},
+    {codigo: "PANDA", emoji: "🐼", nome: "Panda", fundo: "bg-slate-200"},
+    {codigo: "COALA", emoji: "🐨", nome: "Coala", fundo: "bg-sky-100"},
+    {codigo: "TIGRE", emoji: "🐯", nome: "Tigre", fundo: "bg-yellow-100"},
+    {codigo: "LEAO", emoji: "🦁", nome: "Leão", fundo: "bg-amber-200"},
+    {codigo: "SAPO", emoji: "🐸", nome: "Sapo", fundo: "bg-green-100"},
+    {codigo: "MACACO", emoji: "🐵", nome: "Macaco", fundo: "bg-stone-200"},
+    {codigo: "COELHO", emoji: "🐰", nome: "Coelho", fundo: "bg-pink-100"},
+];
+
+const TAMANHOS = {
+    pequeno: "h-9 w-9 text-xl",
+    grande: "h-16 w-16 text-4xl",
+};
+
+interface AvatarProps {
+    avatar?: string | null;
+    nome: string;
+    tamanho?: keyof typeof TAMANHOS;
+}
+
+// Mostra o animal escolhido; sem escolha, mostra a inicial do nome (como antes)
+function Avatar({avatar, nome, tamanho = "pequeno"}: AvatarProps) {
+    const animal = AVATARES.find((opcao) => opcao.codigo === avatar);
+    const medida = TAMANHOS[tamanho];
+
+    if (!animal) {
+        return (
+            <span className={`flex shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 font-bold text-white ${medida}`}>
+                <span className={tamanho === "grande" ? "text-2xl" : "text-sm"}>
+                    {nome.charAt(0).toUpperCase()}
+                </span>
+            </span>
+        );
+    }
+
+    return (
+        <span
+            role="img"
+            aria-label={`Avatar: ${animal.nome}`}
+            className={`flex shrink-0 items-center justify-center rounded-full ${animal.fundo} ${medida}`}
+        >
+            {animal.emoji}
+        </span>
+    );
+}
+
+interface EscolherAvatarProps {
+    atual?: string | null;
+    salvando: boolean;
+    onEscolher: (codigo: string) => void;
+}
+
+// Grade com as 10 opções; a escolhida fica com contorno roxo
+export function EscolherAvatar({atual, salvando, onEscolher}: EscolherAvatarProps) {
+    return (
+        <div className="grid grid-cols-5 gap-3">
+            {AVATARES.map((opcao) => {
+                const selecionado = opcao.codigo === atual;
+
+                return (
+                    <button
+                        key={opcao.codigo}
+                        type="button"
+                        onClick={() => onEscolher(opcao.codigo)}
+                        disabled={salvando}
+                        aria-pressed={selecionado}
+                        title={opcao.nome}
+                        className={`flex flex-col items-center gap-1 rounded-xl p-2 text-xs text-slate-600 transition hover:bg-slate-50 disabled:opacity-50 ${
+                            selecionado ? "ring-2 ring-purple-500" : ""
+                        }`}
+                    >
+                        <span className={`flex h-12 w-12 items-center justify-center rounded-full text-3xl ${opcao.fundo}`}>
+                            {opcao.emoji}
+                        </span>
+                        {opcao.nome}
+                    </button>
+                );
+            })}
+        </div>
+    );
+}
+
+export default Avatar;

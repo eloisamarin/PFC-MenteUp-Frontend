@@ -11,12 +11,7 @@ function PrivateRoute({
 }: PrivateRouteProps) {
 
     const token = localStorage.getItem("token");
-    const usuarioSalvo = localStorage.getItem("usuario");
-
-    console.log("=== PRIVATE ROUTE ===");
-    console.log("Token:", token);
-    console.log("Usuário:", usuarioSalvo);
-    console.log("Permitido:", permitido);
+    const usuarioSalvo = localStorage.getItem("usuario")
 
     // Não está logado
     if (!token || !usuarioSalvo) {
@@ -29,23 +24,19 @@ function PrivateRoute({
     try {
         usuario = JSON.parse(usuarioSalvo);
     } catch (error) {
-        console.error("❌ Erro ao ler usuário:", error);
-
+        // Dado salvo corrompido: limpa e volta para o login
         localStorage.removeItem("token");
         localStorage.removeItem("usuario");
 
         return <Navigate to="/login" replace />;
     }
 
-    console.log("Tipo do usuário:", usuario.tipoUsuario);
-
+  
     // Verifica permissão
     if (!permitido.includes(usuario.tipoUsuario)) {
-        console.log("❌ Usuário sem permissão");
         return <Navigate to="/login" replace />;
     }
 
-    console.log("✅ Acesso permitido");
 
     return <>{children}</>;
 }

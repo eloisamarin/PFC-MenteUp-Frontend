@@ -13,7 +13,7 @@ const MENU: ItemMenu[] = [
     { rotulo: "Turmas", icone: <Users size={20} />, para: "/aluno/turmas" },
     { rotulo: "Ranking", icone: <Trophy size={20} />, para: "/aluno/ranking" },
     { rotulo: "Conquistas", icone: <Medal size={20} /> },
-    { rotulo: "Perfil", icone: <CircleUser size={20} /> },
+    { rotulo: "Perfil", icone: <CircleUser size={20} />, para: "/aluno/perfil" },
 ];
 
 interface AlunoLayoutProps {

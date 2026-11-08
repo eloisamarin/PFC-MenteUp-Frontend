@@ -1,6 +1,7 @@
 import type {ReactNode} from "react";
 import {useLocation, useNavigate} from "react-router-dom";
 import {
+    CircleUser,
     BookOpen,
     LayoutDashboard,
     ScrollText,
@@ -12,6 +13,7 @@ import {
     type LucideIcon,
 } from "lucide-react";
 import {ROTA_BASE, usuarioLogado, type Perfil} from "../services/turmaDesafio";
+import Avatar from "./Avatar";
 
 interface ItemMenu {
     rotulo: string;
@@ -32,13 +34,17 @@ function itensDoPerfil(perfil: Perfil): ItemMenu[] {
         {rotulo: "Turmas", rota: `${base}/turmas`, icone: Users},
         {rotulo: "Atividades", rota: `${base}/atividades`, icone: BookOpen},
         {rotulo: "Desafios", rota: `${base}/desafios`, icone: Zap},
-        {rotulo: "Desempenho", rota: `${base}/desempenho`, icone: TrendingUp},
+        
     ];
 
     const inicio: ItemMenu = {rotulo: "Dashboard", rota: `${base}/dashboard`, icone: LayoutDashboard};
 
+    const desempenho: ItemMenu = {rotulo: "Desempenho", rota: `${base}/desempenho`, icone: TrendingUp};
+    const meuPerfil: ItemMenu = {rotulo: "Meu perfil", rota: `${base}/perfil`, icone: CircleUser};
+    
+    // Aluno: sem Desempenho
     if (perfil === "ALUNO") {
-        return [inicio, ...comuns, {rotulo: "Ranking", rota: `${base}/ranking`, icone: Trophy}];
+        return [inicio, ...comuns, {rotulo: "Ranking", rota: `${base}/ranking`, icone: Trophy}, meuPerfil];
     }
 
     if (perfil === "ADMINISTRADOR") {
@@ -47,11 +53,13 @@ function itensDoPerfil(perfil: Perfil): ItemMenu[] {
             {rotulo: "Usuários", rota: `${base}/usuarios`, icone: UserCog},
             ...comuns,
             {rotulo: "Logs", rota: `${base}/logs`, icone: ScrollText},
-            {rotulo: "Desempenho", rota: `${base}/desempenho`, icone: TrendingUp},
+            desempenho,
+            meuPerfil,
         ];
     }
 
-    return [inicio, ...comuns];
+    // Professor
+    return [inicio, ...comuns, desempenho, meuPerfil];
 }
 
 interface LayoutPainelProps {
@@ -64,7 +72,8 @@ function LayoutPainel({perfil, children}: LayoutPainelProps) {
     const {pathname} = useLocation();
 
     const itens = itensDoPerfil(perfil);
-    const nome = usuarioLogado().nome || ROTULO_PERFIL[perfil];
+    const usuario = usuarioLogado();
+    const nome = usuario.nome || ROTULO_PERFIL[perfil];
 
     function renderizarItem(item: ItemMenu) {
         const ativo = pathname === item.rota || pathname.startsWith(`${item.rota}/`);
@@ -114,7 +123,7 @@ function LayoutPainel({perfil, children}: LayoutPainelProps) {
             <main className="min-h-screen min-w-0 md:ml-56">
                 <header className="flex h-16 items-center justify-end gap-3 border-b bg-white px-4 md:h-20 md:px-8">
                     <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-sm font-bold text-white">
-                        {nome.charAt(0).toUpperCase()}
+                        <Avatar avatar={usuario.avatar} nome={nome}/>
                     </div>
                     <div className="text-right">
                         <p className="text-sm font-semibold text-slate-700">{nome}</p>

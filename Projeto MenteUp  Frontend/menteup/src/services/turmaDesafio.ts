@@ -90,7 +90,8 @@ export function contagem(quantidade: number, singular: string, plural: string) {
     return `${quantidade} ${quantidade === 1 ? singular : plural}`;
 }
 
-export function usuarioLogado(): { id?: number; nome?: string } {
+
+export function usuarioLogado(): { id?: number; nome?: string; avatar?: string | null } {
     try {
         return JSON.parse(localStorage.getItem("usuario") ?? "{}");
     } catch {

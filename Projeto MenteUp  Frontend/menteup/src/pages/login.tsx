@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 
 import styles from "./login.module.css";
+import { lerErro } from "../services/api";
 
 type Perfil = "ALUNO" | "PROFESSOR";
 
@@ -53,13 +54,17 @@ function Login() {
                 }
             );
 
-            if (!resposta.ok) {
-                setErro("E-mail ou senha inválidos.");
+             if (!resposta.ok) {
+                // conta bloqueada depois de 3 senhas erradas
+                if (resposta.status === 403) {
+                    setErro((await lerErro(resposta, "Sua conta está bloqueada.")).mensagem);
+                } else {
+                    setErro("E-mail ou senha inválidos.");
+                }
                 return;
             }
             const dados = await resposta.json();
 
-            console.log("Login realizado:", dados);
 
             if (!dados.token) {
                 localStorage.removeItem("token");
@@ -249,7 +254,11 @@ function Login() {
                                 </div>
                             </div>
 
-                            <button type="button" className={styles.forgot}>
+                            <button
+                                type="button"
+                                className={styles.forgot}
+                                onClick={() => navigate("/esqueci-senha", { state: { email } })}
+                            >
                                 Esqueci minha senha
                             </button>
 
