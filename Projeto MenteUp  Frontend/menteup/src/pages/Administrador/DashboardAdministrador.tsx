@@ -1,7 +1,7 @@
-import DashboardPainel from "../../components/DashboardPainel";
+import { Navigate } from "react-router-dom";
 
 function DashboardAdministrador() {
-    return <DashboardPainel perfil="ADMINISTRADOR"/>;
+    return <Navigate to="/administrador/logs" replace />;
 }
 
 export default DashboardAdministrador;

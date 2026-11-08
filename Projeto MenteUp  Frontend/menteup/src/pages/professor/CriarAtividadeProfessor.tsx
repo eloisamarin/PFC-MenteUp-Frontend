@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Check, ChevronLeft, ChevronRight, Plus, Sparkles, X } from "lucide-react";
 
-import ProfessorLayout from "../../components/professor/ProfessorLayout";
+import ProfessorLayout, { useAreaBase } from "../../components/layout/AreaLayout";
 import {
     EditorPerguntas,
     SeletorTemplate,
@@ -25,6 +25,7 @@ const ETAPAS = ["Informações", "Template", "Perguntas", "Revisão"];
 
 function CriarAtividadeProfessor() {
     const navigate = useNavigate();
+    const area = useAreaBase();
 
     const [etapa, setEtapa] = useState(0);
     const [titulo, setTitulo] = useState("");
@@ -61,7 +62,7 @@ function CriarAtividadeProfessor() {
     }, []);
 
     const turma = turmas.find((t) => String(t.id) === turmaId);
-    const sair = () => navigate("/professor/atividades");
+    const sair = () => navigate(`${area}/atividades`);
 
     function validarEtapa(): string | null {
         if (etapa === 0) {
@@ -161,7 +162,7 @@ function CriarAtividadeProfessor() {
                 }
             }
 
-            navigate("/professor/atividades");
+            navigate(`${area}/atividades`);
         } catch (error) {
             console.error("Erro ao salvar atividade:", error);
             setErro(error instanceof Error ? error.message : "Erro ao salvar a atividade.");

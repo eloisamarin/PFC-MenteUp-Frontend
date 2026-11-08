@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import {
     BookOpen,
     ChevronRight,
-    Clock,
     Flame,
     FlaskConical,
     Hourglass,
@@ -19,8 +18,11 @@ import {
     obterUsuarioLogado,
     primeiroNome,
 } from "../../services/usuarioLogado";
-import { calcularNivel } from "../../services/nivel";
+import { useConquistas } from "../../hooks/useConquistas";
+import { infoNivel } from "../../services/conquistasInfo";
 import ProgressoCard from "../../components/aluno/ProgressoCard";
+import { BadgeStatusDesafio } from "../../components/ComponentesDesafio";
+import { contagem, type Desafio } from "../../services/turmaDesafio";
 import { estaAberta, type AtividadeAluno, type RankingAluno } from "../../types/aluno";
 import styles from "./dashboardAluno.module.css";
 
@@ -31,12 +33,14 @@ function saudacao(data = new Date()) {
     return "Boa noite";
 }
 
-function tempoAteMeiaNoite(agora: Date) {
-    const fim = new Date(agora);
-    fim.setHours(24, 0, 0, 0);
-    const s = Math.max(0, Math.floor((fim.getTime() - agora.getTime()) / 1000));
-    const pad = (n: number) => String(n).padStart(2, "0");
-    return `${pad(Math.floor(s / 3600))}:${pad(Math.floor((s % 3600) / 60))}:${pad(s % 60)}`;
+// Desafio do dia: o que está ao vivo agora ou, se não houver, o mais recente que ainda vai acontecer
+function escolherDesafioDoDia(desafios: Desafio[]): Desafio | null {
+    const pendentes = desafios.filter((d) => d.status !== "ENCERRADO");
+    pendentes.sort((a, b) => {
+        const aoVivo = Number(b.status === "EM_ANDAMENTO") - Number(a.status === "EM_ANDAMENTO");
+        return aoVivo || (b.dataCriacao ?? "").localeCompare(a.dataCriacao ?? "");
+    });
+    return pendentes[0] ?? null;
 }
 
 const ICONES = [
@@ -54,9 +58,12 @@ function DashboardAluno() {
 
     const [atividades, setAtividades] = useState<AtividadeAluno[]>([]);
     const [ranking, setRanking] = useState<RankingAluno[]>([]);
+    const [desafios, setDesafios] = useState<Desafio[]>([]);
     const [carregando, setCarregando] = useState(true);
     const [erro, setErro] = useState("");
     const [agora, setAgora] = useState(() => new Date());
+    const { resumo } = useConquistas();
+    const nivel = infoNivel(resumo);
 
     useEffect(() => {
         async function carregar() {
@@ -64,9 +71,10 @@ function DashboardAluno() {
                 setCarregando(true);
                 setErro("");
 
-                const [respAtividades, respRanking] = await Promise.all([
+                const [respAtividades, respRanking, respDesafios] = await Promise.all([
                     apiFetch("/alunos/me/atividades"),
                     apiFetch("/ranking"),
+                    apiFetch("/desafios"),
                 ]);
 
                 if (respAtividades.ok) {
@@ -77,6 +85,10 @@ function DashboardAluno() {
 
                 if (respRanking.ok) {
                     setRanking(await respRanking.json());
+                }
+
+                if (respDesafios.ok) {
+                    setDesafios(await respDesafios.json());
                 }
             } catch (error) {
                 console.error("Erro ao carregar dashboard:", error);
@@ -90,7 +102,7 @@ function DashboardAluno() {
     }, []);
 
     useEffect(() => {
-        const id = window.setInterval(() => setAgora(new Date()), 1000);
+        const id = window.setInterval(() => setAgora(new Date()), 60000);
         return () => window.clearInterval(id);
     }, []);
 
@@ -100,11 +112,6 @@ function DashboardAluno() {
         const emAndamento = atividades.filter((a) => a.status === "EM_ANDAMENTO");
 
         const posicaoIndice = meuId ? ranking.findIndex((r) => r.usuarioId === meuId) : -1;
-        const minhaEntrada = posicaoIndice >= 0 ? ranking[posicaoIndice] : null;
-
-        const xp =
-            minhaEntrada?.pontuacaoTotal ??
-            concluidas.reduce((soma, a) => soma + (a.pontuacao ?? 0), 0);
 
         const acertos = concluidas.reduce((soma, a) => soma + (a.acertos ?? 0), 0);
 
@@ -114,21 +121,17 @@ function DashboardAluno() {
             return (b.atividade.dataCriacao ?? "").localeCompare(a.atividade.dataCriacao ?? "");
         });
 
-        const desafio =
-            [...abertas].sort((a, b) => b.atividade.pontuacao - a.atividade.pontuacao)[0] ?? null;
-
         return {
             abertas,
             concluidas,
             emAndamento,
             fila,
-            desafio,
-            xp,
             acertos,
             posicao: posicaoIndice >= 0 ? posicaoIndice + 1 : null,
-            nivel: calcularNivel(xp),
         };
     }, [atividades, ranking, meuId]);
+
+    const desafioDoDia = useMemo(() => escolherDesafioDoDia(desafios), [desafios]);
 
     const total = atividades.length;
 
@@ -143,11 +146,13 @@ function DashboardAluno() {
     }
 
     return (
-        <AlunoLayout xp={carregando ? null : dados.xp} sidebarExtra={<ProgressoCard concluidas={dados.concluidas.length} total={total} />}>
+        <AlunoLayout sidebarExtra={<ProgressoCard concluidas={dados.concluidas.length} total={total} />}>
             <section className={styles.hero}>
                 <div>
                     <span className={styles.eyebrowIndigo}>
-                        Nível {dados.nivel.nivel} · {dados.nivel.titulo}
+                        {nivel.atual
+                            ? `Nível ${nivel.numeroAtual} · ${nivel.atual.nome}`
+                            : "Início da jornada"}
                     </span>
                     <h1 className={styles.heroTitle}>
                         {saudacao(agora)}, <span>{primeiroNome(usuario)}!</span>
@@ -244,19 +249,21 @@ function DashboardAluno() {
                 <div className={styles.column}>
                     <section className={styles.card}>
                         <header className={styles.cardHeader}>
-                            <h2 className={styles.cardTitleSm}>Próximo nível</h2>
-                            <span className={styles.muted}>{dados.nivel.percentual}%</span>
+                            <h2 className={styles.cardTitleSm}>
+                                {nivel.proximo ? `Próximo nível: ${nivel.proximo.nome}` : "Nível máximo"}
+                            </h2>
+                            <span className={styles.muted}>{nivel.proximo?.percentual ?? 100}%</span>
                         </header>
 
                         <div className={`${styles.track} ${styles.trackLg}`}>
                             <div
                                 className={`${styles.fill} ${styles.fillIndigo}`}
-                                style={{ width: `${dados.nivel.percentual}%` }}
+                                style={{ width: `${nivel.proximo?.percentual ?? 100}%` }}
                             />
                         </div>
                         <div className={styles.trackLabels}>
-                            <span>{fmt(dados.xp)} XP</span>
-                            <span>{fmt(dados.nivel.xpProximoNivel)} XP</span>
+                            <span>{fmt(resumo?.xpTotal ?? 0)} XP</span>
+                            {nivel.proximo && <span>{fmt(nivel.proximo.meta)} XP</span>}
                         </div>
 
                         <div className={styles.miniStats}>
@@ -281,33 +288,33 @@ function DashboardAluno() {
 
                     <section className={styles.card}>
                         <span className={styles.eyebrowCoral}>Desafio do dia</span>
-                        {dados.desafio ? (
+                        {desafioDoDia ? (
                             <button
                                 type="button"
                                 className={styles.challenge}
-                                onClick={() => abrirAtividade(dados.desafio!.atividade.id)}
+                                onClick={() => navigate(`/aluno/desafios/${desafioDoDia.id}`)}
                             >
-                                <span className={styles.challengeTitle}>
-                                    {dados.desafio.atividade.titulo}
-                                </span>
+                                <span className={styles.challengeTitle}>{desafioDoDia.titulo}</span>
                                 <span className={styles.challengeText}>
-                                    {dados.desafio.atividade.descricao ||
-                                        "A atividade que mais vale XP agora."}
+                                    {desafioDoDia.descricao || `Desafio da turma ${desafioDoDia.turma.nome}.`}
                                 </span>
                                 <span className={styles.challengeFooter}>
                                     <span className={styles.timer}>
-                                        <Clock size={16} />
-                                        {tempoAteMeiaNoite(agora)}
+                                        <BadgeStatusDesafio status={desafioDoDia.status} />
+                                        {contagem(desafioDoDia.totalPerguntas, "pergunta", "perguntas")}
                                     </span>
                                     <span className={styles.challengeXp}>
-                                        +{fmt(dados.desafio.atividade.pontuacao)} XP
+                                        {desafioDoDia.status === "EM_ANDAMENTO" ? "Entrar agora" : "Entrar na sala"}
                                     </span>
                                 </span>
                             </button>
+                        ) : carregando ? (
+                            <p className={styles.challengeText}>Carregando...</p>
                         ) : (
-                            <p className={styles.challengeText}>
-                                {carregando ? "Carregando..." : "Sem desafios abertos hoje."}
-                            </p>
+                            <div className={styles.semDesafio}>
+                                <strong>Sem desafio do dia</strong>
+                                <span>Aguarde pelo próximo desafio</span>
+                            </div>
                         )}
                     </section>
                 </div>
@@ -347,7 +354,7 @@ function DashboardAluno() {
                                             {souEu && " (você)"}
                                         </span>
                                         <span className={styles.rowMeta}>
-                                            {fmt(r.pontuacaoTotal)} XP
+                                            {fmt(r.pontuacaoTotal)} pts
                                         </span>
                                     </span>
                                 </div>

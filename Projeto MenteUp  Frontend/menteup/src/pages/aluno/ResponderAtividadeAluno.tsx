@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 
 import AlunoLayout from "../../components/aluno/AlunoLayout";
+import { useConquistas } from "../../hooks/useConquistas";
 import { apiFetch, lerErro } from "../../services/api";
 import {
     PlayerAssociacao,
@@ -88,6 +89,7 @@ const LETRAS = "ABCDEFGH";
 function ResponderAtividadeAluno() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const { verificarNovas } = useConquistas();
 
     const [questionario, setQuestionario] = useState<QuestionarioResponse | null>(null);
     const [carregando, setCarregando] = useState(true);
@@ -202,6 +204,9 @@ function ResponderAtividadeAluno() {
         setQuestionario((atual) =>
             atual ? { ...atual, meuResultado: resultadoApi, meuProgresso: null } : atual
         );
+
+        // Atividade concluída: confere se ela liberou alguma conquista
+        void verificarNovas();
     }
 
     const confirmar = useCallback(async () => {

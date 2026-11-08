@@ -10,10 +10,10 @@ import {
     Rocket,
     Search,
     Trash2,
-    TriangleAlert,
 } from "lucide-react";
 
-import ProfessorLayout from "../../components/professor/ProfessorLayout";
+import ConfirmarExclusao from "../../components/ConfirmarExclusao";
+import ProfessorLayout, { useAreaBase } from "../../components/layout/AreaLayout";
 import { apiFetch, lerErro } from "../../services/api";
 import { NOME_TIPO, type TipoAtividade } from "../../types/aluno";
 import base from "../aluno/atividadesAluno.module.css";
@@ -58,6 +58,7 @@ function formatarData(data?: string) {
 
 function AtividadesProfessor() {
     const navigate = useNavigate();
+    const area = useAreaBase();
 
     const [atividades, setAtividades] = useState<Atividade[]>([]);
     const [busca, setBusca] = useState("");
@@ -101,8 +102,8 @@ function AtividadesProfessor() {
         return () => window.clearTimeout(t);
     }, [aviso]);
 
-    const visualizar = (a: Atividade) => navigate(`/professor/atividades/${a.id}`);
-    const editar = (a: Atividade) => navigate(`/professor/atividades/editar/${a.id}`);
+    const visualizar = (a: Atividade) => navigate(`${area}/atividades/${a.id}`);
+    const editar = (a: Atividade) => navigate(`${area}/atividades/editar/${a.id}`);
 
     async function publicar(atividade: Atividade) {
         try {
@@ -171,15 +172,6 @@ function AtividadesProfessor() {
         }
     }
 
-    useEffect(() => {
-        if (!paraExcluir) return;
-        const onKey = (e: KeyboardEvent) => {
-            if (e.key === "Escape" && !excluindo) setParaExcluir(null);
-        };
-        window.addEventListener("keydown", onKey);
-        return () => window.removeEventListener("keydown", onKey);
-    }, [paraExcluir, excluindo]);
-
     const contagem = useMemo(() => {
         const c: Record<Filtro, number> = {
             TODAS: atividades.length,
@@ -218,7 +210,7 @@ function AtividadesProfessor() {
                 <button
                     type="button"
                     className={styles.createButton}
-                    onClick={() => navigate("/professor/atividades/criar")}
+                    onClick={() => navigate(`${area}/atividades/criar`)}
                 >
                     <Plus size={16} /> Criar atividade
                 </button>
@@ -279,7 +271,7 @@ function AtividadesProfessor() {
                             <button
                                 type="button"
                                 className={base.primaryButton}
-                                onClick={() => navigate("/professor/atividades/criar")}
+                                onClick={() => navigate(`${area}/atividades/criar`)}
                             >
                                 <Plus size={16} /> Criar atividade
                             </button>
@@ -377,51 +369,18 @@ function AtividadesProfessor() {
             )}
 
             {paraExcluir && (
-                <div
-                    className={styles.overlay}
-                    onClick={() => !excluindo && setParaExcluir(null)}
-                >
-                    <div
-                        className={styles.dialog}
-                        role="alertdialog"
-                        aria-modal="true"
-                        aria-labelledby="excluir-titulo"
-                        aria-describedby="excluir-texto"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <span className={styles.dialogIcon}>
-                            <TriangleAlert size={28} />
-                        </span>
-                        <h2 id="excluir-titulo" className={styles.dialogTitle}>
-                            Excluir atividade?
-                        </h2>
-                        <p id="excluir-texto" className={styles.dialogText}>
-                            <strong>{paraExcluir.titulo}</strong> será removida permanentemente,
-                            junto com as perguntas e respostas dos alunos. Essa ação não pode ser
-                            desfeita.
-                        </p>
-                        <div className={styles.dialogActions}>
-                            <button
-                                type="button"
-                                className={base.secondaryButton}
-                                onClick={() => setParaExcluir(null)}
-                                disabled={excluindo}
-                                autoFocus
-                            >
-                                Cancelar
-                            </button>
-                            <button
-                                type="button"
-                                className={styles.dangerButton}
-                                onClick={confirmarExclusao}
-                                disabled={excluindo}
-                            >
-                                <Trash2 size={16} />
-                                {excluindo ? "Excluindo..." : "Excluir"}
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                <ConfirmarExclusao
+                    titulo="Excluir atividade?"
+                    mensagem={
+                        <>
+                            <strong>{paraExcluir.titulo}</strong> será removida permanentemente, junto com as
+                            perguntas e respostas dos alunos. Essa ação não pode ser desfeita.
+                        </>
+                    }
+                    processando={excluindo}
+                    onConfirmar={confirmarExclusao}
+                    onCancelar={() => setParaExcluir(null)}
+                />
             )}
         </ProfessorLayout>
     );

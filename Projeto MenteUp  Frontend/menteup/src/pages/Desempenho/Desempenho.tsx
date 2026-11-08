@@ -1,23 +1,25 @@
 import { useEffect, useState } from "react";
-import { BookOpen, Percent, TrendingUp, Users, type LucideIcon } from "lucide-react";
-import LayoutPainel from "../../components/LayoutPainel";
+import { useNavigate } from "react-router-dom";
+import { ChevronRight } from "lucide-react";
 import { apiFetch, lerErro } from "../../services/api";
 import { ROTA_BASE, type PerfilGestao } from "../../services/turmaDesafio";
 import type { DesempenhoDaTurma, TurmaResumo } from "../../types/desempenho";
-import { Link } from "react-router-dom";
+import { LayoutGestao } from "../Desafio/TurmasGestao";
+import dash from "../professor/dashboardProfessor.module.css";
+import styles from "./Desempenho.module.css";
 
-/*
- * - Professor: o seletor mostra só as turmas dele (a API filtra em /turmas/minhas).
- * - Administrador: o seletor mostra todas as turmas.
- */
+function primeiroNome(nome: string) {
+    return nome.trim().split(/\s+/)[0] ?? nome;
+}
+
 function Desempenho({ perfil }: { perfil: PerfilGestao }) {
+    const navigate = useNavigate();
     const [turmas, setTurmas] = useState<TurmaResumo[]>([]);
     const [turmaId, setTurmaId] = useState<number | null>(null);
     const [desempenho, setDesempenho] = useState<DesempenhoDaTurma | null>(null);
     const [carregando, setCarregando] = useState(false);
     const [erro, setErro] = useState<string | null>(null);
 
-    // Ao abrir: busca as turmas e já seleciona a primeira
     useEffect(() => {
         async function carregarTurmas() {
             try {
@@ -42,7 +44,6 @@ function Desempenho({ perfil }: { perfil: PerfilGestao }) {
         carregarTurmas();
     }, []);
 
-    // Sempre que a turma escolhida muda, busca o desempenho dela
     useEffect(() => {
         if (turmaId == null) {
             return;
@@ -72,12 +73,21 @@ function Desempenho({ perfil }: { perfil: PerfilGestao }) {
         carregarDesempenho(turmaId);
     }, [turmaId]);
 
+    const linkAluno = (alunoId: number) =>
+        `${ROTA_BASE[perfil]}/desempenho/${desempenho?.turmaId}/alunos/${alunoId}`;
+
+    const alunos = desempenho?.alunos ?? [];
+    const grafico = [...alunos].sort((a, b) => b.pontuacao - a.pontuacao).slice(0, 8);
+    const maxPontuacao = Math.max(1, ...grafico.map((a) => a.pontuacao));
+    const semAtividades = alunos.filter((a) => a.atividadesConcluidas === 0);
+
     return (
-        <LayoutPainel perfil={perfil}>
-            <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+        <LayoutGestao perfil={perfil}>
+            <header className={dash.hero}>
                 <div>
-                    <h1 className="text-2xl font-semibold">Desempenho da turma</h1>
-                    <p className="mt-1 text-sm text-slate-400">
+                    <span className={dash.eyebrow}>Desempenho</span>
+                    <h1 className={dash.title}>Desempenho da turma</h1>
+                    <p className={dash.subtitle}>
                         {perfil === "ADMINISTRADOR"
                             ? "Acompanhe o desempenho de qualquer turma."
                             : "Pontuação, acertos e atividades concluídas dos seus alunos."}
@@ -85,12 +95,12 @@ function Desempenho({ perfil }: { perfil: PerfilGestao }) {
                 </div>
 
                 {turmas.length > 0 && (
-                    <label className="flex flex-col gap-1 text-sm text-slate-400">
+                    <label className={styles.selectLabel}>
                         Turma
                         <select
                             value={turmaId ?? ""}
                             onChange={(evento) => setTurmaId(Number(evento.target.value))}
-                            className="min-w-56 rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-700"
+                            className={styles.select}
                         >
                             {turmas.map((turma) => (
                                 <option key={turma.id} value={turma.id}>{turma.nome}</option>
@@ -98,80 +108,148 @@ function Desempenho({ perfil }: { perfil: PerfilGestao }) {
                         </select>
                     </label>
                 )}
-            </div>
+            </header>
 
-            {erro && (
-                <div className="mb-5 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-600">{erro}</div>
-            )}
+            {erro && <div className={dash.error} role="alert">{erro}</div>}
 
             {!erro && turmas.length === 0 && (
-                <p className="py-12 text-center text-sm text-slate-400">
-                    {perfil === "ADMINISTRADOR"
-                        ? "Nenhuma turma cadastrada."
-                        : "Você ainda não está vinculado a nenhuma turma."}
-                </p>
+                <section className={dash.card}>
+                    <p className={dash.empty}>
+                        {perfil === "ADMINISTRADOR"
+                            ? "Nenhuma turma cadastrada."
+                            : "Você ainda não está vinculado a nenhuma turma."}
+                    </p>
+                </section>
             )}
 
-            {carregando && <p className="py-12 text-center text-sm text-slate-400">Carregando desempenho...</p>}
+            {carregando && (
+                <section className={dash.card}>
+                    <p className={dash.empty}>Carregando desempenho...</p>
+                </section>
+            )}
 
             {desempenho && !carregando && (
                 <>
-                    <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
-                        <Cartao icone={Users} valor={desempenho.totalAlunos} rotulo="Alunos" />
-                        <Cartao icone={BookOpen} valor={desempenho.totalAtividades} rotulo="Atividades publicadas" />
-                        <Cartao icone={TrendingUp} valor={desempenho.mediaPontuacao.toLocaleString("pt-BR")} rotulo="Média de pontuação" />
-                        <Cartao icone={Percent} valor={`${desempenho.taxaParticipacao}%`} rotulo="Participação" />
+                    <div className={dash.stats}>
+                        <div className={dash.stat}>
+                            <strong className={dash.indigo}>{desempenho.totalAlunos}</strong>
+                            <span>Alunos</span>
+                        </div>
+                        <div className={dash.stat}>
+                            <strong className={dash.gold}>{desempenho.totalAtividades}</strong>
+                            <span>Atividades publicadas</span>
+                        </div>
+                        <div className={dash.stat}>
+                            <strong className={dash.coral}>{desempenho.mediaPontuacao.toLocaleString("pt-BR")}</strong>
+                            <span>Média de pontuação</span>
+                        </div>
+                        <div className={dash.stat}>
+                            <strong className={styles.mint}>{desempenho.taxaParticipacao}%</strong>
+                            <span>Participação</span>
+                        </div>
                     </div>
 
-                    <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
-                        {desempenho.alunos.length === 0 ? (
-                            <p className="py-12 text-center text-sm text-slate-400">Esta turma ainda não tem alunos.</p>
-                        ) : (
-                            <table className="w-full text-sm">
-                                <thead>
-                                    <tr className="text-left text-xs uppercase text-slate-400">
-                                        <th className="px-5 py-3 font-semibold">Aluno</th>
-                                        <th className="px-5 py-3 text-right font-semibold">Pontuação</th>
-                                        <th className="px-5 py-3 text-right font-semibold">Acertos</th>
-                                        <th className="px-5 py-3 text-right font-semibold">Atividades concluídas</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {desempenho.alunos.map((aluno) => (
-                                        <tr key={aluno.alunoId} className="border-t hover:bg-slate-50">
-                                            <td className="px-5 py-4 font-semibold">
-                                                <Link
-                                                    to={`${ROTA_BASE[perfil]}/desempenho/${desempenho.turmaId}/alunos/${aluno.alunoId}`}
-                                                    className="text-indigo-600 hover:underline"
-                                                >
-                                                    {aluno.nomeAluno}
-                                                </Link>
-                                            </td>
-                                            <td className="px-5 py-4 text-right">{aluno.pontuacao}</td>
-                                            <td className="px-5 py-4 text-right">{aluno.acertos}</td>
-                                            <td className={`px-5 py-4 text-right ${aluno.atividadesConcluidas === 0 ? "font-semibold text-red-500" : ""}`}>
-                                                {aluno.atividadesConcluidas} / {desempenho.totalAtividades}
-                                            </td>
-                                        </tr>
+                    <div className={dash.grid}>
+                        <section className={dash.card}>
+                            <header className={dash.cardHeader}>
+                                <h2 className={dash.cardTitle}>Pontuação dos alunos</h2>
+                                <span className={dash.cardNote}>{desempenho.nomeTurma} · top {grafico.length}</span>
+                            </header>
+
+                            {grafico.length === 0 ? (
+                                <p className={dash.empty}>Esta turma ainda não tem alunos.</p>
+                            ) : (
+                                <div className={dash.chart} role="img" aria-label="Pontuação por aluno">
+                                    {grafico.map((aluno) => (
+                                        <div key={aluno.alunoId} className={dash.barCol}>
+                                            <span className={dash.barValue}>{aluno.pontuacao}</span>
+                                            <div className={dash.barTrack}>
+                                                <div
+                                                    className={dash.bar}
+                                                    style={{ height: `${Math.max((aluno.pontuacao / maxPontuacao) * 100, 4)}%` }}
+                                                    title={`${aluno.nomeAluno}: ${aluno.pontuacao} pontos`}
+                                                />
+                                            </div>
+                                            <span className={dash.barLabel}>{primeiroNome(aluno.nomeAluno)}</span>
+                                        </div>
                                     ))}
-                                </tbody>
-                            </table>
-                        )}
+                                </div>
+                            )}
+                        </section>
+
+                        <section className={dash.card}>
+                            <h2 className={dash.cardTitle}>Atenção recomendada</h2>
+
+                            {semAtividades.length === 0 ? (
+                                <p className={dash.empty}>Todos os alunos já concluíram ao menos uma atividade.</p>
+                            ) : (
+                                <ul className={dash.attention}>
+                                    {semAtividades.slice(0, 6).map((aluno) => (
+                                        <li key={aluno.alunoId}>
+                                            <button
+                                                type="button"
+                                                className={dash.attentionItem}
+                                                onClick={() => navigate(linkAluno(aluno.alunoId))}
+                                            >
+                                                <span className={`${dash.dot} ${dash.coralBg}`} />
+                                                <span className={dash.attentionText}>
+                                                    <strong>{aluno.nomeAluno}</strong>
+                                                    <span>Nenhuma atividade concluída</span>
+                                                </span>
+                                                <ChevronRight size={16} className={dash.attentionArrow} />
+                                            </button>
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </section>
+
+                        <section className={`${dash.card} ${dash.full}`}>
+                            <header className={dash.cardHeader}>
+                                <h2 className={dash.cardTitle}>Alunos da turma</h2>
+                                <span className={dash.cardNote}>Clique em um aluno para ver o detalhe</span>
+                            </header>
+
+                            {alunos.length === 0 ? (
+                                <p className={dash.empty}>Esta turma ainda não tem alunos.</p>
+                            ) : (
+                                <table className={`${dash.table} ${styles.table}`}>
+                                    <thead>
+                                        <tr>
+                                            <th>Aluno</th>
+                                            <th>Pontuação</th>
+                                            <th>Acertos</th>
+                                            <th>Atividades concluídas</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {alunos.map((aluno) => (
+                                            <tr
+                                                key={aluno.alunoId}
+                                                tabIndex={0}
+                                                onClick={() => navigate(linkAluno(aluno.alunoId))}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === "Enter") navigate(linkAluno(aluno.alunoId));
+                                                }}
+                                            >
+                                                <td className={dash.strong}>{aluno.nomeAluno}</td>
+                                                <td>{aluno.pontuacao}</td>
+                                                <td>{aluno.acertos}</td>
+                                                <td>
+                                                    <span className={aluno.atividadesConcluidas === 0 ? styles.zero : ""}>
+                                                        {aluno.atividadesConcluidas} / {desempenho.totalAtividades}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            )}
+                        </section>
                     </div>
                 </>
             )}
-        </LayoutPainel>
-    );
-}
-
-// Cartão de resumo da turma (alunos, atividades, média, participação)
-function Cartao({ icone: Icone, valor, rotulo }: { icone: LucideIcon; valor: number | string; rotulo: string }) {
-    return (
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-            <Icone size={22} className="mb-2 text-indigo-500" />
-            <p className="text-2xl font-semibold">{valor}</p>
-            <p className="text-sm text-slate-400">{rotulo}</p>
-        </div>
+        </LayoutGestao>
     );
 }
 

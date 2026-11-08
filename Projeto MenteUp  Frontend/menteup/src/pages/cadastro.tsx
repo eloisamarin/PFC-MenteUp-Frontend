@@ -1,26 +1,39 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-//import { GraduationCap, Users } from "lucide-react";
+import { useLocation, useNavigate } from "react-router-dom";
+import {
+    BookOpen,
+    Eye,
+    EyeOff,
+    GraduationCap,
+    Sparkles,
+    Trophy,
+    User,
+} from "lucide-react";
+
+import styles from "./login.module.css";
+
+type Perfil = "ALUNO" | "PROFESSOR";
 
 function Cadastro() {
     const navigate = useNavigate();
+    const location = useLocation();
+    const perfilInicial: Perfil =
+        (location.state as { perfil?: string } | null)?.perfil === "professor" ? "PROFESSOR" : "ALUNO";
 
+    const [perfil, setPerfil] = useState<Perfil>(perfilInicial);
     const [nome, setNome] = useState("");
     const [email, setEmail] = useState("");
     const [senha, setSenha] = useState("");
     const [confirmarSenha, setConfirmarSenha] = useState("");
-    const [tipoUsuario, setTipoUsuario] = useState("aluno");
-
+    const [mostrarSenha, setMostrarSenha] = useState(false);
+    const [carregando, setCarregando] = useState(false);
     const [erro, setErro] = useState("");
 
-    async function handleCadastro(
-        event: React.FormEvent<HTMLFormElement>
-    ) {
+    async function handleCadastro(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault();
-
         setErro("");
 
-        if (!nome || !email || !senha || !confirmarSenha) {
+        if (!nome.trim() || !email.trim() || !senha || !confirmarSenha) {
             setErro("Preencha todos os campos.");
             return;
         }
@@ -35,22 +48,21 @@ function Cadastro() {
             return;
         }
 
+        setCarregando(true);
+
         try {
-            const resposta = await fetch(
-                "http://localhost:8080/usuarios/cadastrar",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                        nomeUsuario: nome,
-                        usuario: email,
-                        senha: senha,
-                        tipoUsuario: tipoUsuario.toUpperCase(),
-                    }),
-                }
-            );
+            const resposta = await fetch("http://localhost:8080/usuarios/cadastrar", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    nomeUsuario: nome.trim(),
+                    usuario: email.trim(),
+                    senha,
+                    tipoUsuario: perfil,
+                }),
+            });
 
             if (resposta.status === 400) {
                 setErro("Este e-mail já está cadastrado.");
@@ -62,156 +74,205 @@ function Cadastro() {
                 return;
             }
 
-            sessionStorage.setItem("email2FA", email);
+            sessionStorage.setItem("email2FA", email.trim());
             navigate("/verificar-2fa");
-
         } catch (error) {
             console.error("Erro ao cadastrar:", error);
             setErro("Não foi possível conectar ao servidor.");
+        } finally {
+            setCarregando(false);
         }
     }
 
+    const textoBotao = perfil === "ALUNO" ? "Criar conta de aluno" : "Criar conta de professor";
+    const iconeSenha = mostrarSenha ? <EyeOff size={16} /> : <Eye size={16} />;
+    const rotuloSenha = mostrarSenha ? "Ocultar senha" : "Mostrar senha";
+
     return (
-        <div className="mu-page">
-            <div className="mu-login-page">
-                <div className="mu-login-card">
+        <div className={styles.page}>
+            <div className={styles.container}>
+                <button
+                    type="button"
+                    className={styles.brand}
+                    onClick={() => navigate("/")}
+                    aria-label="Voltar para a página inicial"
+                >
+                    <span className={styles.brandMark}>M</span>
+                    <span>
+                        <span className={styles.brandName}>MenteUp</span>
+                        <span className={styles.brandTagline}>Sua jornada de aprendizado</span>
+                    </span>
+                </button>
 
-                    {/* LOGO */}
-                    <div className="mu-login-brand">
-                        <div className="mu-brand">
-                            <div className="mu-brand-mark small">
-                                M
+                <main className={styles.main}>
+                    <section className={styles.hero}>
+                        <span className={styles.pill}>
+                            <Sparkles size={16} />
+                            Aprenda. Evolua. Conquiste.
+                        </span>
+
+                        <h1 className={styles.heroTitle}>
+                            Sua jornada
+                            <br />
+                            começa aqui.
+                        </h1>
+
+                        <p className={styles.heroText}>
+                            Crie sua conta, complete missões e transforme cada aula em uma nova conquista.
+                        </p>
+
+                        <div className={styles.features}>
+                            <div className={styles.feature}>
+                                <Trophy size={24} className={styles.iconTeal} />
+                                <div>
+                                    <span className={styles.featureTitle}>Missões diárias</span>
+                                    <span className={styles.featureText}>Aprenda no seu ritmo</span>
+                                </div>
                             </div>
-                            <div className="mu-brand-name small">
-                                Mente<span>Up</span>
+
+                            <div className={styles.feature}>
+                                <BookOpen size={24} className={styles.iconPurple} />
+                                <div>
+                                    <span className={styles.featureTitle}>Conteúdo que engaja</span>
+                                    <span className={styles.featureText}>Ensino que evolui</span>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    </section>
 
-                    {/* TÍTULO */}
-                    <div className="mu-login-title">
-                        <h1>Crie sua conta</h1>
-                        <p>Comece sua jornada de aprendizado</p>
-                    </div>
+                    <section className={styles.card} aria-labelledby="cadastro-title">
+                        <header className={styles.cardHeader}>
+                            <span className={styles.eyebrow}>Cadastro MenteUp</span>
+                            <h2 id="cadastro-title" className={styles.cardTitle}>
+                                Crie sua conta
+                            </h2>
+                            <p className={styles.cardSubtitle}>Escolha seu perfil para começar.</p>
+                        </header>
 
-                    {/* FORMULÁRIO */}
-                    <form className="mu-login-form" onSubmit={handleCadastro}>
+                        <div className={styles.segmented} role="radiogroup" aria-label="Perfil da conta">
+                            <button
+                                type="button"
+                                role="radio"
+                                aria-checked={perfil === "ALUNO"}
+                                className={`${styles.segment} ${perfil === "ALUNO" ? styles.segmentActive : ""}`}
+                                onClick={() => setPerfil("ALUNO")}
+                            >
+                                <User size={16} />
+                                Sou aluno
+                            </button>
 
-                        {/* TIPO DE USUÁRIO */}
-                        <div className="radio-group">
-                            {/* Botão Estudante */}
-                            <label className={`card-option ${tipoUsuario === "aluno" ? "active" : ""}`}>
+                            <button
+                                type="button"
+                                role="radio"
+                                aria-checked={perfil === "PROFESSOR"}
+                                className={`${styles.segment} ${perfil === "PROFESSOR" ? styles.segmentActive : ""}`}
+                                onClick={() => setPerfil("PROFESSOR")}
+                            >
+                                <GraduationCap size={16} />
+                                Sou professor
+                            </button>
+                        </div>
+
+                        <form className={styles.form} onSubmit={handleCadastro} noValidate>
+                            <div className={styles.field}>
+                                <label htmlFor="nome" className={styles.label}>
+                                    Nome completo
+                                </label>
                                 <input
-                                    type="radio"
-                                    name="tipoUsuario"
-                                    value="aluno"
-                                    checked={tipoUsuario === "aluno"}
-                                    onChange={(e) => setTipoUsuario(e.target.value)}
+                                    type="text"
+                                    id="nome"
+                                    autoComplete="name"
+                                    className={styles.input}
+                                    placeholder="Digite seu nome completo"
+                                    value={nome}
+                                    onChange={(event) => setNome(event.target.value)}
                                 />
-                                <span style={{ fontSize: "24px" }}>🎓</span>
-                                <span>Estudante</span>
-                            </label>
-
-                            {/* Botão Professor */}
-                            <label className={`card-option ${tipoUsuario === "professor" ? "active" : ""}`}>
-                                <input
-                                    type="radio"
-                                    name="tipoUsuario"
-                                    value="professor"
-                                    checked={tipoUsuario === "professor"}
-                                    onChange={(e) => setTipoUsuario(e.target.value)}
-                                />
-                                <span style={{ fontSize: "24px" }}>🧑‍🏫</span>
-                                <span>Professor</span>
-                            </label>
-                        </div>
-
-                        {/* NOME */}
-                        <div className="mu-login-field">
-                            <label htmlFor="nome">Nome completo</label>
-                            <input
-                                type="text"
-                                id="nome"
-                                placeholder="Digite seu nome completo"
-                                value={nome}
-                                onChange={(event) => setNome(event.target.value)}
-                            />
-                        </div>
-
-                        {/* E-MAIL */}
-                        <div className="mu-login-field">
-                            <label htmlFor="email">E-mail</label>
-                            <input
-                                type="email"
-                                id="email"
-                                placeholder="seuemail@escola.com"
-                                value={email}
-                                onChange={(event) => setEmail(event.target.value)}
-                            />
-                        </div>
-
-                        {/* SENHA */}
-                        <div className="mu-login-field">
-                            <label htmlFor="senha">Senha</label>
-                            <input
-                                type="password"
-                                id="senha"
-                                placeholder="Digite sua senha"
-                                value={senha}
-                                onChange={(event) => setSenha(event.target.value)}
-                            />
-                        </div>
-
-                        {/* CONFIRMAR SENHA */}
-                        <div className="mu-login-field">
-                            <label htmlFor="confirmarSenha">Confirmar senha</label>
-                            <input
-                                type="password"
-                                id="confirmarSenha"
-                                placeholder="Digite sua senha novamente"
-                                value={confirmarSenha}
-                                onChange={(event) => setConfirmarSenha(event.target.value)}
-                            />
-                        </div>
-
-                        {/* ERRO */}
-                        {erro && (
-                            <div className="mu-login-error">
-                                {erro}
                             </div>
-                        )}
 
-                        {/* BOTÃO SUBMIT */}
-                        <button
-                            type="submit"
-                            className="mu-btn mu-btn-primary mu-btn-lg mu-login-submit"
-                        >
-                            Criar conta
-                        </button>
-                    </form>
+                            <div className={styles.field}>
+                                <label htmlFor="email" className={styles.label}>
+                                    E-mail
+                                </label>
+                                <input
+                                    type="email"
+                                    id="email"
+                                    autoComplete="email"
+                                    className={styles.input}
+                                    placeholder="voce@exemplo.com"
+                                    value={email}
+                                    onChange={(event) => setEmail(event.target.value)}
+                                />
+                            </div>
 
-                    {/* LOGIN */}
-                    <div className="mu-login-register">
-                        Já possui uma conta?{" "}
-                        <button
-                            type="button"
-                            className="mu-btn mu-btn-ghost"
-                            onClick={() => navigate("/login")}
-                        >
-                            Entrar
-                        </button>
-                    </div>
+                            <div className={styles.field}>
+                                <label htmlFor="senha" className={styles.label}>
+                                    Senha
+                                </label>
+                                <div className={styles.inputWrap}>
+                                    <input
+                                        type={mostrarSenha ? "text" : "password"}
+                                        id="senha"
+                                        autoComplete="new-password"
+                                        className={styles.input}
+                                        placeholder="Mínimo de 8 caracteres"
+                                        value={senha}
+                                        onChange={(event) => setSenha(event.target.value)}
+                                    />
+                                    <button
+                                        type="button"
+                                        className={styles.eyeButton}
+                                        onClick={() => setMostrarSenha((v) => !v)}
+                                        aria-label={rotuloSenha}
+                                    >
+                                        {iconeSenha}
+                                    </button>
+                                </div>
+                            </div>
 
-                    {/* VOLTAR */}
-                    <button
-                        type="button"
-                        className="mu-login-back"
-                        onClick={() => navigate("/")}
-                    >
-                        ← Voltar para página inicial
-                    </button>
+                            <div className={styles.field}>
+                                <label htmlFor="confirmarSenha" className={styles.label}>
+                                    Confirmar senha
+                                </label>
+                                <div className={styles.inputWrap}>
+                                    <input
+                                        type={mostrarSenha ? "text" : "password"}
+                                        id="confirmarSenha"
+                                        autoComplete="new-password"
+                                        className={styles.input}
+                                        placeholder="Digite a senha novamente"
+                                        value={confirmarSenha}
+                                        onChange={(event) => setConfirmarSenha(event.target.value)}
+                                    />
+                                    <button
+                                        type="button"
+                                        className={styles.eyeButton}
+                                        onClick={() => setMostrarSenha((v) => !v)}
+                                        aria-label={rotuloSenha}
+                                    >
+                                        {iconeSenha}
+                                    </button>
+                                </div>
+                            </div>
 
-                </div>
+                            {erro && (
+                                <div className={styles.error} role="alert">
+                                    {erro}
+                                </div>
+                            )}
+
+                            <button type="submit" className={styles.primaryButton} disabled={carregando}>
+                                {carregando ? "Criando conta..." : textoBotao}
+                            </button>
+                        </form>
+
+                        <p className={styles.footer}>
+                            Já possui uma conta?{" "}
+                            <button type="button" className={styles.link} onClick={() => navigate("/login")}>
+                                Entrar
+                            </button>
+                        </p>
+                    </section>
+                </main>
             </div>
         </div>
     );

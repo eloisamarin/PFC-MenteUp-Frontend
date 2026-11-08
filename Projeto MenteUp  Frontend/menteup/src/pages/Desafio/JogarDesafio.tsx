@@ -1,11 +1,16 @@
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import {useNavigate, useParams} from "react-router-dom";
-import {ArrowLeft, Check, Hourglass, X} from "lucide-react";
-import LayoutPainel from "../../components/LayoutPainel";
-import {BarraTempo, TabelaRanking} from "../../components/ComponentesDesafio";
+import {ArrowLeft, Check, Hourglass, Trophy, X} from "lucide-react";
+import AlunoLayout from "../../components/aluno/AlunoLayout";
+import {useConquistas} from "../../hooks/useConquistas";
+import {BadgeStatusDesafio, BarraTempo, IconeDesafio, TabelaRanking} from "../../components/ComponentesDesafio";
 import {useEstadoDesafio} from "../../hooks/useEstadoDesafio";
 import {apiFetch, lerErro} from "../../services/api";
-import {CORES_ALTERNATIVA, LETRAS_ALTERNATIVA, contagem, usuarioLogado} from "../../services/turmaDesafio";
+import {LETRAS_ALTERNATIVA, contagem, usuarioLogado} from "../../services/turmaDesafio";
+import base from "./TurmasGestao.module.css";
+import styles from "./Desafios.module.css";
+
+const COR_ALTERNATIVA = [styles.altCoral, styles.altIndigo, styles.altGold, styles.altMint];
 
 interface Escolha {
     perguntaId: number;
@@ -19,6 +24,16 @@ function JogarDesafio() {
     const {estado, ranking, erro, setErro, carregando, atualizar} = useEstadoDesafio(id);
     const [escolha, setEscolha] = useState<Escolha | null>(null);
     const [enviando, setEnviando] = useState(false);
+
+    const {verificarNovas} = useConquistas();
+    const desafioEncerrado = estado?.status === "ENCERRADO";
+
+    // Quando o desafio termina, os pontos viram XP e podem liberar conquistas
+    useEffect(() => {
+        if (desafioEncerrado) {
+            void verificarNovas();
+        }
+    }, [desafioEncerrado, verificarNovas]);
 
     const meuId = usuarioLogado().id;
     const minhaPosicao = ranking.find((linha) => linha.usuarioId === meuId);
@@ -52,27 +67,25 @@ function JogarDesafio() {
     }
 
     const voltar = (
-        <button onClick={() => navigate("/aluno/desafios")} className="mb-4 flex items-center gap-2 text-sm text-slate-500 hover:text-slate-800">
+        <button type="button" onClick={() => navigate("/aluno/desafios")} className={base.back}>
             <ArrowLeft size={16}/> Voltar para desafios
         </button>
     );
 
     if (carregando) {
         return (
-            <LayoutPainel perfil="ALUNO">
-                <p className="py-12 text-center text-sm text-slate-400">Carregando desafio...</p>
-            </LayoutPainel>
+            <AlunoLayout>
+                <p className={base.empty}>Carregando desafio...</p>
+            </AlunoLayout>
         );
     }
 
     if (!estado) {
         return (
-            <LayoutPainel perfil="ALUNO">
+            <AlunoLayout>
                 {voltar}
-                <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-600">
-                    {erro || "Desafio não encontrado."}
-                </div>
-            </LayoutPainel>
+                <div className={base.error} role="alert">{erro || "Desafio não encontrado."}</div>
+            </AlunoLayout>
         );
     }
 
@@ -82,41 +95,58 @@ function JogarDesafio() {
     const minhaAlternativa = estado.minhaAlternativaId ?? escolhidaAgora;
     const respondeu = minhaAlternativa !== null;
     const acertou = respondeu && minhaAlternativa === estado.alternativaCorretaId;
+    const progresso = estado.totalPerguntas ? Math.round(((estado.numeroPergunta ?? 0) / estado.totalPerguntas) * 100) : 0;
 
     return (
-        <LayoutPainel perfil="ALUNO">
+        <AlunoLayout>
             {voltar}
 
-            <h1 className="mb-6 text-2xl font-semibold">{estado.titulo}</h1>
+            <header className={base.header}>
+                <span className={base.eyebrow}>Desafio ao vivo</span>
+                <div className={styles.titleLine}>
+                    <h1 className={`${base.title} ${styles.titleWithIcon}`}>
+                        {estado.titulo} <IconeDesafio tamanho={32}/>
+                    </h1>
+                    <BadgeStatusDesafio status={status}/>
+                </div>
+                <p className={base.subtitle}>{contagem(estado.totalPerguntas, "pergunta", "perguntas")}</p>
+            </header>
 
-            {erro && (
-                <div className="mb-5 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-600">{erro}</div>
-            )}
+            {erro && <div className={base.error} role="alert">{erro}</div>}
 
             {status === "AGUARDANDO" && (
-                <div className="rounded-xl border border-slate-200 bg-white p-10 text-center shadow-sm">
-                    <Hourglass size={36} className="mx-auto mb-3 animate-pulse text-indigo-400"/>
-                    <h2 className="text-lg font-semibold">Aguardando o professor iniciar</h2>
-                    <p className="mt-1 text-sm text-slate-400">
+                <section className={`${base.card} ${styles.startCard}`}>
+                    <span className={`${styles.startIcon} ${styles.pulse}`}>
+                        <Hourglass size={32}/>
+                    </span>
+                    <h2 className={styles.startTitle}>Aguardando o professor iniciar</h2>
+                    <p className={styles.startText}>
                         Total: {contagem(estado.totalPerguntas, "pergunta", "perguntas")}. Fique nesta tela: o desafio começa sozinho.
                     </p>
-                </div>
+                </section>
             )}
 
             {status === "EM_ANDAMENTO" && pergunta && (
-                <div className="mx-auto max-w-3xl space-y-6">
-                    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                        <p className="mb-4 text-sm text-slate-500">
-                            Pergunta {estado.numeroPergunta} de {estado.totalPerguntas}
-                        </p>
+                <div className={encerrada ? styles.liveGrid : styles.solo}>
+                    <section className={`${base.card} ${styles.questionCard}`}>
+                        <div className={styles.questionTop}>
+                            <span className={styles.questionCount}>
+                                Pergunta {estado.numeroPergunta} de {estado.totalPerguntas}
+                            </span>
+                        </div>
+                        <div className={styles.progressTrack}>
+                            <div className={styles.progressFill} style={{width: `${progresso}%`}}/>
+                        </div>
 
                         {!encerrada && (
-                            <BarraTempo restantes={estado.segundosRestantes ?? 0} total={pergunta.tempoSegundos}/>
+                            <div className={styles.timer}>
+                                <BarraTempo restantes={estado.segundosRestantes ?? 0} total={pergunta.tempoSegundos}/>
+                            </div>
                         )}
 
-                        <h2 className="mt-5 mb-5 text-xl font-semibold">{pergunta.enunciado}</h2>
+                        <h2 className={styles.question}>{pergunta.enunciado}</h2>
 
-                        <div className="grid gap-3 sm:grid-cols-2">
+                        <div className={styles.options}>
                             {pergunta.alternativas.map((alternativa, indice) => {
                                 const escolhida = alternativa.id === minhaAlternativa;
                                 const correta = alternativa.id === estado.alternativaCorretaId;
@@ -129,12 +159,10 @@ function JogarDesafio() {
                                         onClick={() => responder(pergunta.id, alternativa.id)}
                                         disabled={respondeu || encerrada || enviando}
                                         aria-pressed={escolhida}
-                                        className={`flex min-h-16 items-center gap-3 rounded-lg p-4 text-left font-medium text-white transition enabled:hover:brightness-110 ${CORES_ALTERNATIVA[indice]} ${
-                                            apagada ? "opacity-40" : ""
-                                        } ${escolhida ? "ring-4 ring-slate-800 ring-offset-2" : ""}`}
+                                        className={`${styles.option} ${styles.optionButton} ${COR_ALTERNATIVA[indice]} ${apagada ? styles.optionFaded : ""} ${escolhida ? styles.optionChosen : ""}`}
                                     >
-                                        <span className="font-bold">{LETRAS_ALTERNATIVA[indice]}</span>
-                                        <span className="min-w-0 flex-1 break-words">{alternativa.texto}</span>
+                                        <span className={styles.letter}>{LETRAS_ALTERNATIVA[indice]}</span>
+                                        <span className={styles.optionText}>{alternativa.texto}</span>
                                         {encerrada && correta && <Check size={20} aria-label="Alternativa correta"/>}
                                         {encerrada && escolhida && !correta && <X size={20} aria-label="Sua resposta incorreta"/>}
                                     </button>
@@ -143,24 +171,22 @@ function JogarDesafio() {
                         </div>
 
                         {!encerrada && respondeu && (
-                            <p className="mt-5 text-center text-sm text-slate-500">
-                                Resposta enviada! Aguarde o fim da pergunta.
-                            </p>
+                            <p className={styles.sentNote}>Resposta enviada! Aguarde o fim da pergunta.</p>
                         )}
 
                         {encerrada && (
-                            <div className={`mt-5 rounded-lg p-4 text-center font-semibold ${
-                                acertou ? "bg-green-50 text-green-800" : "bg-slate-100 text-slate-700"
-                            }`}>
-                                {!respondeu
-                                    ? "O tempo acabou e você não respondeu."
-                                    : acertou
-                                        ? `Você acertou e ganhou ${estado.meusPontos ?? 0} pontos!`
-                                        : "Não foi desta vez."}
-                                <p className="mt-1 text-sm font-normal">Aguarde o professor avançar.</p>
+                            <div className={`${styles.feedback} ${acertou ? styles.feedbackRight : ""}`}>
+                                <strong>
+                                    {!respondeu
+                                        ? "O tempo acabou e você não respondeu."
+                                        : acertou
+                                            ? `Você acertou e ganhou ${estado.meusPontos ?? 0} pontos!`
+                                            : "Não foi desta vez."}
+                                </strong>
+                                <span>Aguarde o professor avançar.</span>
                             </div>
                         )}
-                    </div>
+                    </section>
 
                     {encerrada && (
                         <TabelaRanking ranking={ranking} destaqueUsuarioId={meuId} titulo="Ranking parcial"/>
@@ -169,20 +195,24 @@ function JogarDesafio() {
             )}
 
             {status === "ENCERRADO" && (
-                <div className="mx-auto max-w-3xl space-y-6">
-                    <div className="rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm">
-                        <h2 className="text-xl font-semibold">Desafio encerrado</h2>
-                        <p className="mt-2 text-sm text-slate-500">
+                <div className={styles.finalGrid}>
+                    <TabelaRanking ranking={ranking} destaqueUsuarioId={meuId} titulo="Ranking final"/>
+
+                    <aside className={`${base.card} ${styles.endCard}`}>
+                        <Trophy size={36} className={styles.gold}/>
+                        <h2 className={styles.endTitle}>Desafio encerrado</h2>
+                        <p className={styles.endText}>
                             {minhaPosicao
                                 ? `Você ficou em ${minhaPosicao.posicao}º lugar, com ${minhaPosicao.pontos} pontos.`
                                 : "Você não respondeu a este desafio."}
                         </p>
-                    </div>
-
-                    <TabelaRanking ranking={ranking} destaqueUsuarioId={meuId} titulo="Ranking final"/>
+                        <button type="button" onClick={() => navigate("/aluno/desafios")} className={base.ghostButton}>
+                            <ArrowLeft size={16}/> Voltar para desafios
+                        </button>
+                    </aside>
                 </div>
             )}
-        </LayoutPainel>
+        </AlunoLayout>
     );
 }
 

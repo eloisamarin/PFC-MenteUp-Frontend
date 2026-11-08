@@ -1,7 +1,6 @@
-import {useEffect, useState} from "react";
+import {useEffect, useState, type FormEvent} from "react";
 import {useNavigate, useParams} from "react-router-dom";
 import {ArrowLeft, BookOpen, Plus, UserMinus, UserPlus, Users, Zap} from "lucide-react";
-import LayoutPainel from "../../components/LayoutPainel";
 import ConfirmarExclusao from "../../components/ConfirmarExclusao";
 import {BadgeStatusDesafio} from "../../components/ComponentesDesafio";
 import {apiFetch, lerErro} from "../../services/api";
@@ -13,6 +12,8 @@ import {
     type PerfilGestao,
     type TurmaDetalhe,
 } from "../../services/turmaDesafio";
+import {LayoutGestao} from "./TurmasGestao";
+import styles from "./TurmasGestao.module.css";
 
 function DetalheTurma({perfil}: { perfil: PerfilGestao }) {
     const {id} = useParams<{ id: string }>();
@@ -23,6 +24,7 @@ function DetalheTurma({perfil}: { perfil: PerfilGestao }) {
     const [desafios, setDesafios] = useState<Desafio[]>([]);
     const [usuarios, setUsuarios] = useState<AlunoTurma[]>([]);
     const [buscaAluno, setBuscaAluno] = useState("");
+    const [nomeDesafio, setNomeDesafio] = useState("");
     const [vinculando, setVinculando] = useState<number | null>(null);
     const [paraRemover, setParaRemover] = useState<AlunoTurma | null>(null);
     const [removendo, setRemovendo] = useState(false);
@@ -113,22 +115,26 @@ function DetalheTurma({perfil}: { perfil: PerfilGestao }) {
         }
     }
 
+    const voltar = (
+        <button type="button" onClick={() => navigate(`${base}/turmas`)} className={styles.back}>
+            <ArrowLeft size={16}/> Voltar para turmas
+        </button>
+    );
+
     if (carregando) {
         return (
-            <LayoutPainel perfil={perfil}>
-                <p className="py-12 text-center text-sm text-slate-400">Carregando turma...</p>
-            </LayoutPainel>
+            <LayoutGestao perfil={perfil}>
+                <p className={styles.empty}>Carregando turma...</p>
+            </LayoutGestao>
         );
     }
 
     if (!turma) {
         return (
-            <LayoutPainel perfil={perfil}>
-                <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-600">{erro}</div>
-                <button onClick={() => navigate(`${base}/turmas`)} className="mt-4 text-sm font-semibold text-indigo-600 hover:underline">
-                    Voltar para turmas
-                </button>
-            </LayoutPainel>
+            <LayoutGestao perfil={perfil}>
+                {voltar}
+                <div className={styles.error} role="alert">{erro}</div>
+            </LayoutGestao>
         );
     }
 
@@ -141,51 +147,72 @@ function DetalheTurma({perfil}: { perfil: PerfilGestao }) {
         )
         .slice(0, 6);
 
+    function adicionarPrimeiro(event: FormEvent) {
+        event.preventDefault();
+        if (candidatos.length > 0) vincularAluno(candidatos[0]);
+    }
+
+    function novoDesafio(event: FormEvent) {
+        event.preventDefault();
+        const titulo = nomeDesafio.trim();
+        const parametros = new URLSearchParams({turma: String(turma!.id)});
+        if (titulo) parametros.set("titulo", titulo);
+        navigate(`${base}/desafios/criar?${parametros.toString()}`);
+    }
+
     return (
-        <LayoutPainel perfil={perfil}>
-            <button onClick={() => navigate(`${base}/turmas`)} className="mb-4 flex items-center gap-2 text-sm text-slate-500 hover:text-slate-800">
-                <ArrowLeft size={16}/> Voltar para turmas
-            </button>
+        <LayoutGestao perfil={perfil}>
+            {voltar}
 
-            <h1 className="text-2xl font-semibold">{turma.nome}</h1>
-            <p className="mt-1 mb-6 text-sm text-slate-400">
-                {contagem(turma.alunos.length, "aluno", "alunos")} · {contagem(turma.atividade.length, "atividade", "atividades")} · {contagem(desafios.length, "desafio", "desafios")}
-            </p>
+            <header className={styles.header}>
+                <h1 className={styles.title}>Turma {turma.nome}</h1>
+                <p className={styles.subtitle}>
+                    {contagem(turma.alunos.length, "aluno", "alunos")} · {contagem(turma.atividade.length, "atividade", "atividades")} · {contagem(desafios.length, "desafio", "desafios")}
+                </p>
+            </header>
 
-            {erro && (
-                <div className="mb-5 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-600">{erro}</div>
-            )}
+            {erro && <div className={styles.error} role="alert">{erro}</div>}
 
-            <div className="grid gap-6 lg:grid-cols-2">
-
-                <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm lg:row-span-2">
-                    <h2 className="mb-3 flex items-center gap-2 font-semibold">
-                        <Users size={18} className="text-indigo-500"/> Alunos
+            <div className={styles.detailGrid}>
+                <section className={`${styles.card} ${styles.panel} ${styles.panelTall}`}>
+                    <h2 className={styles.panelTitle}>
+                        <Users size={20} className={styles.indigo}/> Alunos
                     </h2>
 
-                    <input
-                        value={buscaAluno}
-                        onChange={(event) => setBuscaAluno(event.target.value)}
-                        placeholder="Adicionar aluno por nome ou e-mail"
-                        aria-label="Adicionar aluno por nome ou e-mail"
-                        className="w-full rounded-lg border border-slate-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-300"
-                    />
+                    <form onSubmit={adicionarPrimeiro} className={styles.inlineForm}>
+                        <input
+                            value={buscaAluno}
+                            onChange={(event) => setBuscaAluno(event.target.value)}
+                            placeholder="Adicionar aluno por nome ou e-mail"
+                            aria-label="Adicionar aluno por nome ou e-mail"
+                            className={styles.input}
+                        />
+                        <button
+                            type="submit"
+                            title="Adicionar o primeiro aluno encontrado"
+                            disabled={candidatos.length === 0 || vinculando !== null}
+                            className={styles.squareButton}
+                        >
+                            <UserPlus size={18}/>
+                        </button>
+                    </form>
 
                     {termo && (
-                        <ul className="mt-2 rounded-lg border border-slate-100">
+                        <ul className={styles.suggestions}>
                             {candidatos.length === 0 && (
-                                <li className="px-4 py-3 text-sm text-slate-400">Nenhum aluno disponível com esse termo.</li>
+                                <li className={styles.muted}>Nenhum aluno disponível com esse termo.</li>
                             )}
                             {candidatos.map((aluno) => (
-                                <li key={aluno.id} className="flex items-center gap-3 border-b px-4 py-2 last:border-b-0">
-                                    <div className="min-w-0 flex-1">
-                                        <p className="truncate text-sm font-medium">{aluno.nomeUsuario}</p>
-                                        <p className="truncate text-xs text-slate-400">{aluno.usuario}</p>
-                                    </div>
+                                <li key={aluno.id} className={styles.person}>
+                                    <span className={styles.personInfo}>
+                                        <strong>{aluno.nomeUsuario}</strong>
+                                        <small>{aluno.usuario}</small>
+                                    </span>
                                     <button
+                                        type="button"
                                         onClick={() => vincularAluno(aluno)}
                                         disabled={vinculando === aluno.id}
-                                        className="flex items-center gap-1 rounded-lg bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 disabled:opacity-50"
+                                        className={styles.smallButton}
                                     >
                                         <UserPlus size={14}/> Adicionar
                                     </button>
@@ -195,22 +222,21 @@ function DetalheTurma({perfil}: { perfil: PerfilGestao }) {
                     )}
 
                     {turma.alunos.length === 0 ? (
-                        <p className="py-8 text-center text-sm text-slate-400">Nenhum aluno nesta turma ainda.</p>
+                        <p className={styles.muted}>Nenhum aluno nesta turma ainda.</p>
                     ) : (
-                        <ul className="mt-4">
+                        <ul className={styles.people}>
                             {turma.alunos.map((aluno) => (
-                                <li key={aluno.id} className="flex items-center gap-3 border-b py-2.5 last:border-b-0">
-                                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-purple-100 text-sm font-semibold text-purple-700">
-                                        {aluno.nomeUsuario.charAt(0).toUpperCase()}
-                                    </div>
-                                    <div className="min-w-0 flex-1">
-                                        <p className="truncate text-sm font-medium">{aluno.nomeUsuario}</p>
-                                        <p className="truncate text-xs text-slate-400">{aluno.usuario}</p>
-                                    </div>
+                                <li key={aluno.id} className={styles.person}>
+                                    <span className={styles.personAvatar}>{aluno.nomeUsuario.charAt(0).toUpperCase()}</span>
+                                    <span className={styles.personInfo}>
+                                        <strong>{aluno.nomeUsuario}</strong>
+                                        <small>{aluno.usuario}</small>
+                                    </span>
                                     <button
+                                        type="button"
                                         title={`Remover ${aluno.nomeUsuario} da turma`}
                                         onClick={() => setParaRemover(aluno)}
-                                        className="rounded p-2 text-slate-500 hover:bg-red-50 hover:text-red-600"
+                                        className={`${styles.iconButton} ${styles.iconDanger}`}
                                     >
                                         <UserMinus size={17}/>
                                     </button>
@@ -218,63 +244,64 @@ function DetalheTurma({perfil}: { perfil: PerfilGestao }) {
                             ))}
                         </ul>
                     )}
-                </div>
+                </section>
 
-                <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                    <div className="mb-3 flex items-center justify-between">
-                        <h2 className="flex items-center gap-2 font-semibold">
-                            <Zap size={18} className="text-indigo-500"/> Desafios
-                        </h2>
-                        <button
-                            onClick={() => navigate(`${base}/desafios/criar?turma=${turma.id}`)}
-                            className="flex items-center gap-1 text-sm font-semibold text-indigo-600 hover:underline"
-                        >
-                            <Plus size={15}/> Novo desafio
+                <section className={`${styles.card} ${styles.panel}`}>
+                    <h2 className={styles.panelTitle}>
+                        <Zap size={20} className={styles.gold}/> Desafios
+                    </h2>
+
+                    <form onSubmit={novoDesafio} className={styles.inlineForm}>
+                        <input
+                            value={nomeDesafio}
+                            onChange={(event) => setNomeDesafio(event.target.value)}
+                            maxLength={100}
+                            placeholder="Nome do novo desafio"
+                            aria-label="Nome do novo desafio"
+                            className={styles.input}
+                        />
+                        <button type="submit" className={styles.ghostButton}>
+                            <Plus size={16}/> Novo desafio
                         </button>
-                    </div>
+                    </form>
 
                     {desafios.length === 0 ? (
-                        <p className="py-6 text-center text-sm text-slate-400">Nenhum desafio nesta turma.</p>
+                        <p className={styles.muted}>Nenhum desafio nesta turma.</p>
                     ) : (
-                        <ul>
+                        <ul className={styles.items}>
                             {desafios.map((desafio) => (
-                                <li key={desafio.id} className="border-b last:border-b-0">
-                                    <button
-                                        onClick={() => navigate(`${base}/desafios/${desafio.id}`)}
-                                        className="flex w-full items-center justify-between gap-3 py-2.5 text-left hover:text-indigo-600"
-                                    >
-                                        <span className="truncate text-sm font-medium">{desafio.titulo}</span>
+                                <li key={desafio.id}>
+                                    <button type="button" onClick={() => navigate(`${base}/desafios/${desafio.id}`)} className={styles.item}>
+                                        <Zap size={16}/>
+                                        <span>{desafio.titulo}</span>
                                         <BadgeStatusDesafio status={desafio.status}/>
                                     </button>
                                 </li>
                             ))}
                         </ul>
                     )}
-                </div>
+                </section>
 
-                <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                    <h2 className="mb-3 flex items-center gap-2 font-semibold">
-                        <BookOpen size={18} className="text-indigo-500"/> Atividades
+                <section className={`${styles.card} ${styles.panel}`}>
+                    <h2 className={styles.panelTitle}>
+                        <BookOpen size={20} className={styles.mint}/> Atividades
                     </h2>
 
                     {turma.atividade.length === 0 ? (
-                        <p className="py-6 text-center text-sm text-slate-400">Nenhuma atividade nesta turma.</p>
+                        <p className={styles.muted}>Nenhuma atividade nesta turma.</p>
                     ) : (
-                        <ul>
+                        <ul className={styles.items}>
                             {turma.atividade.map((atividade) => (
-                                <li key={atividade.id} className="border-b last:border-b-0">
-                                    <button
-                                        onClick={() => navigate(`${base}/atividades/${atividade.id}`)}
-                                        className="w-full truncate py-2.5 text-left text-sm font-medium hover:text-indigo-600"
-                                    >
-                                        {atividade.titulo}
+                                <li key={atividade.id}>
+                                    <button type="button" onClick={() => navigate(`${base}/atividades/${atividade.id}`)} className={styles.item}>
+                                        <BookOpen size={16}/>
+                                        <span>{atividade.titulo}</span>
                                     </button>
                                 </li>
                             ))}
                         </ul>
                     )}
-                </div>
-
+                </section>
             </div>
 
             {paraRemover && (
@@ -288,7 +315,7 @@ function DetalheTurma({perfil}: { perfil: PerfilGestao }) {
                     onCancelar={() => setParaRemover(null)}
                 />
             )}
-        </LayoutPainel>
+        </LayoutGestao>
     );
 }
 
