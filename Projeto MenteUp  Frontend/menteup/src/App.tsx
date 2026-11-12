@@ -5,6 +5,7 @@ import Login from "./pages/login";
 import Cadastro from "./pages/cadastro";
 import EsqueciSenha from "./pages/EsqueciSenha";
 import RedefinirSenha from "./pages/RedefinirSenha";
+import PrimeiroAcesso from "./pages/PrimeiroAcesso";
 
 import DashboardAluno from "./pages/aluno/dashboardAluno";
 import AtividadesAluno from "./pages/aluno/atividadesAluno";
@@ -93,6 +94,7 @@ function App() {
                     <Route path="/verificar-2fa" element={<Verificar2FA />} />
                     <Route path="/esqueci-senha" element={<EsqueciSenha />} />
                     <Route path="/redefinir-senha" element={<RedefinirSenha />} />
+                    <Route path="/primeiro-acesso" element={<PrimeiroAcesso />} />
 
 
                     {/* ALUNO */}

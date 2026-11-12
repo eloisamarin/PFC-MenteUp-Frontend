@@ -1,5 +1,5 @@
 import {useEffect, type ReactNode} from "react";
-import {Trash2, TriangleAlert} from "lucide-react";
+import {CheckCircle2, Trash2, TriangleAlert} from "lucide-react";
 
 import styles from "./ConfirmarExclusao.module.css";
 
@@ -11,6 +11,9 @@ interface ConfirmarExclusaoProps {
     rotuloProcessando?: string;
     onConfirmar: () => void;
     onCancelar: () => void;
+    /** "perigo" (padrão) para excluir; "confirmar" para ações sem perda, como finalizar uma atividade */
+    variante?: "perigo" | "confirmar";
+    rotuloCancelar?: string;
 }
 
 function ConfirmarExclusao({
@@ -21,7 +24,11 @@ function ConfirmarExclusao({
     rotuloProcessando = "Excluindo...",
     onConfirmar,
     onCancelar,
+    variante = "perigo",
+    rotuloCancelar = "Cancelar",
 }: ConfirmarExclusaoProps) {
+    const perigo = variante === "perigo";
+
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {
             if (e.key === "Escape" && !processando) onCancelar();
@@ -40,8 +47,8 @@ function ConfirmarExclusao({
                 aria-describedby="confirmar-exclusao-texto"
                 onClick={(e) => e.stopPropagation()}
             >
-                <span className={styles.icon}>
-                    <TriangleAlert size={28}/>
+                <span className={`${styles.icon} ${perigo ? "" : styles.iconConfirmar}`}>
+                    {perigo ? <TriangleAlert size={28}/> : <CheckCircle2 size={28}/>}
                 </span>
                 <h2 id="confirmar-exclusao-titulo" className={styles.title}>
                     {titulo}
@@ -57,15 +64,15 @@ function ConfirmarExclusao({
                         disabled={processando}
                         autoFocus
                     >
-                        Cancelar
+                        {rotuloCancelar}
                     </button>
                     <button
                         type="button"
-                        className={styles.dangerButton}
+                        className={perigo ? styles.dangerButton : styles.confirmButton}
                         onClick={onConfirmar}
                         disabled={processando}
                     >
-                        <Trash2 size={16}/>
+                        {perigo && <Trash2 size={16}/>}
                         {processando ? rotuloProcessando : rotuloConfirmar}
                     </button>
                 </div>

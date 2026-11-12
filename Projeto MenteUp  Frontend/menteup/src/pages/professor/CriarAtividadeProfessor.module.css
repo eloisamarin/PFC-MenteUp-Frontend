@@ -27,7 +27,7 @@
   font-weight: 800;
   line-height: 16px;
   text-transform: uppercase;
-  color: var(--mu-indigo);
+  color: var(--mu-indigo-text);
 }
 
 .title {
@@ -344,4 +344,19 @@ select.input option {
   .row {
     grid-template-columns: 1fr;
   }
+}
+
+/* Lei de Fitts: área de toque de pelo menos 44x44px sem mudar o desenho do botão */
+.close {
+  position: relative;
+}
+
+.close::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: max(100%, 44px);
+  height: max(100%, 44px);
+  transform: translate(-50%, -50%);
 }

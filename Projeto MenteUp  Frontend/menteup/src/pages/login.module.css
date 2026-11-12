@@ -167,6 +167,9 @@
 }
 
 .eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-size: 12px;
   font-weight: 800;
   line-height: 16px;
@@ -318,6 +321,16 @@
   background: rgba(255, 107, 129, 0.12);
   border: 1px solid rgba(255, 107, 129, 0.4);
   color: var(--mu-danger);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.success {
+  padding: 10px 12px;
+  border-radius: var(--mu-radius-sm);
+  background: rgba(45, 212, 191, 0.12);
+  border: 1px solid rgba(45, 212, 191, 0.4);
+  color: var(--mu-teal);
   font-size: 14px;
   font-weight: 700;
 }
@@ -479,4 +492,37 @@
     font-size: 26px;
     line-height: 32px;
   }
+}
+
+/* Telas de um cartão só (2FA): centraliza o cartão */
+.mainCentered {
+  justify-content: center;
+}
+
+/* Campo do código 2FA: dígitos grandes e espaçados */
+.codeInput {
+  height: 64px;
+  text-align: center;
+  font-family: var(--mu-font-display);
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 0.5em;
+  padding-left: 0.5em;
+}
+
+.link:disabled {
+  color: var(--mu-text-muted);
+  text-decoration: none;
+  cursor: not-allowed;
+}
+
+/* Lei de Fitts: área de toque de pelo menos 44x44px sem mudar o desenho do botão */
+.eyeButton::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: max(100%, 44px);
+  height: max(100%, 44px);
+  transform: translate(-50%, -50%);
 }

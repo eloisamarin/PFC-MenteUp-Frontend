@@ -39,6 +39,7 @@
   --mu-app-shadow: 0 12px 30px rgba(0, 3, 16, 0.28);
 
   --mu-indigo: #615fff;
+  --mu-indigo-text: #a5a4ff; /* indigo para texto pequeno: 6,1:1 sobre --mu-bg */
   --mu-gold: #edbe24;
   --mu-mint: #00a99e;
   --mu-coral: #eb6456;
@@ -58,4 +59,17 @@
 
 body {
   font-family: var(--mu-font-body);
+}
+
+/* Respeita quem pediu ao sistema para reduzir movimento:
+   desliga animações e transições longas em todas as telas. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

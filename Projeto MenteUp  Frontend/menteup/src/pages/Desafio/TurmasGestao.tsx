@@ -5,7 +5,16 @@ import AdminLayout from "../../components/administrador/AdminLayout";
 import ProfessorLayout from "../../components/professor/ProfessorLayout";
 import ConfirmarExclusao from "../../components/ConfirmarExclusao";
 import {apiFetch, lerErro} from "../../services/api";
-import {contagem, ROTA_BASE, type Desafio, type PerfilGestao, type TurmaDetalhe} from "../../services/turmaDesafio";
+import {
+    carregarProfessores,
+    contagem,
+    podeAlterarTurma,
+    ROTA_BASE,
+    type Desafio,
+    type PerfilGestao,
+    type ProfessorResponsavel,
+    type TurmaDetalhe,
+} from "../../services/turmaDesafio";
 import styles from "./TurmasGestao.module.css";
 
 export function LayoutGestao({perfil, children}: { perfil: PerfilGestao; children: ReactNode }) {
@@ -20,6 +29,7 @@ function sigla(nome: string) {
 function TurmasGestao({perfil}: { perfil: PerfilGestao }) {
     const navigate = useNavigate();
     const base = ROTA_BASE[perfil];
+    const administrador = perfil === "ADMINISTRADOR";
 
     const [turmas, setTurmas] = useState<TurmaDetalhe[]>([]);
     const [desafiosPorTurma, setDesafiosPorTurma] = useState<Record<number, number>>({});
@@ -30,8 +40,13 @@ function TurmasGestao({perfil}: { perfil: PerfilGestao }) {
     const [novoNome, setNovoNome] = useState("");
     const [criando, setCriando] = useState(false);
 
+    // Só o administrador escolhe o professor responsável (quem cria como professor fica responsável)
+    const [professores, setProfessores] = useState<ProfessorResponsavel[]>([]);
+    const [novoProfessorId, setNovoProfessorId] = useState("");
+
     const [editandoId, setEditandoId] = useState<number | null>(null);
     const [nomeEditado, setNomeEditado] = useState("");
+    const [professorEditado, setProfessorEditado] = useState("");
 
     const [paraExcluir, setParaExcluir] = useState<TurmaDetalhe | null>(null);
     const [excluindo, setExcluindo] = useState(false);
@@ -68,6 +83,13 @@ function TurmasGestao({perfil}: { perfil: PerfilGestao }) {
         carregarTurmas();
     }, [versao]);
 
+    useEffect(() => {
+        if (!administrador) return;
+        carregarProfessores()
+            .then(setProfessores)
+            .catch(() => setErro("Não foi possível carregar os professores."));
+    }, [administrador]);
+
     async function criarTurma(event: FormEvent) {
         event.preventDefault();
 
@@ -80,7 +102,10 @@ function TurmasGestao({perfil}: { perfil: PerfilGestao }) {
 
             const resposta = await apiFetch("/turmas", {
                 method: "POST",
-                body: JSON.stringify({nome}),
+                body: JSON.stringify({
+                    nome,
+                    ...(administrador && novoProfessorId ? {professorId: Number(novoProfessorId)} : {}),
+                }),
             });
 
             if (!resposta.ok) {
@@ -90,6 +115,7 @@ function TurmasGestao({perfil}: { perfil: PerfilGestao }) {
             }
 
             setNovoNome("");
+            setNovoProfessorId("");
             setVersao((atual) => atual + 1);
         } catch (error) {
             console.error("Erro ao criar turma:", error);
@@ -108,7 +134,11 @@ function TurmasGestao({perfil}: { perfil: PerfilGestao }) {
 
             const resposta = await apiFetch("/turmas", {
                 method: "PUT",
-                body: JSON.stringify({id, nome}),
+                body: JSON.stringify({
+                    id,
+                    nome,
+                    ...(administrador && professorEditado ? {professorId: Number(professorEditado)} : {}),
+                }),
             });
 
             if (!resposta.ok) {
@@ -173,6 +203,20 @@ function TurmasGestao({perfil}: { perfil: PerfilGestao }) {
                     aria-label="Nome da nova turma"
                     className={styles.input}
                 />
+                {administrador && (
+                    <select
+                        value={novoProfessorId}
+                        onChange={(event) => setNovoProfessorId(event.target.value)}
+                        aria-label="Professor responsável"
+                        title="Professor responsável: terá acesso às atividades e desafios da turma"
+                        className={styles.input}
+                    >
+                        <option value="">Sem professor responsável</option>
+                        {professores.map((professor) => (
+                            <option key={professor.id} value={professor.id}>{professor.nome}</option>
+                        ))}
+                    </select>
+                )}
                 <button type="submit" disabled={criando || !novoNome.trim()} className={styles.primaryButton}>
                     <Plus size={18}/>
                     {criando ? "Criando..." : "Criar turma"}
@@ -217,10 +261,23 @@ function TurmasGestao({perfil}: { perfil: PerfilGestao }) {
                                         aria-label="Novo nome da turma"
                                         className={styles.input}
                                     />
-                                    <button type="button" title="Salvar" onClick={() => salvarNome(turma.id)} className={`${styles.iconButton} ${styles.iconSave}`}>
+                                    {administrador && (
+                                        <select
+                                            value={professorEditado}
+                                            onChange={(event) => setProfessorEditado(event.target.value)}
+                                            aria-label="Professor responsável"
+                                            className={styles.input}
+                                        >
+                                            {!professorEditado && <option value="">Sem professor responsável</option>}
+                                            {professores.map((professor) => (
+                                                <option key={professor.id} value={professor.id}>{professor.nome}</option>
+                                            ))}
+                                        </select>
+                                    )}
+                                    <button type="button" title="Salvar" aria-label={`Salvar alterações da turma ${turma.nome}`} onClick={() => salvarNome(turma.id)} className={`${styles.iconButton} ${styles.iconSave}`}>
                                         <Check size={17}/>
                                     </button>
-                                    <button type="button" title="Cancelar" onClick={() => setEditandoId(null)} className={styles.iconButton}>
+                                    <button type="button" title="Cancelar" aria-label="Cancelar edição" onClick={() => setEditandoId(null)} className={styles.iconButton}>
                                         <X size={17}/>
                                     </button>
                                 </div>
@@ -235,25 +292,36 @@ function TurmasGestao({perfil}: { perfil: PerfilGestao }) {
                                         <small>
                                             {contagem(turma.alunos?.length ?? 0, "aluno", "alunos")} · {contagem(turma.atividade?.length ?? 0, "atividade", "atividades")} · {contagem(desafiosPorTurma[turma.id] ?? 0, "desafio", "desafios")}
                                         </small>
+                                        <small>
+                                            {turma.professorResponsavel
+                                                ? `Professor: ${turma.professorResponsavel.nome}`
+                                                : "Sem professor responsável"}
+                                        </small>
                                     </button>
                                     <div className={styles.actions}>
-                                        <button type="button" title="Ver turma" onClick={() => navigate(`${base}/turmas/${turma.id}`)} className={styles.iconButton}>
+                                        <button type="button" title="Ver turma" aria-label={`Ver turma ${turma.nome}`} onClick={() => navigate(`${base}/turmas/${turma.id}`)} className={styles.iconButton}>
                                             <Eye size={17}/>
                                         </button>
-                                        <button
-                                            type="button"
-                                            title="Renomear"
-                                            onClick={() => {
-                                                setEditandoId(turma.id);
-                                                setNomeEditado(turma.nome);
-                                            }}
-                                            className={styles.iconButton}
-                                        >
-                                            <Pencil size={17}/>
-                                        </button>
-                                        <button type="button" title="Excluir" onClick={() => setParaExcluir(turma)} className={`${styles.iconButton} ${styles.iconDanger}`}>
-                                            <Trash2 size={17}/>
-                                        </button>
+                                        {podeAlterarTurma(turma, perfil) && (
+                                            <>
+                                                <button
+                                                    type="button"
+                                                    title={administrador ? "Editar nome e professor" : "Renomear"}
+                                                    aria-label={`${administrador ? "Editar nome e professor da turma" : "Renomear a turma"} ${turma.nome}`}
+                                                    onClick={() => {
+                                                        setEditandoId(turma.id);
+                                                        setNomeEditado(turma.nome);
+                                                        setProfessorEditado(turma.professorResponsavel ? String(turma.professorResponsavel.id) : "");
+                                                    }}
+                                                    className={styles.iconButton}
+                                                >
+                                                    <Pencil size={17}/>
+                                                </button>
+                                                <button type="button" title="Excluir" aria-label={`Excluir turma ${turma.nome}`} onClick={() => setParaExcluir(turma)} className={`${styles.iconButton} ${styles.iconDanger}`}>
+                                                    <Trash2 size={17}/>
+                                                </button>
+                                            </>
+                                        )}
                                     </div>
                                 </>
                             )}

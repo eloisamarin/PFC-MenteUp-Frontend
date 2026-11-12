@@ -12,14 +12,13 @@ import {
     validarPerguntas,
     type PerguntaRequest,
 } from "../../components/atividades/Editores";
+import ProfessorDaTurma from "../../components/ProfessorDaTurma";
 import { apiFetch, lerErro } from "../../services/api";
+import { podeAlterarTurma, type TurmaResumo } from "../../services/turmaDesafio";
 import { NOME_TIPO, type TipoAtividade } from "../../types/aluno";
 import styles from "./CriarAtividadeProfessor.module.css";
 
-interface Turma {
-    id: number;
-    nome: string;
-}
+type Turma = TurmaResumo;
 
 interface Alternativa {
     id: number;
@@ -102,6 +101,7 @@ function EditarAtividadeProfessor() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const area = useAreaBase();
+    const perfil = area === "/administrador" ? "ADMINISTRADOR" : "PROFESSOR";
 
     const [titulo, setTitulo] = useState("");
     const [descricao, setDescricao] = useState("");
@@ -170,13 +170,15 @@ function EditarAtividadeProfessor() {
             try {
                 const response = await apiFetch("/turmas/all");
                 if (!response.ok) throw new Error("Erro ao buscar turmas");
-                setTurmas(await response.json());
+                // O professor só move a atividade entre as turmas dele
+                const todas: Turma[] = await response.json();
+                setTurmas(todas.filter((t) => podeAlterarTurma(t, perfil)));
             } catch (error) {
                 console.error("Erro ao carregar turmas:", error);
             }
         };
         carregarTurmas();
-    }, []);
+    }, [perfil]);
 
     const sair = () => navigate(`${area}/atividades`);
 
@@ -204,6 +206,7 @@ function EditarAtividadeProfessor() {
         if (!titulo.trim()) return "Informe o título da atividade.";
         if (!turmaId) return "Selecione uma turma.";
         if (!pontuacao || pontuacao <= 0) return "Informe uma pontuação maior que zero.";
+        if (pontuacao > 1000) return "A pontuação deve ser no máximo 1000 XP.";
         if (!descricao.trim()) return "Informe a descrição da atividade.";
         if (perguntasAlteradas && !bloqueado) return validarPerguntas(tipo, perguntas);
         return null;
@@ -326,6 +329,14 @@ function EditarAtividadeProfessor() {
                                 </option>
                             ))}
                         </select>
+                        {perfil === "ADMINISTRADOR" && (
+                            <ProfessorDaTurma
+                                turma={turmas.find((t) => String(t.id) === turmaId)}
+                                onVinculado={(atualizada) =>
+                                    setTurmas((lista) => lista.map((t) => (t.id === atualizada.id ? atualizada : t)))
+                                }
+                            />
+                        )}
                     </div>
                     <div className={styles.row}>
                         <div>
@@ -336,6 +347,7 @@ function EditarAtividadeProfessor() {
                                 id="pontuacao"
                                 type="number"
                                 min={1}
+                                max={1000}
                                 className={styles.input}
                                 value={pontuacao}
                                 onChange={(e) => setPontuacao(Number(e.target.value))}

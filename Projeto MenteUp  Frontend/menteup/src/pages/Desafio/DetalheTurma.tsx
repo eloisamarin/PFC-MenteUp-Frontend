@@ -177,11 +177,13 @@ function DetalheTurma({perfil}: { perfil: PerfilGestao }) {
     }
 
     const idsMatriculados = new Set(turma.alunos.map((aluno) => aluno.id));
+    // A turma não traz o e-mail dos alunos (LGPD); professor e administrador o recebem na lista de usuários
+    const emailPorId = new Map(usuarios.map((usuario) => [usuario.id, usuario.usuario]));
     const termo = buscaAluno.trim().toLowerCase();
     const candidatos = !termo ? [] : usuarios
         .filter((usuario) => usuario.tipoUsuario?.toUpperCase() === "ALUNO" && !idsMatriculados.has(usuario.id))
         .filter((usuario) =>
-            usuario.nomeUsuario.toLowerCase().includes(termo) || usuario.usuario.toLowerCase().includes(termo)
+            usuario.nomeUsuario.toLowerCase().includes(termo) || (usuario.usuario ?? "").toLowerCase().includes(termo)
         )
         .slice(0, 6);
 
@@ -228,6 +230,7 @@ function DetalheTurma({perfil}: { perfil: PerfilGestao }) {
                         <button
                             type="submit"
                             title="Adicionar o primeiro aluno encontrado"
+                            aria-label="Adicionar o primeiro aluno encontrado"
                             disabled={candidatos.length === 0 || vinculando !== null}
                             className={styles.squareButton}
                         >
@@ -244,7 +247,7 @@ function DetalheTurma({perfil}: { perfil: PerfilGestao }) {
                                 <li key={aluno.id} className={styles.person}>
                                     <span className={styles.personInfo}>
                                         <strong>{aluno.nomeUsuario}</strong>
-                                        <small>{aluno.usuario}</small>
+                                        {aluno.usuario && <small>{aluno.usuario}</small>}
                                     </span>
                                     <button
                                         type="button"
@@ -282,6 +285,7 @@ function DetalheTurma({perfil}: { perfil: PerfilGestao }) {
                                         <button
                                             type="button"
                                             title={`Recusar o pedido de ${solicitacao.alunoNome}`}
+                                            aria-label={`Recusar o pedido de ${solicitacao.alunoNome}`}
                                             onClick={() => responderSolicitacao(solicitacao, "recusar")}
                                             disabled={respondendo === solicitacao.id}
                                             className={`${styles.iconButton} ${styles.iconDanger}`}
@@ -303,11 +307,12 @@ function DetalheTurma({perfil}: { perfil: PerfilGestao }) {
                                     <span className={styles.personAvatar}>{aluno.nomeUsuario.charAt(0).toUpperCase()}</span>
                                     <span className={styles.personInfo}>
                                         <strong>{aluno.nomeUsuario}</strong>
-                                        <small>{aluno.usuario}</small>
+                                        {emailPorId.get(aluno.id) && <small>{emailPorId.get(aluno.id)}</small>}
                                     </span>
                                     <button
                                         type="button"
                                         title={`Remover ${aluno.nomeUsuario} da turma`}
+                                        aria-label={`Remover ${aluno.nomeUsuario} da turma`}
                                         onClick={() => setParaRemover(aluno)}
                                         className={`${styles.iconButton} ${styles.iconDanger}`}
                                     >

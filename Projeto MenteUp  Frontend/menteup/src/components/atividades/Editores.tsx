@@ -18,6 +18,9 @@ import type { TipoAtividade } from "../../types/aluno";
 import { contarLacunas, partesDoTexto } from "./Players";
 import styles from "./Editores.module.css";
 
+// Mesmo limite do backend (enunciado e alternativas: 255 caracteres)
+const LIMITE_TEXTO = 255;
+
 export interface AlternativaRequest {
     texto: string;
     correta: boolean;
@@ -226,6 +229,7 @@ function EditorQuiz({ pergunta, onChange }: EditorProps) {
                 Enunciado
             </label>
             <input
+                maxLength={LIMITE_TEXTO}
                 id="enunciado"
                 className={styles.input}
                 placeholder="Digite a pergunta..."
@@ -246,6 +250,7 @@ function EditorQuiz({ pergunta, onChange }: EditorProps) {
                             {a.correta && <Check size={12} />}
                         </button>
                         <input
+                            maxLength={LIMITE_TEXTO}
                             className={styles.inlineInput}
                             placeholder={`Alternativa ${LETRAS[i] ?? i + 1}`}
                             value={a.texto}
@@ -294,6 +299,7 @@ function EditorVerdadeiroFalso({ pergunta, onChange }: EditorProps) {
                 Afirmação
             </label>
             <textarea
+                maxLength={LIMITE_TEXTO}
                 id="afirmacao"
                 className={`${styles.input} ${styles.statement}`}
                 placeholder="Ex.: O Sol é uma estrela."
@@ -349,6 +355,7 @@ function EditorOrdenacao({ pergunta, onChange }: EditorProps) {
                 Instrução
             </label>
             <input
+                maxLength={LIMITE_TEXTO}
                 id="instrucao"
                 className={styles.input}
                 placeholder="Ex.: Ordene os eventos do mais antigo para o mais recente"
@@ -361,6 +368,7 @@ function EditorOrdenacao({ pergunta, onChange }: EditorProps) {
                     <li key={i} className={styles.sortItem}>
                         <span className={styles.sortNumber}>{i + 1}</span>
                         <input
+                            maxLength={LIMITE_TEXTO}
                             className={styles.inlineInput}
                             placeholder={`Item ${i + 1}`}
                             value={item.texto}
@@ -501,6 +509,7 @@ function EditorLacunas({ pergunta, onChange }: EditorProps) {
                             <label key={i} className={styles.gapAnswer}>
                                 <span className={styles.sortNumber}>{i + 1}</span>
                                 <input
+                                    maxLength={LIMITE_TEXTO}
                                     className={styles.inlineInput}
                                     placeholder={`Resposta da lacuna ${i + 1}`}
                                     value={corretas.find((a) => a.ordem === i + 1)?.texto ?? ""}
@@ -532,6 +541,7 @@ function EditorLacunas({ pergunta, onChange }: EditorProps) {
                     </span>
                 ))}
                 <input
+                    maxLength={LIMITE_TEXTO}
                     className={styles.chipInput}
                     placeholder="Digite e tecle Enter"
                     value={extra}
@@ -578,6 +588,7 @@ function EditorAssociacao({ perguntas, onChange }: EditorAssociacaoProps) {
                         <div className={styles.pairSide}>
                             <span className={styles.sortNumber}>{i + 1}</span>
                             <input
+                                maxLength={LIMITE_TEXTO}
                                 className={styles.inlineInput}
                                 placeholder="Ex.: Brasil"
                                 value={p.enunciado}
@@ -587,6 +598,7 @@ function EditorAssociacao({ perguntas, onChange }: EditorAssociacaoProps) {
                         <Link2 size={18} className={styles.pairLink} />
                         <div className={styles.pairSide}>
                             <input
+                                maxLength={LIMITE_TEXTO}
                                 className={styles.inlineInput}
                                 placeholder="Ex.: Brasília"
                                 value={p.alternativas[0]?.texto ?? ""}

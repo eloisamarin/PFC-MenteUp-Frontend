@@ -2,14 +2,17 @@ import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
     BookOpen,
+    CircleCheck,
     Eye,
     EyeOff,
+    FileText,
     GraduationCap,
     Sparkles,
     Trophy,
     User,
 } from "lucide-react";
 
+import { API_URL, lerErro } from "../services/api";
 import styles from "./login.module.css";
 
 type Perfil = "ALUNO" | "PROFESSOR";
@@ -28,6 +31,12 @@ function Cadastro() {
     const [mostrarSenha, setMostrarSenha] = useState(false);
     const [carregando, setCarregando] = useState(false);
     const [erro, setErro] = useState("");
+
+    // O "Li e aceito" só é liberado depois que a pessoa abre os dois documentos
+    const [abriuTermo, setAbriuTermo] = useState(false);
+    const [abriuPolitica, setAbriuPolitica] = useState(false);
+    const leuDocumentos = abriuTermo && abriuPolitica;
+    const [aceitou, setAceitou] = useState(false);
 
     async function handleCadastro(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -48,10 +57,20 @@ function Cadastro() {
             return;
         }
 
+        if (!leuDocumentos) {
+            setErro("Abra e leia o Termo de Aceite e a Política de Privacidade antes de aceitar.");
+            return;
+        }
+
+        if (!aceitou) {
+            setErro("Para criar a conta, leia e aceite o Termo de Aceite e a Política de Privacidade.");
+            return;
+        }
+
         setCarregando(true);
 
         try {
-            const resposta = await fetch("http://localhost:8080/usuarios/cadastrar", {
+            const resposta = await fetch(`${API_URL}/usuarios/cadastrar`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -61,21 +80,24 @@ function Cadastro() {
                     usuario: email.trim(),
                     senha,
                     tipoUsuario: perfil,
+                    aceitouTermos: aceitou,
                 }),
             });
 
-            if (resposta.status === 400) {
-                setErro("Este e-mail já está cadastrado.");
-                return;
-            }
-
             if (!resposta.ok) {
-                setErro("Não foi possível criar a conta.");
+                const falha = await lerErro(resposta, "Não foi possível criar a conta.");
+
+                // Sem corpo de erro, o 400 do cadastro é o e-mail repetido
+                if (resposta.status === 400 && falha.codigo === "ERRO-DESCONHECIDO") {
+                    setErro("Este e-mail já está cadastrado.");
+                } else {
+                    setErro(falha.mensagem);
+                }
                 return;
             }
 
-            sessionStorage.setItem("email2FA", email.trim());
-            navigate("/verificar-2fa");
+            // O cadastro não envia código: a pessoa entra pelo login (o código de 2 etapas chega ali)
+            navigate("/login", { state: { contaCriada: true, email: email.trim(), perfil } });
         } catch (error) {
             console.error("Erro ao cadastrar:", error);
             setErro("Não foi possível conectar ao servidor.");
@@ -254,13 +276,72 @@ function Cadastro() {
                                 </div>
                             </div>
 
+                            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                                <span style={{ fontSize: 13, lineHeight: "18px" }}>
+                                    Antes de aceitar, abra e leia os dois documentos:
+                                </span>
+                                <a
+                                    href="/termo-de-aceite"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className={styles.link}
+                                    onClick={() => setAbriuTermo(true)}
+                                    onAuxClick={() => setAbriuTermo(true)}
+                                    style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 14 }}
+                                >
+                                    {abriuTermo ? <CircleCheck size={16} /> : <FileText size={16} />}
+                                    Termo de Aceite {abriuTermo && "(aberto)"}
+                                </a>
+                                <a
+                                    href="/politica-privacidade"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className={styles.link}
+                                    onClick={() => setAbriuPolitica(true)}
+                                    onAuxClick={() => setAbriuPolitica(true)}
+                                    style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 14 }}
+                                >
+                                    {abriuPolitica ? <CircleCheck size={16} /> : <FileText size={16} />}
+                                    Política de Privacidade {abriuPolitica && "(aberta)"}
+                                </a>
+                            </div>
+
+                            <label
+                                title={leuDocumentos ? undefined : "Abra o Termo de Aceite e a Política de Privacidade para liberar"}
+                                style={{
+                                    display: "flex",
+                                    gap: 10,
+                                    alignItems: "flex-start",
+                                    fontSize: 14,
+                                    lineHeight: "20px",
+                                    cursor: leuDocumentos ? "pointer" : "not-allowed",
+                                    opacity: leuDocumentos ? 1 : 0.55,
+                                }}
+                            >
+                                <input
+                                    type="checkbox"
+                                    checked={aceitou}
+                                    disabled={!leuDocumentos}
+                                    onChange={(event) => setAceitou(event.target.checked)}
+                                    style={{ marginTop: 3, width: 18, height: 18, accentColor: "var(--mu-teal)" }}
+                                />
+                                <span>
+                                    Li e aceito o Termo de Aceite e a Política de Privacidade do MenteUp.
+                                    {!leuDocumentos && (
+                                        <span style={{ display: "block", fontSize: 12 }}>
+                                            Disponível depois de abrir os dois documentos acima.
+                                        </span>
+                                    )}
+                                </span>
+                            </label>
+
                             {erro && (
                                 <div className={styles.error} role="alert">
                                     {erro}
                                 </div>
                             )}
 
-                            <button type="submit" className={styles.primaryButton} disabled={carregando}>
+                            <button type="submit" className={styles.primaryButton} disabled={carregando || !aceitou}>
                                 {carregando ? "Criando conta..." : textoBotao}
                             </button>
                         </form>

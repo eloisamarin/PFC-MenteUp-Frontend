@@ -12,20 +12,20 @@ import {
     validarPerguntas,
     type PerguntaRequest,
 } from "../../components/atividades/Editores";
+import ProfessorDaTurma from "../../components/ProfessorDaTurma";
 import { apiFetch, lerErro } from "../../services/api";
+import { podeAlterarTurma, type TurmaResumo } from "../../services/turmaDesafio";
 import { NOME_TIPO, type TipoAtividade } from "../../types/aluno";
 import styles from "./CriarAtividadeProfessor.module.css";
 
-interface Turma {
-    id: number;
-    nome: string;
-}
+type Turma = TurmaResumo;
 
 const ETAPAS = ["Informações", "Template", "Perguntas", "Revisão"];
 
 function CriarAtividadeProfessor() {
     const navigate = useNavigate();
     const area = useAreaBase();
+    const perfil = area === "/administrador" ? "ADMINISTRADOR" : "PROFESSOR";
 
     const [etapa, setEtapa] = useState(0);
     const [titulo, setTitulo] = useState("");
@@ -50,7 +50,9 @@ function CriarAtividadeProfessor() {
                 setCarregandoTurmas(true);
                 const response = await apiFetch("/turmas/all");
                 if (!response.ok) throw new Error("Erro ao buscar turmas");
-                setTurmas(await response.json());
+                // O professor só cria atividade nas turmas dele
+                const todas: Turma[] = await response.json();
+                setTurmas(todas.filter((t) => podeAlterarTurma(t, perfil)));
             } catch (error) {
                 console.error("Erro ao carregar turmas:", error);
                 setErro("Erro ao carregar turmas. Tente novamente.");
@@ -59,7 +61,7 @@ function CriarAtividadeProfessor() {
             }
         };
         carregarTurmas();
-    }, []);
+    }, [perfil]);
 
     const turma = turmas.find((t) => String(t.id) === turmaId);
     const sair = () => navigate(`${area}/atividades`);
@@ -69,6 +71,7 @@ function CriarAtividadeProfessor() {
             if (!titulo.trim()) return "Informe o título da atividade.";
             if (!turmaId) return "Selecione uma turma.";
             if (!pontuacao || pontuacao <= 0) return "Informe uma pontuação maior que zero.";
+        if (pontuacao > 1000) return "A pontuação deve ser no máximo 1000 XP.";
             if (!descricao.trim()) return "Informe a descrição da atividade.";
         }
         if (etapa === 2) return validarPerguntas(tipo, perguntas);
@@ -237,6 +240,19 @@ function CriarAtividadeProfessor() {
                                         </option>
                                     ))}
                                 </select>
+                                {perfil === "ADMINISTRADOR" && (
+                                    <ProfessorDaTurma
+                                        turma={turma}
+                                        onVinculado={(atualizada) =>
+                                            setTurmas((lista) => lista.map((t) => (t.id === atualizada.id ? atualizada : t)))
+                                        }
+                                    />
+                                )}
+                                {perfil === "PROFESSOR" && !carregandoTurmas && turmas.length === 0 && (
+                                    <p style={{ fontSize: 13, margin: "4px 0 0" }}>
+                                        Você ainda não é professor responsável por nenhuma turma. Peça a um administrador para vincular você.
+                                    </p>
+                                )}
                             </div>
                             <div>
                                 <label className={styles.label} htmlFor="pontuacao">
@@ -246,6 +262,7 @@ function CriarAtividadeProfessor() {
                                     id="pontuacao"
                                     type="number"
                                     min={1}
+                                    max={1000}
                                     className={styles.input}
                                     value={pontuacao}
                                     onChange={(e) => setPontuacao(Number(e.target.value))}

@@ -1,5 +1,5 @@
 ﻿import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
     BookOpen,
     Eye,
@@ -11,28 +11,40 @@ import {
 } from "lucide-react";
 
 import styles from "./login.module.css";
-import { lerErro } from "../services/api";
+import { API_URL, lerErro } from "../services/api";
 
 type Perfil = "ALUNO" | "PROFESSOR";
 
 function Login() {
     const navigate = useNavigate();
 
-    const [email, setEmail] = useState("");
+    // Vindo do cadastro: mostra o aviso de conta criada e já preenche o e-mail e o perfil
+    const vindoDoCadastro = useLocation().state as
+        | { contaCriada?: boolean; email?: string; perfil?: Perfil }
+        | null;
+    const [contaCriada, setContaCriada] = useState(vindoDoCadastro?.contaCriada === true);
+
+    const [email, setEmail] = useState(vindoDoCadastro?.email ?? "");
     const [senha, setSenha] = useState("");
     const [erro, setErro] = useState("");
 
     // Novo Design
-    const [perfil, setPerfil] = useState<Perfil>("ALUNO");
+    const [perfil, setPerfil] = useState<Perfil>(vindoDoCadastro?.perfil === "PROFESSOR" ? "PROFESSOR" : "ALUNO");
     const [mostrarSenha, setMostrarSenha] = useState(false);
     const [carregando, setCarregando] = useState(false);
+    // Senhas erradas seguidas para o mesmo e-mail nesta tela (o backend bloqueia na 3ª)
+    const [falhas, setFalhas] = useState({ email: "", total: 0 });
 
     async function handleLogin(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault();
 
         setErro("");
+        setContaCriada(false);
 
-        if (!email || !senha) {
+        // Aceita o e-mail com espaços sobrando (copiado e colado, teclado do celular)
+        const emailLimpo = email.trim();
+
+        if (!emailLimpo || !senha) {
             setErro("Preencha todos os campos.");
             return;
         }
@@ -41,14 +53,14 @@ function Login() {
 
         try {
             const resposta = await fetch(
-                "http://localhost:8080/usuarios/logar",
+                `${API_URL}/usuarios/logar`,
                 {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
                     },
                     body: JSON.stringify({
-                        usuario: email,
+                        usuario: emailLimpo,
                         senha: senha,
                     }),
                 }
@@ -59,7 +71,13 @@ function Login() {
                 if (resposta.status === 403) {
                     setErro((await lerErro(resposta, "Sua conta está bloqueada.")).mensagem);
                 } else {
-                    setErro("E-mail ou senha inválidos.");
+                    const total = falhas.email === emailLimpo ? falhas.total + 1 : 1;
+                    setFalhas({ email: emailLimpo, total });
+                    setErro(
+                        total >= 2
+                            ? "E-mail ou senha inválidos. Atenção: mais uma senha errada pode bloquear a conta. Se não lembrar, use “Esqueceu a senha?”."
+                            : "E-mail ou senha inválidos. Após 3 tentativas erradas a conta é bloqueada."
+                    );
                 }
                 return;
             }
@@ -69,7 +87,7 @@ function Login() {
             if (!dados.token) {
                 localStorage.removeItem("token");
                 localStorage.removeItem("usuario");
-                sessionStorage.setItem("email2FA", email);
+                sessionStorage.setItem("email2FA", emailLimpo);
                 navigate("/verificar-2fa");
                 return;
             }
@@ -261,6 +279,12 @@ function Login() {
                             >
                                 Esqueci minha senha
                             </button>
+
+                            {contaCriada && !erro && (
+                                <div className={styles.success} role="status">
+                                    Conta criada com sucesso! Entre com o seu e-mail e a senha que você cadastrou.
+                                </div>
+                            )}
 
                             {erro && (
                                 <div className={styles.error} role="alert">

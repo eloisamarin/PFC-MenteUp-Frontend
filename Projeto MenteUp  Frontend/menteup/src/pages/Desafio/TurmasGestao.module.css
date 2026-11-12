@@ -6,7 +6,7 @@
   font-size: 12px;
   font-weight: 800;
   text-transform: uppercase;
-  color: var(--mu-indigo);
+  color: var(--mu-indigo-text);
 }
 
 .title {
@@ -280,8 +280,8 @@
 }
 
 .iconButton {
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   flex-shrink: 0;
   display: grid;
   place-items: center;
@@ -504,4 +504,19 @@
   .row {
     flex-wrap: wrap;
   }
+}
+
+/* Lei de Fitts: área de toque de pelo menos 44x44px sem mudar o desenho do botão */
+.iconButton {
+  position: relative;
+}
+
+.iconButton::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: max(100%, 44px);
+  height: max(100%, 44px);
+  transform: translate(-50%, -50%);
 }

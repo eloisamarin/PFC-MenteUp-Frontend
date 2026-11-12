@@ -5,11 +5,14 @@ import {
     ChevronLeft,
     ChevronRight,
     Lock,
+    PartyPopper,
+    Trophy,
     TriangleAlert,
     Zap,
 } from "lucide-react";
 
 import AlunoLayout from "../../components/aluno/AlunoLayout";
+import ConfirmarExclusao from "../../components/ConfirmarExclusao";
 import { useConquistas } from "../../hooks/useConquistas";
 import { apiFetch, lerErro } from "../../services/api";
 import {
@@ -20,7 +23,7 @@ import {
     valorInicial,
     type Valor,
 } from "../../components/atividades/Players";
-import { NOME_TIPO, type TipoAtividade } from "../../types/aluno";
+import { NOME_TIPO, estaAberta, type AtividadeAluno, type TipoAtividade } from "../../types/aluno";
 import styles from "./ResponderAtividadeAluno.module.css";
 
 interface AlternativaResponse {
@@ -100,6 +103,10 @@ function ResponderAtividadeAluno() {
     const [rascunho, setRascunho] = useState<Valor>([]);
     const [ligacoes, setLigacoes] = useState<Record<number, number | null>>({});
     const [enviando, setEnviando] = useState(false);
+    // Respostas prontas para envio, aguardando o aluno confirmar a finalização
+    const [paraFinalizar, setParaFinalizar] = useState<Record<number, Valor> | null>(null);
+    // Próxima atividade aberta, oferecida ao terminar esta
+    const [proximaId, setProximaId] = useState<number | null>(null);
 
     const atividade = questionario?.atividade;
     const perguntas = questionario?.perguntas ?? [];
@@ -185,14 +192,34 @@ function ResponderAtividadeAluno() {
         setRespostas((atuais) => ({ ...atuais, [perguntaId]: valor }));
     }
 
-    async function finalizarAtividade(todas: Record<number, Valor>) {
+    // Antes de finalizar (ação sem volta), pede confirmação ao aluno
+    function pedirFinalizacao(todas: Record<number, Valor>) {
         const faltando = perguntas.findIndex((p) => todas[p.id] === undefined);
         if (faltando !== -1) {
             setIndice(faltando);
             setErro("Responda todas as perguntas antes de finalizar.");
             return;
         }
+        setParaFinalizar(todas);
+    }
 
+    async function finalizarConfirmado() {
+        if (!paraFinalizar || enviando) return;
+        try {
+            setEnviando(true);
+            setErro("");
+            await finalizarAtividade();
+            setParaFinalizar(null);
+        } catch (error) {
+            console.error("Erro ao finalizar:", error);
+            setParaFinalizar(null);
+            setErro(error instanceof Error ? error.message : "Não foi possível concluir a atividade.");
+        } finally {
+            setEnviando(false);
+        }
+    }
+
+    async function finalizarAtividade() {
         const resposta = await apiFetch(`/atividades/${id}/respostas`, { method: "POST" });
 
         if (!resposta.ok) {
@@ -225,7 +252,7 @@ function ResponderAtividadeAluno() {
                     }
                     todas[p.id] = valor;
                 }
-                await finalizarAtividade(todas);
+                pedirFinalizacao(todas);
                 return;
             }
 
@@ -234,7 +261,7 @@ function ResponderAtividadeAluno() {
             }
 
             if (ultima) {
-                await finalizarAtividade({ ...respostas, [pergunta.id]: rascunho });
+                pedirFinalizacao({ ...respostas, [pergunta.id]: rascunho });
             } else {
                 setIndice((i) => i + 1);
             }
@@ -248,7 +275,7 @@ function ResponderAtividadeAluno() {
     }, [podeResponder, pergunta, rascunho, ligacoes, completa, enviando, respostas, ultima]);
 
     useEffect(() => {
-        if (!podeResponder || !pergunta) return;
+        if (!podeResponder || !pergunta || paraFinalizar) return;
         const alternativas = pergunta.alternativas;
 
         function onKey(e: KeyboardEvent) {
@@ -264,9 +291,28 @@ function ResponderAtividadeAluno() {
 
         window.addEventListener("keydown", onKey);
         return () => window.removeEventListener("keydown", onKey);
-    }, [podeResponder, pergunta, confirmar, tipo]);
+    }, [podeResponder, pergunta, confirmar, tipo, paraFinalizar]);
 
     const voltar = () => navigate("/aluno/atividades");
+
+    // Com o resultado na tela, procura a próxima atividade aberta (em andamento primeiro)
+    const concluiu = meuResultado !== null;
+    useEffect(() => {
+        if (!concluiu) return;
+        let ativo = true;
+        apiFetch("/alunos/me/atividades")
+            .then((r) => (r.ok ? r.json() : []))
+            .then((lista: AtividadeAluno[]) => {
+                const abertas = lista
+                    .filter((item) => estaAberta(item) && item.atividade.id !== Number(id))
+                    .sort((a, b) => Number(b.status === "EM_ANDAMENTO") - Number(a.status === "EM_ANDAMENTO"));
+                if (ativo) setProximaId(abertas[0]?.atividade.id ?? null);
+            })
+            .catch(() => undefined);
+        return () => {
+            ativo = false;
+        };
+    }, [concluiu, id]);
 
     const topo = (
         <div className={styles.topRow}>
@@ -317,15 +363,28 @@ function ResponderAtividadeAluno() {
         const pctAcerto = meuResultado.totalQuestoes
             ? Math.round((meuResultado.acertos / meuResultado.totalQuestoes) * 100)
             : 0;
+        // O final é o que fica na memória: a mensagem acompanha o desempenho, sempre positiva
+        const [tituloFinal, textoFinal] =
+            pctAcerto === 100
+                ? ["Gabaritou!", "Você acertou todas as perguntas. Que fase!"]
+                : pctAcerto >= 70
+                  ? ["Mandou bem!", "Ótimo resultado. Seu XP já foi somado."]
+                  : pctAcerto >= 40
+                    ? ["Bom trabalho!", "Você está no caminho. Cada atividade conta para o seu nível."]
+                    : ["Atividade concluída!", "Todo começo conta. Revise o conteúdo e siga para a próxima."];
 
         return (
             <AlunoLayout compacto>
                 {topo}
                 <section className={`${styles.card} ${styles.center}`}>
                     <span className={styles.subject}>{assunto}</span>
-                    <CheckCircle2 size={56} className={styles.mint} />
-                    <h2 className={styles.stateTitle}>Atividade concluída!</h2>
-                    <p className={styles.muted}>Não é possível responder novamente.</p>
+                    {pctAcerto >= 70 ? (
+                        <PartyPopper size={56} className={styles.gold} aria-hidden />
+                    ) : (
+                        <CheckCircle2 size={56} className={styles.mint} aria-hidden />
+                    )}
+                    <h2 className={styles.stateTitle}>{tituloFinal}</h2>
+                    <p className={styles.muted}>{textoFinal}</p>
 
                     <div className={styles.resultGrid}>
                         <div className={styles.resultItem}>
@@ -344,9 +403,25 @@ function ResponderAtividadeAluno() {
                         </div>
                     </div>
 
-                    <button type="button" className={styles.primary} onClick={voltar}>
-                        Voltar para atividades <ChevronRight size={16} />
-                    </button>
+                    <div className={styles.resultActions}>
+                        {proximaId !== null ? (
+                            <button
+                                type="button"
+                                className={styles.primary}
+                                onClick={() => navigate(`/aluno/atividades/responder/${proximaId}`)}
+                            >
+                                Próxima atividade <ChevronRight size={16} />
+                            </button>
+                        ) : (
+                            <button type="button" className={styles.primary} onClick={voltar}>
+                                Voltar para atividades <ChevronRight size={16} />
+                            </button>
+                        )}
+                        <button type="button" className={styles.ghost} onClick={() => navigate("/aluno/ranking")}>
+                            <Trophy size={16} /> Ver ranking
+                        </button>
+                    </div>
+                    <p className={styles.note}>Suas respostas foram registradas.</p>
                 </section>
             </AlunoLayout>
         );
@@ -459,6 +534,25 @@ function ResponderAtividadeAluno() {
                     </button>
                 </footer>
             </section>
+
+            {paraFinalizar && (
+                <ConfirmarExclusao
+                    variante="confirmar"
+                    titulo="Finalizar atividade?"
+                    mensagem={
+                        <>
+                            Você respondeu <strong>{perguntas.length} de {perguntas.length}</strong> perguntas.
+                            Depois de finalizar, não dá para alterar as respostas.
+                        </>
+                    }
+                    processando={enviando}
+                    rotuloCancelar="Revisar respostas"
+                    rotuloConfirmar="Finalizar"
+                    rotuloProcessando="Finalizando..."
+                    onConfirmar={finalizarConfirmado}
+                    onCancelar={() => setParaFinalizar(null)}
+                />
+            )}
         </AlunoLayout>
     );
 }

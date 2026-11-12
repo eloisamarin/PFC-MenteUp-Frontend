@@ -67,7 +67,7 @@
   border-radius: 999px;
   background: rgba(237, 190, 36, 0.18);
   color: var(--mu-gold);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
   text-transform: uppercase;
 }
@@ -83,12 +83,12 @@
 .dots {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
 }
 
 .dot {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   display: grid;
   place-items: center;
   border: 1px solid var(--mu-app-glass-border);
@@ -244,8 +244,8 @@
 }
 
 .iconButton {
-  width: 30px;
-  height: 30px;
+  width: 36px;
+  height: 36px;
   flex-shrink: 0;
   display: grid;
   place-items: center;
@@ -486,4 +486,47 @@
   .gapAnswers {
     grid-template-columns: 1fr;
   }
+}
+
+/* Lei de Fitts: área de toque de pelo menos 44x44px sem mudar o desenho do botão */
+.iconButton {
+  position: relative;
+}
+
+.iconButton::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: max(100%, 44px);
+  height: max(100%, 44px);
+  transform: translate(-50%, -50%);
+}
+
+.dot {
+  position: relative;
+}
+
+.dot::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: max(100%, 44px);
+  height: max(100%, 44px);
+  transform: translate(-50%, -50%);
+}
+
+.chip button {
+  position: relative;
+}
+
+.chip button::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: max(100%, 32px);
+  height: max(100%, 32px);
+  transform: translate(-50%, -50%);
 }

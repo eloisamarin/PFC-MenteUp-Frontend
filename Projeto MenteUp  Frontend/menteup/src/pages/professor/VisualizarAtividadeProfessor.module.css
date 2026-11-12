@@ -94,7 +94,7 @@
   font-weight: 800;
   line-height: 16px;
   text-transform: uppercase;
-  color: var(--mu-indigo);
+  color: var(--mu-indigo-text);
 }
 
 .title {
@@ -153,7 +153,7 @@
 }
 
 .infoStat small {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--mu-app-muted);
 }
 
@@ -252,13 +252,13 @@
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 6px;
+  gap: 8px;
   min-width: 0;
 }
 
 .dot {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   display: grid;
   place-items: center;
   border: 1px solid var(--mu-app-glass-border);
@@ -370,4 +370,19 @@
   .navButton {
     height: 44px;
   }
+}
+
+/* Lei de Fitts: área de toque de pelo menos 44x44px sem mudar o desenho do botão */
+.dot {
+  position: relative;
+}
+
+.dot::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: max(100%, 44px);
+  height: max(100%, 44px);
+  transform: translate(-50%, -50%);
 }

@@ -1,7 +1,7 @@
-import {useEffect, useMemo, useState} from "react";
-import {ChevronLeft, ChevronRight, Ellipsis, GraduationCap, Search, ShieldCheck, User, Users, X} from "lucide-react";
+import {useEffect, useMemo, useState, type FormEvent} from "react";
+import {ChevronLeft, ChevronRight, Ellipsis, GraduationCap, Search, ShieldCheck, User, UserPlus, Users, X} from "lucide-react";
 import AdminLayout from "../../components/administrador/AdminLayout";
-import {apiFetch} from "../../services/api";
+import {apiFetch, lerErro} from "../../services/api";
 import {iniciais} from "../../services/usuarioLogado";
 import styles from "./Administrador.module.css";
 
@@ -14,6 +14,7 @@ interface UsuarioApi {
     nomeUsuario: string;
     usuario: string;
     tipoUsuario?: string;
+    aguardandoPrimeiroAcesso?: boolean;
     dataCadastro?: string;
     dataCriacao?: string;
     criadoEm?: string;
@@ -36,6 +37,7 @@ interface Usuario {
     nome: string;
     email: string;
     tipo: Tipo;
+    pendente: boolean;
     cadastro: string | null;
     ultimoAcesso: string | null;
     turmas: string[];
@@ -73,6 +75,87 @@ function BadgeTipo({tipo}: { tipo: Tipo }) {
     );
 }
 
+/*
+ * Criação de usuário pelo administrador (POST /usuarios).
+ * É o único jeito de criar outro ADMINISTRADOR: o cadastro público aceita só Aluno e Professor.
+ */
+function NovoUsuario({onFechar, onCriado}: { onFechar: () => void; onCriado: (mensagem: string) => void }) {
+    const [nome, setNome] = useState("");
+    const [email, setEmail] = useState("");
+    const [tipo, setTipo] = useState<Tipo>("PROFESSOR");
+    const [salvando, setSalvando] = useState(false);
+    const [erro, setErro] = useState("");
+
+    async function salvar(evento: FormEvent) {
+        evento.preventDefault();
+        setErro("");
+
+        if (!nome.trim() || !email.trim()) {
+            setErro("Preencha o nome e o e-mail.");
+            return;
+        }
+
+        try {
+            setSalvando(true);
+            const resposta = await apiFetch("/usuarios", {
+                method: "POST",
+                body: JSON.stringify({nomeUsuario: nome.trim(), usuario: email.trim(), tipoUsuario: tipo}),
+            });
+
+            if (!resposta.ok) {
+                setErro((await lerErro(resposta, "Não foi possível criar o usuário.")).mensagem);
+                return;
+            }
+
+            onCriado(`${TIPO[tipo].rotulo} "${nome.trim()}" criado. O convite para criar a senha foi enviado para ${email.trim()}.`);
+        } catch {
+            setErro("Não foi possível conectar ao servidor.");
+        } finally {
+            setSalvando(false);
+        }
+    }
+
+    return (
+        <div className={styles.overlay} onClick={onFechar}>
+            <div className={styles.modal} role="dialog" aria-modal="true" aria-labelledby="novo-titulo"
+                 onClick={(e) => e.stopPropagation()}>
+                <button type="button" className={styles.modalClose} onClick={onFechar} aria-label="Fechar">
+                    <X size={18}/>
+                </button>
+                <h2 id="novo-titulo" className={styles.modalTitle}>Novo usuário</h2>
+                <p className={styles.modalSubtitle}>
+                    A pessoa recebe um e-mail com um link (válido por 3 dias) para criar a própria senha e aceitar o
+                    Termo de Aceite e a Política de Privacidade. Só o administrador pode criar outro administrador.
+                </p>
+
+                <form onSubmit={salvar} className={styles.formNovo}>
+                    <label>Nome
+                        <input className={styles.campo} value={nome} onChange={(e) => setNome(e.target.value)}
+                               autoComplete="off"/>
+                    </label>
+                    <label>E-mail
+                        <input className={styles.campo} type="email" value={email}
+                               onChange={(e) => setEmail(e.target.value)} autoComplete="off"/>
+                    </label>
+                    <label>Tipo de usuário
+                        <select className={styles.select} value={tipo} onChange={(e) => setTipo(e.target.value as Tipo)}>
+                            <option value="ALUNO">Aluno</option>
+                            <option value="PROFESSOR">Professor</option>
+                            <option value="ADMINISTRADOR">Administrador</option>
+                        </select>
+                    </label>
+
+                    {erro && <div className={styles.error} role="alert">{erro}</div>}
+
+                    <button type="submit" className={styles.primaryButton} disabled={salvando}>
+                        <UserPlus size={18}/> {salvando ? "Enviando convite..." : "Criar e enviar convite"}
+                    </button>
+                </form>
+            </div>
+        </div>
+    );
+}
+
 function Usuarios() {
     const [usuarios, setUsuarios] = useState<Usuario[]>([]);
     const [carregando, setCarregando] = useState(true);
@@ -81,6 +164,9 @@ function Usuarios() {
     const [perfil, setPerfil] = useState("");
     const [pagina, setPagina] = useState(0);
     const [detalhe, setDetalhe] = useState<Usuario | null>(null);
+    const [novoAberto, setNovoAberto] = useState(false);
+    const [aviso, setAviso] = useState("");
+    const [versao, setVersao] = useState(0);
 
     useEffect(() => {
         async function carregar() {
@@ -109,6 +195,7 @@ function Usuarios() {
                     nome: u.nomeUsuario,
                     email: u.usuario,
                     tipo: tipoDe(u.tipoUsuario),
+                    pendente: u.aguardandoPrimeiroAcesso === true,
                     cadastro: u.dataCadastro ?? u.dataCriacao ?? u.criadoEm ?? null,
                     ultimoAcesso: ultimo.get(u.id) ?? null,
                     turmas: turmas
@@ -124,7 +211,7 @@ function Usuarios() {
         }
 
         carregar();
-    }, []);
+    }, [versao]);
 
     useEffect(() => {
         if (!detalhe) return;
@@ -170,7 +257,12 @@ function Usuarios() {
                     <h1 className={styles.title}>Gestão de usuários</h1>
                     <p className={styles.subtitle}>Contas e perfis dos usuários do MenteUp.</p>
                 </div>
+                <button type="button" className={styles.primaryButton} onClick={() => setNovoAberto(true)}>
+                    <UserPlus size={18}/> Novo usuário
+                </button>
             </header>
+
+            {aviso && <div className={styles.sucesso} role="status">{aviso}</div>}
 
             <div className={styles.summary}>
                 {resumo.map((item) => (
@@ -233,7 +325,7 @@ function Usuarios() {
                                             <span className={styles.avatar}>{iniciais(u.nome)}</span>
                                             <span>
                                                 <strong>{u.nome}</strong>
-                                                <small>{identificador(u.id)}</small>
+                                                <small>{identificador(u.id)}{u.pendente && " · convite pendente"}</small>
                                             </span>
                                         </span>
                                     </td>
@@ -244,6 +336,7 @@ function Usuarios() {
                                         <button
                                             type="button"
                                             title="Mais informações"
+                                            aria-label={`Mais informações sobre ${u.nome}`}
                                             onClick={() => setDetalhe(u)}
                                             className={styles.iconButton}
                                         >
@@ -303,6 +396,7 @@ function Usuarios() {
                             <div><dt>Identificador</dt><dd>{identificador(detalhe.id)}</dd></div>
                             <div><dt>E-mail</dt><dd>{detalhe.email}</dd></div>
                             <div><dt>Tipo de usuário</dt><dd>{TIPO[detalhe.tipo].rotulo}</dd></div>
+                            <div><dt>Situação</dt><dd>{detalhe.pendente ? "Aguardando primeiro acesso (convite enviado)" : "Ativo"}</dd></div>
                             <div><dt>Turmas</dt><dd>{detalhe.turmas.length ? detalhe.turmas.join(", ") : "—"}</dd></div>
                             <div><dt>Data de cadastro</dt><dd>{formatar(detalhe.cadastro, false)}</dd></div>
                             <div><dt>Último acesso</dt><dd>{formatar(detalhe.ultimoAcesso)}</dd></div>
@@ -312,6 +406,17 @@ function Usuarios() {
                         </button>
                     </div>
                 </div>
+            )}
+
+            {novoAberto && (
+                <NovoUsuario
+                    onFechar={() => setNovoAberto(false)}
+                    onCriado={(mensagem) => {
+                        setNovoAberto(false);
+                        setAviso(mensagem);
+                        setVersao((atual) => atual + 1);
+                    }}
+                />
             )}
         </AdminLayout>
     );

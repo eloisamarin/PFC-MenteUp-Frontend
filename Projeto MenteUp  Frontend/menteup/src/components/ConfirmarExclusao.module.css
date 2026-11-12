@@ -65,7 +65,8 @@
 }
 
 .cancelButton,
-.dangerButton {
+.dangerButton,
+.confirmButton {
   height: 48px;
   display: flex;
   align-items: center;
@@ -108,9 +109,29 @@
 }
 
 .cancelButton:focus-visible,
-.dangerButton:focus-visible {
+.dangerButton:focus-visible,
+.confirmButton:focus-visible {
   outline: 2px solid var(--mu-mint);
   outline-offset: 2px;
+}
+
+/* Variante "confirmar": ação sem perda de dados */
+.iconConfirmar {
+  background: rgba(0, 169, 158, 0.18);
+  color: var(--mu-mint);
+}
+
+.confirmButton {
+  background: var(--mu-gradient-brand);
+}
+
+.confirmButton:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.confirmButton:disabled {
+  opacity: 0.7;
+  cursor: wait;
 }
 
 @keyframes aparecer {

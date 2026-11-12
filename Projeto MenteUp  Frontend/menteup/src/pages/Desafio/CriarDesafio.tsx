@@ -3,7 +3,8 @@ import {useNavigate, useParams, useSearchParams} from "react-router-dom";
 import {Check, ChevronLeft, ChevronRight, Plus, Timer, Trash2, X} from "lucide-react";
 import {IconeDesafio} from "../../components/ComponentesDesafio";
 import {apiFetch, lerErro} from "../../services/api";
-import {contagem, ROTA_BASE, type PerfilGestao, type TurmaResumo} from "../../services/turmaDesafio";
+import {contagem, podeAlterarTurma, ROTA_BASE, type PerfilGestao, type TurmaResumo} from "../../services/turmaDesafio";
+import ProfessorDaTurma from "../../components/ProfessorDaTurma";
 import {LayoutGestao} from "./TurmasGestao";
 import styles from "../professor/CriarAtividadeProfessor.module.css";
 import editor from "../../components/atividades/Editores.module.css";
@@ -122,7 +123,9 @@ function CriarDesafio({perfil}: { perfil: PerfilGestao }) {
             try {
                 const resposta = await apiFetch("/turmas/all");
                 if (!resposta.ok) throw new Error("Falha ao consultar as turmas.");
-                setTurmas(await resposta.json());
+                // O professor só cria desafio nas turmas dele
+                const todas: TurmaResumo[] = await resposta.json();
+                setTurmas(todas.filter((t) => podeAlterarTurma(t, perfil)));
             } catch (error) {
                 console.error("Erro ao carregar turmas:", error);
                 setErro("Não foi possível carregar as turmas.");
@@ -130,7 +133,7 @@ function CriarDesafio({perfil}: { perfil: PerfilGestao }) {
         }
 
         carregarTurmas();
-    }, []);
+    }, [perfil]);
 
     const sair = () => navigate(`${base}/desafios`);
     const pergunta = perguntas[indice] ?? perguntas[0];
@@ -302,6 +305,14 @@ function CriarDesafio({perfil}: { perfil: PerfilGestao }) {
                                 <option key={t.id} value={t.id}>{t.nome}</option>
                             ))}
                         </select>
+                        {perfil === "ADMINISTRADOR" && (
+                            <ProfessorDaTurma
+                                turma={turma}
+                                onVinculado={(atualizada) =>
+                                    setTurmas((lista) => lista.map((t) => (t.id === atualizada.id ? atualizada : t)))
+                                }
+                            />
+                        )}
 
                         <label className={styles.label} htmlFor="descricao">Descrição</label>
                         <textarea

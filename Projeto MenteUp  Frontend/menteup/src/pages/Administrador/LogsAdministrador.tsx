@@ -315,6 +315,7 @@ function LogsAdministrador() {
                                             <button
                                                 type="button"
                                                 title="Ver detalhes"
+                                                aria-label="Ver detalhes do registro"
                                                 onClick={() => setDetalhe(log)}
                                                 className={styles.iconButton}
                                             >

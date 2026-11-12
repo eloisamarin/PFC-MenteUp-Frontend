@@ -294,12 +294,12 @@
 
 .ringCenter small {
   margin-top: 2px;
-  font-size: 9px;
+  font-size: 12px;
   color: var(--mu-app-muted);
 }
 
 .levelLabel {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
   text-transform: uppercase;
   color: var(--mu-app-muted);

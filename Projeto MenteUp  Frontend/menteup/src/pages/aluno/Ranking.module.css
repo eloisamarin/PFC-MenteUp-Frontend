@@ -7,7 +7,7 @@
   font-weight: 800;
   line-height: 16px;
   text-transform: uppercase;
-  color: var(--mu-indigo);
+  color: var(--mu-indigo-text);
 }
 
 .title {
@@ -221,7 +221,7 @@
 .league {
   display: block;
   margin: 6px 0;
-  color: var(--mu-indigo);
+  color: var(--mu-indigo-text);
   font-size: 30px;
   font-weight: 800;
   line-height: 36px;
@@ -387,7 +387,7 @@
   border-radius: 999px;
   background: rgba(97, 95, 255, 0.3);
   color: #c9c8ff;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
   text-transform: uppercase;
 }
@@ -423,7 +423,7 @@
 }
 
 .pedestalLabel {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
   text-transform: uppercase;
   color: var(--mu-app-muted);
