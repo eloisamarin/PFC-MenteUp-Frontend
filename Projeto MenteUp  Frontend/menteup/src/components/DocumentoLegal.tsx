@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, FileText } from "lucide-react";
 
 import styles from "./DocumentoLegal.module.css";
+import { LogoMarca, LogoNome } from "./Logo";
 
 interface DocumentoLegalProps {
     titulo: string;
@@ -24,8 +25,8 @@ export default function DocumentoLegal({ titulo, subtitulo, outroDocumento, chil
             <header className={styles.topbar}>
                 <div className={styles.inner}>
                     <Link to="/" className={styles.brand}>
-                        <span className={styles.brandMark}>M</span>
-                        <span className={styles.brandName}>MenteUp</span>
+                        <LogoMarca tamanho={36} />
+                        <LogoNome className={styles.brandName} />
                     </Link>
                     <button type="button" className={styles.back} onClick={voltar}>
                         <ArrowLeft size={16} /> Voltar

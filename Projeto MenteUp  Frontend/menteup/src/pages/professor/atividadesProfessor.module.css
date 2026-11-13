@@ -112,7 +112,7 @@
 
 .danger:hover:not(:disabled) {
   background: rgba(235, 100, 86, 0.25);
-  color: #ffb4ab;
+  color: var(--mu-error-text);
 }
 
 .createButton:focus-visible,

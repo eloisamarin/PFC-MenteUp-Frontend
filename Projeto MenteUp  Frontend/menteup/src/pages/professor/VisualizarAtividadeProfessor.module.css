@@ -32,6 +32,7 @@
 }
 
 .editButton {
+  composes: clara from "../../styles/superficie.module.css";
   height: 48px;
   display: inline-flex;
   align-items: center;
@@ -49,10 +50,11 @@
 }
 
 .editButton:hover {
-  background: rgba(252, 250, 245, 0.14);
+  background: rgba(var(--mu-veu-rgb), 0.14);
 }
 
 .xpChip {
+  composes: clara from "../../styles/superficie.module.css";
   height: 48px;
   display: inline-flex;
   align-items: center;
@@ -66,6 +68,7 @@
 }
 
 .info {
+  composes: clara from "../../styles/superficie.module.css";
   margin-bottom: 16px;
   padding: 20px 28px;
   display: flex;
@@ -137,6 +140,7 @@
 }
 
 .infoStat {
+  composes: clara from "../../styles/superficie.module.css";
   min-width: 132px;
   display: flex;
   align-items: center;
@@ -167,6 +171,7 @@
 }
 
 .card {
+  composes: clara from "../../styles/superficie.module.css";
   display: flex;
   flex-direction: column;
   padding: 24px 40px;
@@ -257,6 +262,7 @@
 }
 
 .dot {
+  composes: clara from "../../styles/superficie.module.css";
   width: 36px;
   height: 36px;
   display: grid;
@@ -273,7 +279,7 @@
 }
 
 .dot:hover:not(.dotActive) {
-  background: rgba(252, 250, 245, 0.14);
+  background: rgba(var(--mu-veu-rgb), 0.14);
   color: var(--mu-app-text);
 }
 

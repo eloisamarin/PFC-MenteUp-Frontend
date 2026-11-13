@@ -22,6 +22,18 @@ export interface TurmaResumo {
     nome: string;
     // Professor que tem acesso às atividades e desafios da turma (null = só o administrador)
     professorResponsavel?: ProfessorResponsavel | null;
+    // Arquivada: sai das listas e não recebe nada novo, mas mantém o histórico
+    arquivada?: boolean;
+}
+
+/** GET /turmas/{id}/exclusao: se a turma pode ser excluída e, se não, o motivo. */
+export interface ExclusaoTurma {
+    podeExcluir: boolean;
+    alunos: number;
+    desafios: number;
+    resultados: number;
+    atividadesEmAndamento: number;
+    motivo: string | null;
 }
 
 export interface AlunoTurma {
@@ -86,6 +98,7 @@ export interface LinhaRanking {
     nomeUsuario: string;
     pontos: number;
     acertos: number;
+    avatar?: string | null;
 }
 
 export function contagem(quantidade: number, singular: string, plural: string) {

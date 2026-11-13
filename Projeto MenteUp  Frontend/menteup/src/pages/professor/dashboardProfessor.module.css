@@ -1,5 +1,6 @@
 .card,
 .stat {
+  composes: clara from "../../styles/superficie.module.css";
   background: var(--mu-app-glass);
   border: 1px solid var(--mu-app-glass-border);
   box-shadow: var(--mu-app-shadow);
@@ -64,9 +65,9 @@
   margin-bottom: 20px;
   padding: 12px 16px;
   border-radius: 14px;
-  background: rgba(235, 100, 86, 0.15);
+  background: var(--mu-error-bg);
   border: 1px solid rgba(235, 100, 86, 0.45);
-  color: #ffb4ab;
+  color: var(--mu-error-text);
   font-weight: 700;
   font-size: 14px;
   display: flex;
@@ -332,7 +333,7 @@ button.attentionItem:hover {
 }
 
 .table tbody tr:hover {
-  background: rgba(252, 250, 245, 0.04);
+  background: rgba(var(--mu-veu-rgb), 0.04);
 }
 
 .table tbody tr:focus-visible {

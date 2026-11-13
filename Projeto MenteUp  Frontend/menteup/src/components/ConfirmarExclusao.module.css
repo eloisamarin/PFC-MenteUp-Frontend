@@ -11,11 +11,12 @@
 }
 
 .dialog {
+  composes: clara from "../styles/superficie.module.css";
   width: 100%;
   max-width: 440px;
   padding: 28px;
   border-radius: var(--mu-radius-2xl);
-  background: #26326f;
+  background: var(--mu-app-glass);
   border: 1px solid var(--mu-app-glass-border);
   box-shadow: 0 30px 60px rgba(0, 0, 0, 0.45);
   display: flex;
@@ -83,11 +84,12 @@
 }
 
 .cancelButton {
+  composes: clara from "../styles/superficie.module.css";
   background: var(--mu-app-glass);
 }
 
 .cancelButton:hover:not(:disabled) {
-  background: rgba(252, 250, 245, 0.14);
+  background: rgba(var(--mu-veu-rgb), 0.14);
 }
 
 .cancelButton:disabled {

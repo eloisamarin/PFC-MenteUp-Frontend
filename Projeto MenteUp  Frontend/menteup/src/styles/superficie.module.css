@@ -1,0 +1,49 @@
+/*
+ * Superfície clara: cartões lilás-claro sobre o fundo em gradiente.
+ * Os blocos de cartão usam "composes: clara from ..." e tudo que está dentro
+ * deles passa a usar texto roxo-escuro e cores de destaque escurecidas.
+ * O que fica direto sobre o gradiente (topo, menu, títulos das páginas) continua claro.
+ * Para trocar a cor de todos os cartões, basta mudar --mu-app-glass aqui.
+ */
+.clara {
+  --mu-app-text: #2e1065;        /* roxo-escuro: 13,6:1 no lilás */
+  --mu-app-muted: #5b4b8a;       /* texto secundário: 6,6:1 no lilás */
+  --mu-app-glass: #f3f0ff;       /* fundo dos cartões */
+  --mu-app-glass-border: #ddd6fe;
+  --mu-app-track: #e4dcff;
+  --mu-app-shadow: 0 10px 28px rgba(46, 16, 101, 0.18);
+  --mu-veu-rgb: 46, 16, 101;
+  --mu-sunken: #ffffff;          /* caixas internas e campos: brancos sobre o lilás */
+
+  --mu-text: #2e1065;
+  --mu-text-muted: #5b4b8a;
+  --mu-surface: #f3f0ff;
+  --mu-surface-soft: #ebe5ff;
+  --mu-surface-sunken: #ffffff;
+  --mu-surface-solid: #ffffff;
+  --mu-input-bg: #ffffff;
+  --mu-border: #ddd6fe;
+  --mu-border-input: #d9d0fb;
+
+  /* Destaques escurecidos: todos com pelo menos 4,5:1 sobre o lilás */
+  --mu-indigo: #4f46e5;
+  --mu-indigo-text: #4f46e5;
+  --mu-purple: #6d28d9;
+  --mu-lilac: #7e22ce;
+  --mu-mint: #0f766e;
+  --mu-teal: #0f766e;
+  --mu-mint-on-gradient: #0f766e;
+  --mu-gold: #a14a07;
+  --mu-coral: #c2352a;
+  --mu-danger: #c2352a;
+  --mu-success: #047857;
+  --mu-success-on-gradient: #047857;
+  --mu-warning: #c2410c;
+  --mu-info: #0369a1;
+  --mu-error-bg: #fff1f0;
+  --mu-error-text: #b42318;
+  --mu-badge-bg: #ddd6fe;        /* etiquetas: lilás médio com texto roxo-escuro (8:1) */
+  --mu-badge-text: #4c1d95;
+
+  color: var(--mu-app-text);
+}

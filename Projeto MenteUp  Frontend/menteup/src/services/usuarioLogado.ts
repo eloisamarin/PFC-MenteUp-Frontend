@@ -4,6 +4,7 @@ export interface UsuarioLogado {
     nome?: string;
     usuario?: string;
     tipoUsuario?: string;
+    avatar?: string | null;
 }
 
 export function obterUsuarioLogado(): UsuarioLogado | null {

@@ -3,8 +3,6 @@ import { useLocation, useNavigate } from "react-router-dom";
 import {
     BookOpen,
     CircleCheck,
-    Eye,
-    EyeOff,
     FileText,
     GraduationCap,
     Sparkles,
@@ -12,8 +10,11 @@ import {
     User,
 } from "lucide-react";
 
+import CampoSenha from "../components/CampoSenha";
 import { API_URL, lerErro } from "../services/api";
+import { problemaSenha } from "../services/senha";
 import styles from "./login.module.css";
+import { LogoMarca, LogoNome } from "../components/Logo";
 
 type Perfil = "ALUNO" | "PROFESSOR";
 
@@ -28,7 +29,6 @@ function Cadastro() {
     const [email, setEmail] = useState("");
     const [senha, setSenha] = useState("");
     const [confirmarSenha, setConfirmarSenha] = useState("");
-    const [mostrarSenha, setMostrarSenha] = useState(false);
     const [carregando, setCarregando] = useState(false);
     const [erro, setErro] = useState("");
 
@@ -47,8 +47,9 @@ function Cadastro() {
             return;
         }
 
-        if (senha.length < 8) {
-            setErro("A senha deve ter no mínimo 8 caracteres.");
+        const problema = problemaSenha(senha);
+        if (problema) {
+            setErro(problema);
             return;
         }
 
@@ -97,7 +98,7 @@ function Cadastro() {
             }
 
             // O cadastro não envia código: a pessoa entra pelo login (o código de 2 etapas chega ali)
-            navigate("/login", { state: { contaCriada: true, email: email.trim(), perfil } });
+            navigate("/login", { state: { contaCriada: true, email: email.trim() } });
         } catch (error) {
             console.error("Erro ao cadastrar:", error);
             setErro("Não foi possível conectar ao servidor.");
@@ -107,8 +108,6 @@ function Cadastro() {
     }
 
     const textoBotao = perfil === "ALUNO" ? "Criar conta de aluno" : "Criar conta de professor";
-    const iconeSenha = mostrarSenha ? <EyeOff size={16} /> : <Eye size={16} />;
-    const rotuloSenha = mostrarSenha ? "Ocultar senha" : "Mostrar senha";
 
     return (
         <div className={styles.page}>
@@ -119,9 +118,9 @@ function Cadastro() {
                     onClick={() => navigate("/")}
                     aria-label="Voltar para a página inicial"
                 >
-                    <span className={styles.brandMark}>M</span>
+                    <LogoMarca tamanho={44} />
                     <span>
-                        <span className={styles.brandName}>MenteUp</span>
+                        <LogoNome className={styles.brandName} />
                         <span className={styles.brandTagline}>Sua jornada de aprendizado</span>
                     </span>
                 </button>
@@ -226,55 +225,24 @@ function Cadastro() {
                                 />
                             </div>
 
-                            <div className={styles.field}>
-                                <label htmlFor="senha" className={styles.label}>
-                                    Senha
-                                </label>
-                                <div className={styles.inputWrap}>
-                                    <input
-                                        type={mostrarSenha ? "text" : "password"}
-                                        id="senha"
-                                        autoComplete="new-password"
-                                        className={styles.input}
-                                        placeholder="Mínimo de 8 caracteres"
-                                        value={senha}
-                                        onChange={(event) => setSenha(event.target.value)}
-                                    />
-                                    <button
-                                        type="button"
-                                        className={styles.eyeButton}
-                                        onClick={() => setMostrarSenha((v) => !v)}
-                                        aria-label={rotuloSenha}
-                                    >
-                                        {iconeSenha}
-                                    </button>
-                                </div>
-                            </div>
+                            <CampoSenha
+                                id="senha"
+                                rotulo="Senha"
+                                valor={senha}
+                                aoMudar={setSenha}
+                                autoComplete="new-password"
+                                placeholder="Crie uma senha forte"
+                                mostrarRequisitos
+                            />
 
-                            <div className={styles.field}>
-                                <label htmlFor="confirmarSenha" className={styles.label}>
-                                    Confirmar senha
-                                </label>
-                                <div className={styles.inputWrap}>
-                                    <input
-                                        type={mostrarSenha ? "text" : "password"}
-                                        id="confirmarSenha"
-                                        autoComplete="new-password"
-                                        className={styles.input}
-                                        placeholder="Digite a senha novamente"
-                                        value={confirmarSenha}
-                                        onChange={(event) => setConfirmarSenha(event.target.value)}
-                                    />
-                                    <button
-                                        type="button"
-                                        className={styles.eyeButton}
-                                        onClick={() => setMostrarSenha((v) => !v)}
-                                        aria-label={rotuloSenha}
-                                    >
-                                        {iconeSenha}
-                                    </button>
-                                </div>
-                            </div>
+                            <CampoSenha
+                                id="confirmarSenha"
+                                rotulo="Confirmar senha"
+                                valor={confirmarSenha}
+                                aoMudar={setConfirmarSenha}
+                                autoComplete="new-password"
+                                placeholder="Digite a senha novamente"
+                            />
 
                             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                                 <span style={{ fontSize: 13, lineHeight: "18px" }}>

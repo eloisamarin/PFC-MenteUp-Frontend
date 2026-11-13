@@ -1,7 +1,8 @@
 .page {
   min-height: 100vh;
   padding-bottom: 64px;
-  background: var(--mu-bg);
+  background: var(--mu-gradient-page);
+  background-attachment: fixed;
   color: var(--mu-app-text);
   font-family: var(--mu-font-body);
   -webkit-font-smoothing: antialiased;
@@ -39,17 +40,6 @@
   text-decoration: none;
 }
 
-.brandMark {
-  width: 36px;
-  height: 36px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background: var(--mu-mint);
-  color: #041b35;
-  font-family: var(--mu-font-display);
-  font-weight: 800;
-}
 
 .brandName {
   font-family: var(--mu-font-display);
@@ -58,6 +48,7 @@
 }
 
 .back {
+  composes: clara from "../styles/superficie.module.css";
   height: 38px;
   display: inline-flex;
   align-items: center;
@@ -74,7 +65,7 @@
 }
 
 .back:hover {
-  background: rgba(252, 250, 245, 0.14);
+  background: rgba(var(--mu-veu-rgb), 0.14);
 }
 
 .header {
@@ -118,6 +109,7 @@
 }
 
 .card {
+  composes: clara from "../styles/superficie.module.css";
   padding: 36px 40px;
   border-radius: var(--mu-radius-2xl);
   background: var(--mu-app-glass);
@@ -126,7 +118,7 @@
   backdrop-filter: blur(10px);
   font-size: 15px;
   line-height: 1.75;
-  color: rgba(252, 250, 245, 0.88);
+  color: rgba(var(--mu-veu-rgb), 0.88);
 }
 
 .card h2 {

@@ -5,6 +5,8 @@ import AlunoLayout from "../../components/aluno/AlunoLayout";
 import ProfessorLayout from "../../components/professor/ProfessorLayout";
 import AdminLayout from "../../components/administrador/AdminLayout";
 import ConfirmarExclusao from "../../components/ConfirmarExclusao";
+import CampoSenha, {type EstiloCampoSenha} from "../../components/CampoSenha";
+import {senhaForte} from "../../services/senha";
 import Avatar, {EscolherAvatar} from "../../components/Avatar";
 import {apiFetch, lerErro} from "../../services/api";
 import {sair} from "../../services/usuarioLogado";
@@ -290,7 +292,7 @@ function AlterarSenha() {
 
     // Conferências feitas na tela, antes de chamar a API
     const confirmacaoDiferente = confirmacao !== "" && confirmacao !== novaSenha;
-    const podeEnviar = senhaAtual !== "" && novaSenha.length >= 8 && confirmacao === novaSenha && !salvando;
+    const podeEnviar = senhaAtual !== "" && senhaForte(novaSenha) && confirmacao === novaSenha && !salvando;
 
     async function enviar(evento: FormEvent) {
         evento.preventDefault();
@@ -326,11 +328,11 @@ function AlterarSenha() {
 
             <form onSubmit={enviar} className={s.form}>
                 <CampoSenha id="senha-atual" rotulo="Senha atual" valor={senhaAtual} aoMudar={setSenhaAtual}
-                            autoComplete="current-password"/>
+                            autoComplete="current-password" estilo={estiloSenha(s)}/>
                 <CampoSenha id="nova-senha" rotulo="Nova senha" valor={novaSenha} aoMudar={setNovaSenha}
-                            autoComplete="new-password" ajuda="Mínimo de 8 caracteres."/>
+                            autoComplete="new-password" mostrarRequisitos estilo={estiloSenha(s)}/>
                 <CampoSenha id="confirmar-senha" rotulo="Confirme a nova senha" valor={confirmacao} aoMudar={setConfirmacao}
-                            autoComplete="new-password"/>
+                            autoComplete="new-password" estilo={estiloSenha(s)}/>
 
                 {confirmacaoDiferente && <p className={s.textoErro}>As senhas não conferem.</p>}
                 {erro && <p className={s.textoErro}>{erro}</p>}
@@ -341,32 +343,6 @@ function AlterarSenha() {
                 </button>
             </form>
         </section>
-    );
-}
-
-function CampoSenha({id, rotulo, valor, aoMudar, autoComplete, ajuda}: {
-    id: string;
-    rotulo: string;
-    valor: string;
-    aoMudar: (valor: string) => void;
-    autoComplete: string;
-    ajuda?: string;
-}) {
-    const s = useEstilo();
-
-    return (
-        <div>
-            <label htmlFor={id} className={s.label}>{rotulo}</label>
-            <input
-                id={id}
-                type="password"
-                value={valor}
-                onChange={(evento) => aoMudar(evento.target.value)}
-                autoComplete={autoComplete}
-                className={s.input}
-            />
-            {ajuda && <p className={s.ajuda}>{ajuda}</p>}
-        </div>
     );
 }
 
@@ -422,7 +398,7 @@ function ExcluirConta({administrador}: { administrador: boolean }) {
                     </p>
 
                     <CampoSenha id="senha-exclusao" rotulo="Digite sua senha para confirmar" valor={senha}
-                                aoMudar={setSenha} autoComplete="current-password"/>
+                                aoMudar={setSenha} autoComplete="current-password" estilo={estiloSenha(s)}/>
 
                     {erro && <p className={`mt-2 ${s.textoErro}`}>{erro}</p>}
 
@@ -453,3 +429,8 @@ function ExcluirConta({administrador}: { administrador: boolean }) {
 }
 
 export default MeuPerfil;
+
+// Classes do tema do "Meu perfil" para o campo de senha compartilhado
+function estiloSenha(s: ReturnType<typeof useEstilo>): EstiloCampoSenha {
+    return {label: s.label, input: s.input, ajuda: s.ajuda};
+}

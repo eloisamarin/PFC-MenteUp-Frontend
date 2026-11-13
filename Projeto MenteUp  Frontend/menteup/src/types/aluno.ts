@@ -27,6 +27,7 @@ export interface RankingAluno {
     nomeUsuario: string;
     pontuacaoTotal: number;
     atividadesConcluidas: number;
+    avatar?: string | null;
 }
 
 export type VisaoStatus = "PENDENTE" | "EM_ANDAMENTO" | "CONCLUIDA" | "ENCERRADA";

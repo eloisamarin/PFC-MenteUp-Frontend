@@ -43,6 +43,7 @@
 }
 
 .tab {
+  composes: clara from "../../styles/superficie.module.css";
   height: 41px;
   display: inline-flex;
   align-items: center;
@@ -60,11 +61,14 @@
 }
 
 .tab:hover:not(.tabActive) {
-  background: rgba(252, 250, 245, 0.14);
+  background: rgba(var(--mu-veu-rgb), 0.14);
 }
 
 .tabActive {
-  background: var(--mu-gradient-brand);
+  /* roxo-escuro: o gradiente da marca sumiria sobre o fundo, que é o mesmo gradiente */
+  background: #2e1065;
+  border-color: #2e1065;
+  color: #fff;
 }
 
 .tabCount {
@@ -80,6 +84,7 @@
 }
 
 .search {
+  composes: clara from "../../styles/superficie.module.css";
   height: 41px;
   width: 280px;
   max-width: 100%;
@@ -117,9 +122,9 @@
   margin-bottom: 20px;
   padding: 12px 16px;
   border-radius: 14px;
-  background: rgba(235, 100, 86, 0.15);
+  background: var(--mu-error-bg);
   border: 1px solid rgba(235, 100, 86, 0.45);
-  color: #ffb4ab;
+  color: var(--mu-error-text);
   font-weight: 700;
   font-size: 14px;
 }
@@ -131,6 +136,7 @@
 }
 
 .card {
+  composes: clara from "../../styles/superficie.module.css";
   min-height: 220px;
   display: flex;
   flex-direction: column;
@@ -146,7 +152,7 @@
 
 .card:hover {
   transform: translateY(-3px);
-  border-color: rgba(252, 250, 245, 0.28);
+  border-color: rgba(var(--mu-veu-rgb), 0.28);
 }
 
 .cardMatriculado {
@@ -166,8 +172,8 @@
   border-radius: 16px;
   display: grid;
   place-items: center;
-  background: rgba(124, 58, 237, 0.3);
-  color: #fff;
+  background: var(--mu-badge-bg);
+  color: var(--mu-badge-text);
 }
 
 .badge {
@@ -188,7 +194,7 @@
 }
 
 .badgeOff {
-  background: rgba(252, 250, 245, 0.1);
+  background: rgba(var(--mu-veu-rgb), 0.1);
   color: var(--mu-app-muted);
 }
 
@@ -224,7 +230,7 @@
   gap: 8px;
   border: 0;
   border-radius: var(--mu-radius-btn);
-  color: #fff;
+  color: var(--mu-app-text);
   font-family: inherit;
   font-size: 14px;
   font-weight: 800;
@@ -241,11 +247,12 @@
 }
 
 .secondaryButton {
+  composes: clara from "../../styles/superficie.module.css";
   background: var(--mu-app-glass);
 }
 
 .secondaryButton:hover:not(:disabled) {
-  background: rgba(252, 250, 245, 0.14);
+  background: rgba(var(--mu-veu-rgb), 0.14);
 }
 
 .primaryButton:disabled,
@@ -262,7 +269,7 @@
 }
 
 .skeleton {
-  background: linear-gradient(90deg, var(--mu-app-glass) 0%, rgba(252, 250, 245, 0.14) 50%, var(--mu-app-glass) 100%);
+  background: linear-gradient(90deg, var(--mu-app-glass) 0%, rgba(var(--mu-veu-rgb), 0.14) 50%, var(--mu-app-glass) 100%);
   background-size: 200% 100%;
   animation: shimmer 1.2s infinite linear;
 }
@@ -273,6 +280,7 @@
 }
 
 .empty {
+  composes: clara from "../../styles/superficie.module.css";
   padding: 56px 24px;
   display: flex;
   flex-direction: column;

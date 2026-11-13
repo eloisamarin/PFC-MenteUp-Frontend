@@ -44,6 +44,7 @@
 }
 
 .timeField {
+  composes: clara from "../../styles/superficie.module.css";
   height: 48px;
   display: flex;
   align-items: center;
@@ -341,7 +342,7 @@
   align-items: center;
   gap: 4px;
   border-radius: 16px;
-  background: rgba(252, 250, 245, 0.1);
+  background: rgba(var(--mu-veu-rgb), 0.1);
   text-align: center;
 }
 

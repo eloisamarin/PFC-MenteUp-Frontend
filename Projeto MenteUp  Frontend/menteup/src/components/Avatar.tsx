@@ -3,17 +3,55 @@
  * o desenho (emoji) e a cor de fundo ficam aqui.
  */
 const AVATARES = [
-    {codigo: "CACHORRO", emoji: "🐶", nome: "Cachorro", fundo: "bg-amber-100"},
-    {codigo: "GATO", emoji: "🐱", nome: "Gato", fundo: "bg-orange-100"},
-    {codigo: "RAPOSA", emoji: "🦊", nome: "Raposa", fundo: "bg-red-100"},
-    {codigo: "PANDA", emoji: "🐼", nome: "Panda", fundo: "bg-slate-200"},
-    {codigo: "COALA", emoji: "🐨", nome: "Coala", fundo: "bg-sky-100"},
-    {codigo: "TIGRE", emoji: "🐯", nome: "Tigre", fundo: "bg-yellow-100"},
-    {codigo: "LEAO", emoji: "🦁", nome: "Leão", fundo: "bg-amber-200"},
-    {codigo: "SAPO", emoji: "🐸", nome: "Sapo", fundo: "bg-green-100"},
-    {codigo: "MACACO", emoji: "🐵", nome: "Macaco", fundo: "bg-stone-200"},
-    {codigo: "COELHO", emoji: "🐰", nome: "Coelho", fundo: "bg-pink-100"},
+    {codigo: "CACHORRO", emoji: "🐶", nome: "Cachorro", fundo: "bg-amber-100", cor: "#fef3c7"},
+    {codigo: "GATO", emoji: "🐱", nome: "Gato", fundo: "bg-orange-100", cor: "#ffedd5"},
+    {codigo: "RAPOSA", emoji: "🦊", nome: "Raposa", fundo: "bg-red-100", cor: "#fee2e2"},
+    {codigo: "PANDA", emoji: "🐼", nome: "Panda", fundo: "bg-slate-200", cor: "#e2e8f0"},
+    {codigo: "COALA", emoji: "🐨", nome: "Coala", fundo: "bg-sky-100", cor: "#e0f2fe"},
+    {codigo: "TIGRE", emoji: "🐯", nome: "Tigre", fundo: "bg-yellow-100", cor: "#fef9c3"},
+    {codigo: "LEAO", emoji: "🦁", nome: "Leão", fundo: "bg-amber-200", cor: "#fde68a"},
+    {codigo: "SAPO", emoji: "🐸", nome: "Sapo", fundo: "bg-green-100", cor: "#dcfce7"},
+    {codigo: "MACACO", emoji: "🐵", nome: "Macaco", fundo: "bg-stone-200", cor: "#e7e5e4"},
+    {codigo: "COELHO", emoji: "🐰", nome: "Coelho", fundo: "bg-pink-100", cor: "#fce7f3"},
 ];
+
+// Animal de um código salvo no back-end (ex.: "PANDA"); undefined se a pessoa não escolheu
+function animalDoAvatar(avatar?: string | null) {
+    return AVATARES.find((opcao) => opcao.codigo === avatar);
+}
+
+function iniciaisDoNome(nome?: string) {
+    const partes = (nome ?? "").trim().split(/\s+/).filter(Boolean);
+    const primeira = partes[0]?.[0] ?? "?";
+    const ultima = partes.length > 1 ? partes[partes.length - 1][0] : "";
+    return (primeira + ultima).toUpperCase();
+}
+
+interface RostoUsuarioProps {
+    avatar?: string | null;
+    nome?: string;
+    /** Classe da tela: define tamanho, formato e o fundo das iniciais */
+    className?: string;
+}
+
+/*
+ * Rosto da pessoa em listas, ranking e topo: o animal escolhido no perfil
+ * ou, se ainda não escolheu, as iniciais do nome. O nome já aparece ao lado,
+ * por isso o desenho fica escondido do leitor de tela.
+ */
+export function RostoUsuario({avatar, nome, className = ""}: RostoUsuarioProps) {
+    const animal = animalDoAvatar(avatar);
+
+    if (!animal) {
+        return <span className={className} title={nome}>{iniciaisDoNome(nome)}</span>;
+    }
+
+    return (
+        <span className={className} title={nome} style={{background: animal.cor}} aria-hidden="true">
+            <span style={{fontSize: "1.5em", lineHeight: 1}}>{animal.emoji}</span>
+        </span>
+    );
+}
 
 const TAMANHOS = {
     pequeno: "h-9 w-9 text-xl",

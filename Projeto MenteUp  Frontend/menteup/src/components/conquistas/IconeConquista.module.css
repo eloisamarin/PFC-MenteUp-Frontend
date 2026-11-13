@@ -50,6 +50,7 @@
 }
 
 .pendente {
+  composes: clara from "../../styles/superficie.module.css";
   background: var(--mu-app-glass);
   border: 1px dashed var(--mu-app-glass-border);
   color: var(--mu-app-muted);

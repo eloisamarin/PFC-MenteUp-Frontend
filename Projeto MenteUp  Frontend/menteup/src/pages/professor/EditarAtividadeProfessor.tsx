@@ -168,7 +168,7 @@ function EditarAtividadeProfessor() {
     useEffect(() => {
         const carregarTurmas = async () => {
             try {
-                const response = await apiFetch("/turmas/all");
+                const response = await apiFetch("/turmas/all?incluirArquivadas=true");
                 if (!response.ok) throw new Error("Erro ao buscar turmas");
                 // O professor só move a atividade entre as turmas dele
                 const todas: Turma[] = await response.json();
@@ -323,7 +323,7 @@ function EditarAtividadeProfessor() {
                         </label>
                         <select id="turma" className={styles.input} value={turmaId} onChange={(e) => setTurmaId(e.target.value)}>
                             <option value="">Selecione uma turma</option>
-                            {turmas.map((t) => (
+                            {turmas.filter((t) => !t.arquivada || String(t.id) === turmaId).map((t) => (
                                 <option key={t.id} value={t.id}>
                                     {t.nome}
                                 </option>

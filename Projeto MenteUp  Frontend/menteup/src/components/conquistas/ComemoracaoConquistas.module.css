@@ -25,6 +25,7 @@
 }
 
 .fechar {
+  composes: clara from "../../styles/superficie.module.css";
   position: absolute;
   top: 14px;
   right: 14px;
@@ -141,6 +142,7 @@
 }
 
 .seta {
+  composes: clara from "../../styles/superficie.module.css";
   width: 32px;
   height: 32px;
   display: grid;

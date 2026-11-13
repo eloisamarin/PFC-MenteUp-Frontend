@@ -34,7 +34,7 @@ function DesafiosGestao({perfil}: { perfil: PerfilGestao }) {
             try {
                 const [resposta, respostaTurmas] = await Promise.all([
                     apiFetch("/desafios"),
-                    apiFetch("/turmas/all"),
+                    apiFetch("/turmas/all?incluirArquivadas=true"),
                 ]);
                 if (!resposta.ok) throw new Error("Falha ao consultar os desafios.");
                 setDesafios(await resposta.json());

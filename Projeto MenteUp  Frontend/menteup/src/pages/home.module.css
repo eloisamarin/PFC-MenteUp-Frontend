@@ -1,7 +1,8 @@
 .page {
   min-height: 100vh;
   padding-bottom: 72px;
-  background: var(--mu-bg);
+  background: var(--mu-gradient-page);
+  background-attachment: fixed;
   color: var(--mu-app-text);
   font-family: var(--mu-font-body);
   -webkit-font-smoothing: antialiased;
@@ -40,17 +41,6 @@
   text-decoration: none;
 }
 
-.brandMark {
-  width: 36px;
-  height: 36px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background: var(--mu-mint);
-  color: #041b35;
-  font-family: var(--mu-font-display);
-  font-weight: 800;
-}
 
 .brandName {
   font-family: var(--mu-font-display);
@@ -125,6 +115,7 @@
 }
 
 .outlineButton {
+  composes: clara from "../styles/superficie.module.css";
   height: 48px;
   padding: 0 22px;
   border: 1px solid var(--mu-app-glass-border);
@@ -140,7 +131,7 @@
 }
 
 .outlineButton:hover {
-  background: rgba(252, 250, 245, 0.14);
+  background: rgba(var(--mu-veu-rgb), 0.14);
 }
 
 .hero {
@@ -153,6 +144,7 @@
 }
 
 .badge {
+  composes: clara from "../styles/superficie.module.css";
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -178,7 +170,7 @@
 }
 
 .mintText {
-  color: var(--mu-mint);
+  color: var(--mu-mint-on-gradient);
 }
 
 .goldText {
@@ -194,6 +186,7 @@
 }
 
 .toggle {
+  composes: clara from "../styles/superficie.module.css";
   display: inline-flex;
   gap: 4px;
   padding: 4px;
@@ -237,6 +230,7 @@
 }
 
 .glassCard {
+  composes: clara from "../styles/superficie.module.css";
   border-radius: var(--mu-radius-xl);
   background: var(--mu-app-glass);
   border: 1px solid var(--mu-app-glass-border);
@@ -408,7 +402,7 @@
   font-size: 12px;
   font-weight: 800;
   text-transform: uppercase;
-  color: var(--mu-mint);
+  color: var(--mu-mint-on-gradient);
 }
 
 .center {

@@ -1,6 +1,6 @@
 .footer {
   margin-top: auto;
-  background: var(--mu-bg);
+  background: #141850; /* azul-escuro sólido: o rodapé fica fora do fundo em gradiente */
   border-top: 1px solid var(--mu-app-glass-border);
   color: var(--mu-app-muted);
   font-family: var(--mu-font-body);
@@ -27,18 +27,6 @@
   text-decoration: none;
 }
 
-.brandMark {
-  width: 28px;
-  height: 28px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background: var(--mu-mint);
-  color: #041b35;
-  font-family: var(--mu-font-display);
-  font-size: 13px;
-  font-weight: 800;
-}
 
 .brandName {
   font-family: var(--mu-font-display);

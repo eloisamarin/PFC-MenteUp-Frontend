@@ -4,6 +4,7 @@ import { MailCheck } from "lucide-react";
 
 import { API_URL, lerErro } from "../services/api";
 import styles from "./login.module.css";
+import { LogoMarca, LogoNome } from "../components/Logo";
 
 /*
  * Esqueci minha senha: pede o e-mail e o back-end envia um link que vale 30 minutos.
@@ -61,9 +62,9 @@ function EsqueciSenha() {
                     onClick={() => navigate("/")}
                     aria-label="Voltar para a página inicial"
                 >
-                    <span className={styles.brandMark}>M</span>
+                    <LogoMarca tamanho={44} />
                     <span>
-                        <span className={styles.brandName}>MenteUp</span>
+                        <LogoNome className={styles.brandName} />
                         <span className={styles.brandTagline}>Sua jornada de aprendizado</span>
                     </span>
                 </button>

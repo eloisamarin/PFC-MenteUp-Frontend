@@ -3,7 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { ChevronRight, Plus, RotateCw } from "lucide-react";
 
 import ProfessorLayout from "../../components/professor/ProfessorLayout";
+import PainelIndicadores from "../../components/PainelIndicadores";
 import { apiFetch } from "../../services/api";
+import { carregarPainel } from "../../services/painel";
 import { nomeCurto, obterUsuarioLogado, primeiroNome } from "../../services/usuarioLogado";
 import type { RankingAluno } from "../../types/aluno";
 import styles from "./dashboardProfessor.module.css";
@@ -56,17 +58,32 @@ function DashboardProfessor() {
             setCarregando(true);
             setErro("");
 
-            const [respAtividades, respRanking] = await Promise.all([
+            // O painel já vem recortado pelo backend: as turmas do professor e os alunos delas.
+            // Antes, esta tela usava /atividades e /ranking, que traziam dados de todas as turmas.
+            const [respAtividades, painel] = await Promise.all([
                 apiFetch("/atividades"),
-                apiFetch("/ranking").catch(() => null),
+                carregarPainel({ dias: 365, turmaId: null, alunoId: null }).catch(() => null),
             ]);
 
             if (!respAtividades.ok) throw new Error("Erro ao carregar atividades");
 
+            const minhasTurmas = new Set((painel?.turmas ?? []).map((t) => String(t.id)));
             const dados: AtividadeProfessor[] = await respAtividades.json();
-            setAtividades([...dados].sort((a, b) => Number(b.id) - Number(a.id)));
+            setAtividades(
+                dados
+                    .filter((a) => a.turma && minhasTurmas.has(String(a.turma.id)))
+                    .sort((a, b) => Number(b.id) - Number(a.id))
+            );
 
-            setRanking(respRanking?.ok ? await respRanking.json() : null);
+            // Engajamento: só os alunos das turmas dele (no último ano)
+            setRanking(painel
+                ? painel.desempenhoAlunos.map((a) => ({
+                    usuarioId: a.id,
+                    nomeUsuario: a.nome,
+                    pontuacaoTotal: a.pontosAtividades + a.pontosDesafios,
+                    atividadesConcluidas: a.atividadesConcluidas,
+                }))
+                : null);
         } catch (error) {
             console.error("Erro ao carregar visão geral:", error);
             setErro("Não foi possível carregar os dados da visão geral.");
@@ -329,6 +346,8 @@ function DashboardProfessor() {
                     {carregando && <p className={styles.empty}>Carregando...</p>}
                 </section>
             </div>
+
+            <PainelIndicadores titulo="Indicadores das minhas turmas" />
         </ProfessorLayout>
     );
 }

@@ -1,0 +1,30 @@
+/* Logo do MenteUp: quadrado arredondado em gradiente azul → roxo com o "M" branco */
+.marca {
+  --tam: 40px;
+  width: var(--tam);
+  height: var(--tam);
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: calc(var(--tam) * 0.28);
+  background: linear-gradient(135deg, #3652ff 0%, #7c3aed 100%);
+  /* Borda clara e sombra: o logo continua destacado mesmo sobre o fundo em gradiente */
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow: 0 6px 16px rgba(20, 10, 80, 0.35);
+  color: #fff;
+  font-family: var(--mu-font-display);
+  font-size: calc(var(--tam) * 0.45);
+  font-weight: 800;
+  line-height: 1;
+}
+
+/* "Mente" na cor do texto e "Up" em lilás (legível sobre o gradiente e sobre o topo escuro) */
+.nome {
+  font-family: var(--mu-font-display);
+  font-weight: 800;
+  color: var(--mu-app-text);
+}
+
+.up {
+  color: #d9c9ff;
+}

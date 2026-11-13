@@ -50,6 +50,7 @@
 }
 
 .card {
+  composes: clara from "../../styles/superficie.module.css";
   padding: 24px;
   border-radius: var(--mu-radius-2xl);
   background: var(--mu-app-glass);
@@ -68,6 +69,7 @@
 }
 
 .row {
+  composes: clara from "../../styles/superficie.module.css";
   min-height: 80px;
   display: flex;
   align-items: center;
@@ -89,7 +91,7 @@
   display: grid;
   place-items: center;
   border-radius: var(--mu-radius-btn);
-  background: rgba(252, 250, 245, 0.12);
+  background: rgba(var(--mu-veu-rgb), 0.12);
   font-family: var(--mu-font-display);
   font-size: 16px;
   font-weight: 700;
@@ -138,7 +140,7 @@
 }
 
 .skeleton {
-  background: linear-gradient(90deg, var(--mu-app-glass) 0%, rgba(252, 250, 245, 0.14) 50%, var(--mu-app-glass) 100%);
+  background: linear-gradient(90deg, var(--mu-app-glass) 0%, rgba(var(--mu-veu-rgb), 0.14) 50%, var(--mu-app-glass) 100%);
   background-size: 200% 100%;
   animation: shimmer 1.2s infinite linear;
 }
@@ -172,7 +174,7 @@
 
 .errorText {
   margin: 0;
-  color: #ffb4ab;
+  color: var(--mu-error-text);
   font-weight: 700;
 }
 
@@ -263,7 +265,7 @@
   flex-shrink: 0;
   padding: 5px 12px;
   border-radius: 999px;
-  background: rgba(252, 250, 245, 0.1);
+  background: rgba(var(--mu-veu-rgb), 0.1);
   font-size: 12px;
   font-weight: 700;
   color: var(--mu-app-text);
@@ -402,7 +404,7 @@
   gap: 6px;
   border-radius: 18px 18px 0 0;
   border-top: 4px solid var(--cor);
-  background: rgba(252, 250, 245, 0.1);
+  background: rgba(var(--mu-veu-rgb), 0.1);
 }
 
 .pedestalBadge {

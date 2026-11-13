@@ -1,6 +1,7 @@
 import {Timer, Trophy, Zap} from "lucide-react";
 import {contagem, type LinhaRanking, type StatusDesafio} from "../services/turmaDesafio";
 import styles from "./ComponentesDesafio.module.css";
+import {RostoUsuario} from "./Avatar";
 
 const ROTULO_STATUS: Record<StatusDesafio, string> = {
     AGUARDANDO: "Aguardando",
@@ -49,12 +50,6 @@ export function BarraTempo({restantes, total}: { restantes: number; total: numbe
     );
 }
 
-function iniciais(nome: string) {
-    const partes = nome.trim().split(/\s+/).filter(Boolean);
-    const primeira = partes[0]?.[0] ?? "?";
-    const ultima = partes.length > 1 ? partes[partes.length - 1][0] : "";
-    return (primeira + ultima).toUpperCase();
-}
 
 interface TabelaRankingProps {
     ranking: LinhaRanking[];
@@ -85,7 +80,7 @@ export function TabelaRanking({ranking, destaqueUsuarioId, titulo}: TabelaRankin
                                 <span className={`${styles.posicao} ${linha.posicao === 1 ? styles.posicaoPrimeiro : ""}`}>
                                     {linha.posicao}º
                                 </span>
-                                <span className={styles.avatar}>{iniciais(linha.nomeUsuario)}</span>
+                                <RostoUsuario avatar={linha.avatar} nome={linha.nomeUsuario} className={styles.avatar}/>
                                 <span className={styles.info}>
                                     <span className={styles.nome}>
                                         {linha.nomeUsuario}

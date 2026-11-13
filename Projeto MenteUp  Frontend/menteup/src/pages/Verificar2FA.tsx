@@ -9,6 +9,7 @@ const ESPERA_REENVIO_SEGUNDOS = 60;
 // Situações em que um novo código não resolve: a pessoa precisa entrar com a senha de novo
 const PRECISA_LOGIN = ["SEM_LOGIN_RECENTE", "LIMITE_REENVIO_2FA"];
 import { registrarTokenFCM } from "../firebase/fcmService";
+import { LogoMarca, LogoNome } from "../components/Logo";
 
 function Verificar2FA() {
     const navigate = useNavigate();
@@ -142,9 +143,9 @@ function Verificar2FA() {
                     onClick={() => navigate("/")}
                     aria-label="Voltar para a página inicial"
                 >
-                    <span className={styles.brandMark}>M</span>
+                    <LogoMarca tamanho={44} />
                     <span>
-                        <span className={styles.brandName}>MenteUp</span>
+                        <LogoNome className={styles.brandName} />
                         <span className={styles.brandTagline}>Sua jornada de aprendizado</span>
                     </span>
                 </button>

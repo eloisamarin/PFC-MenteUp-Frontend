@@ -2,25 +2,22 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import {
     BookOpen,
-    Eye,
-    EyeOff,
-    GraduationCap,
     Sparkles,
     Trophy,
-    User,
 } from "lucide-react";
 
+import CampoSenha from "../components/CampoSenha";
 import styles from "./login.module.css";
 import { API_URL, lerErro } from "../services/api";
-
-type Perfil = "ALUNO" | "PROFESSOR";
+import { LogoMarca, LogoNome } from "../components/Logo";
 
 function Login() {
     const navigate = useNavigate();
 
-    // Vindo do cadastro: mostra o aviso de conta criada e já preenche o e-mail e o perfil
+    // Vindo do cadastro: mostra o aviso de conta criada e já preenche o e-mail.
+    // Não há escolha de perfil no login: o backend descobre se é aluno, professor ou admin pelo e-mail.
     const vindoDoCadastro = useLocation().state as
-        | { contaCriada?: boolean; email?: string; perfil?: Perfil }
+        | { contaCriada?: boolean; email?: string }
         | null;
     const [contaCriada, setContaCriada] = useState(vindoDoCadastro?.contaCriada === true);
 
@@ -28,9 +25,6 @@ function Login() {
     const [senha, setSenha] = useState("");
     const [erro, setErro] = useState("");
 
-    // Novo Design
-    const [perfil, setPerfil] = useState<Perfil>(vindoDoCadastro?.perfil === "PROFESSOR" ? "PROFESSOR" : "ALUNO");
-    const [mostrarSenha, setMostrarSenha] = useState(false);
     const [carregando, setCarregando] = useState(false);
     // Senhas erradas seguidas para o mesmo e-mail nesta tela (o backend bloqueia na 3ª)
     const [falhas, setFalhas] = useState({ email: "", total: 0 });
@@ -127,8 +121,6 @@ function Login() {
         navigate("/cadastro");
     }
 
-    const textoBotao = perfil === "ALUNO" ? "Entrar como aluno" : "Entrar como professor";
-
     return (
         <div className={styles.page}>
             <div className={styles.container}>
@@ -138,9 +130,9 @@ function Login() {
                     onClick={() => navigate("/")}
                     aria-label="Voltar para a página inicial"
                 >
-                    <span className={styles.brandMark}>M</span>
+                    <LogoMarca tamanho={44} />
                     <span>
-                        <span className={styles.brandName}>MenteUp</span>
+                        <LogoNome className={styles.brandName} />
                         <span className={styles.brandTagline}>
                             Sua jornada de aprendizado
                         </span>
@@ -199,37 +191,10 @@ function Login() {
                                 Que bom ter você de volta!
                             </h2>
                             <p className={styles.cardSubtitle}>
-                                Escolha seu perfil para continuar.
+                                Entre com o seu e-mail e senha.
                             </p>
                         </header>
 
-                        <div
-                            className={styles.segmented}
-                            role="radiogroup"
-                            aria-label="Perfil de acesso"
-                        >
-                            <button
-                                type="button"
-                                role="radio"
-                                aria-checked={perfil === "ALUNO"}
-                                className={`${styles.segment} ${perfil === "ALUNO" ? styles.segmentActive : ""}`}
-                                onClick={() => setPerfil("ALUNO")}
-                            >
-                                <User size={16} />
-                                Sou aluno
-                            </button>
-
-                            <button
-                                type="button"
-                                role="radio"
-                                aria-checked={perfil === "PROFESSOR"}
-                                className={`${styles.segment} ${perfil === "PROFESSOR" ? styles.segmentActive : ""}`}
-                                onClick={() => setPerfil("PROFESSOR")}
-                            >
-                                <GraduationCap size={16} />
-                                Sou professor
-                            </button>
-                        </div>
 
                         <form className={styles.form} onSubmit={handleLogin} noValidate>
                             <div className={styles.field}>
@@ -247,30 +212,14 @@ function Login() {
                                 />
                             </div>
 
-                            <div className={styles.field}>
-                                <label htmlFor="senha" className={styles.label}>
-                                    Senha
-                                </label>
-                                <div className={styles.inputWrap}>
-                                    <input
-                                        type={mostrarSenha ? "text" : "password"}
-                                        id="senha"
-                                        autoComplete="current-password"
-                                        className={styles.input}
-                                        placeholder="Mínimo de 8 caracteres"
-                                        value={senha}
-                                        onChange={(event) => setSenha(event.target.value)}
-                                    />
-                                    <button
-                                        type="button"
-                                        className={styles.eyeButton}
-                                        onClick={() => setMostrarSenha((v) => !v)}
-                                        aria-label={mostrarSenha ? "Ocultar senha" : "Mostrar senha"}
-                                    >
-                                        {mostrarSenha ? <EyeOff size={16} /> : <Eye size={16} />}
-                                    </button>
-                                </div>
-                            </div>
+                            <CampoSenha
+                                id="senha"
+                                rotulo="Senha"
+                                valor={senha}
+                                aoMudar={setSenha}
+                                autoComplete="current-password"
+                                placeholder="Digite sua senha"
+                            />
 
                             <button
                                 type="button"
@@ -297,16 +246,9 @@ function Login() {
                                 className={styles.primaryButton}
                                 disabled={carregando}
                             >
-                                {carregando ? "Entrando..." : textoBotao}
+                                {carregando ? "Entrando..." : "Entrar"}
                             </button>
                         </form>
-
-                        <div className={styles.divider}>ou continue com</div>
-
-                        <button type="button" className={styles.secondaryButton}>
-                            <span className={styles.googleG}>G</span>
-                            Google
-                        </button>
 
                         <p className={styles.footer}>
                             Ainda não tem conta?{" "}

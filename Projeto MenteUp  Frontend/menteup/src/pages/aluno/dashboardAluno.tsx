@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import PainelIndicadores from "../../components/PainelIndicadores";
 import { useNavigate } from "react-router-dom";
 import {
     BookOpen,
@@ -12,7 +13,6 @@ import {
 import AlunoLayout from "../../components/aluno/AlunoLayout";
 import { apiFetch } from "../../services/api";
 import {
-    iniciais,
     idDoUsuario,
     nomeCurto,
     obterUsuarioLogado,
@@ -25,6 +25,7 @@ import { BadgeStatusDesafio } from "../../components/ComponentesDesafio";
 import { contagem, type Desafio } from "../../services/turmaDesafio";
 import { estaAberta, type AtividadeAluno, type RankingAluno } from "../../types/aluno";
 import styles from "./dashboardAluno.module.css";
+import { RostoUsuario } from "../../components/Avatar";
 
 function saudacao(data = new Date()) {
     const h = data.getHours();
@@ -345,9 +346,7 @@ function DashboardAluno() {
                                     className={`${styles.podiumItem} ${souEu ? styles.podiumMe : ""}`}
                                 >
                                     <span className={styles.podiumPos}>{i + 1}º</span>
-                                    <span className={styles.podiumAvatar}>
-                                        {iniciais(r.nomeUsuario)}
-                                    </span>
+                                    <RostoUsuario avatar={r.avatar} nome={r.nomeUsuario} className={styles.podiumAvatar} />
                                     <span className={styles.rowText}>
                                         <span className={styles.podiumName}>
                                             {nomeCurto(r.nomeUsuario)}
@@ -367,6 +366,8 @@ function DashboardAluno() {
                     </div>
                 </section>
             </div>
+
+            <PainelIndicadores titulo="Meus indicadores" />
         </AlunoLayout>
     );
 }

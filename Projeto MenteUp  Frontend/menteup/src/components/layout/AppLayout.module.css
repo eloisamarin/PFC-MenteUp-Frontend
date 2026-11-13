@@ -2,7 +2,8 @@
   position: relative;
   min-height: 100vh;
   overflow: hidden;
-  background: var(--mu-bg);
+  background: var(--mu-gradient-page);
+  background-attachment: fixed;
   color: var(--mu-app-text);
   font-family: var(--mu-font-body);
   -webkit-font-smoothing: antialiased;
@@ -66,18 +67,6 @@
   text-align: left;
 }
 
-.brandMark {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: var(--mu-mint);
-  color: #041b35;
-  display: grid;
-  place-items: center;
-  font-family: var(--mu-font-display);
-  font-size: 18px;
-  font-weight: 800;
-}
 
 .brandName {
   display: block;
@@ -88,9 +77,6 @@
   color: var(--mu-app-text);
 }
 
-.brandName span {
-  color: var(--mu-lilac);
-}
 
 .brandTagline {
   display: block;
@@ -139,7 +125,7 @@
 }
 
 .ghostButton:hover {
-  background: rgba(252, 250, 245, 0.14);
+  background: rgba(var(--mu-veu-rgb), 0.14);
 }
 
 .avatar {
@@ -208,9 +194,10 @@
   color: var(--mu-app-text);
 }
 
+/* Item ativo em branco: o gradiente da marca sumiria sobre o fundo, que é o mesmo gradiente */
 .navItemActive {
-  background: var(--mu-gradient-brand);
-  color: #fff;
+  background: #fff;
+  color: var(--mu-blue);
   font-weight: 700;
 }
 
@@ -284,4 +271,10 @@
   .body {
     padding: 16px 16px 32px;
   }
+}
+
+/* O fundo em gradiente já dá a cor: os brilhos decorativos ficam desligados */
+.glowTop,
+.glowBottom {
+  display: none;
 }

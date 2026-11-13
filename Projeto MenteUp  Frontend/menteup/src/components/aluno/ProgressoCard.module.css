@@ -1,4 +1,5 @@
 .card {
+  composes: clara from "../../styles/superficie.module.css";
   border-radius: var(--mu-radius-xl);
   padding: 16px;
   display: flex;

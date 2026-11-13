@@ -26,6 +26,7 @@
 }
 
 .xpChip {
+  composes: clara from "../../styles/superficie.module.css";
   height: 48px;
   display: inline-flex;
   align-items: center;
@@ -39,6 +40,7 @@
 }
 
 .card {
+  composes: clara from "../../styles/superficie.module.css";
   display: flex;
   flex-direction: column;
   padding: 28px 40px 28px;
@@ -133,7 +135,7 @@
 }
 
 .error {
-  color: #ffb4ab;
+  color: var(--mu-error-text);
   font-size: 14px;
   font-weight: 700;
 }
@@ -202,6 +204,7 @@
 }
 
 .resultItem {
+  composes: clara from "../../styles/superficie.module.css";
   padding: 18px 8px;
   border-radius: var(--mu-radius-xl);
   background: var(--mu-app-glass);

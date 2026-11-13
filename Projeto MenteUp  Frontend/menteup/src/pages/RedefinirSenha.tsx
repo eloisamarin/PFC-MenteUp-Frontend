@@ -1,9 +1,12 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { CircleCheck, Eye, EyeOff } from "lucide-react";
+import { CircleCheck } from "lucide-react";
 
+import CampoSenha from "../components/CampoSenha";
 import { API_URL, lerErro } from "../services/api";
+import { problemaSenha } from "../services/senha";
 import styles from "./login.module.css";
+import { LogoMarca, LogoNome } from "../components/Logo";
 
 /*
  * Aberta pelo link do e-mail (/redefinir-senha?token=...).
@@ -16,7 +19,6 @@ function RedefinirSenha() {
 
     const [novaSenha, setNovaSenha] = useState("");
     const [confirmacao, setConfirmacao] = useState("");
-    const [mostrarSenha, setMostrarSenha] = useState(false);
     const [erro, setErro] = useState("");
     const [linkInvalido, setLinkInvalido] = useState(token === "");
     const [concluido, setConcluido] = useState(false);
@@ -26,8 +28,9 @@ function RedefinirSenha() {
         evento.preventDefault();
         setErro("");
 
-        if (novaSenha.length < 8) {
-            setErro("A nova senha deve ter no mínimo 8 caracteres.");
+        const problema = problemaSenha(novaSenha);
+        if (problema) {
+            setErro(problema);
             return;
         }
 
@@ -86,44 +89,23 @@ function RedefinirSenha() {
 
         return (
             <form className={styles.form} onSubmit={salvar} noValidate>
-                <div className={styles.field}>
-                    <label htmlFor="nova-senha" className={styles.label}>
-                        Nova senha
-                    </label>
-                    <div className={styles.inputWrap}>
-                        <input
-                            type={mostrarSenha ? "text" : "password"}
-                            id="nova-senha"
-                            autoComplete="new-password"
-                            className={styles.input}
-                            placeholder="Mínimo de 8 caracteres"
-                            value={novaSenha}
-                            onChange={(evento) => setNovaSenha(evento.target.value)}
-                        />
-                        <button
-                            type="button"
-                            className={styles.eyeButton}
-                            onClick={() => setMostrarSenha((valor) => !valor)}
-                            aria-label={mostrarSenha ? "Ocultar senha" : "Mostrar senha"}
-                        >
-                            {mostrarSenha ? <EyeOff size={16} /> : <Eye size={16} />}
-                        </button>
-                    </div>
-                </div>
+                <CampoSenha
+                    id="nova-senha"
+                    rotulo="Nova senha"
+                    valor={novaSenha}
+                    aoMudar={setNovaSenha}
+                    autoComplete="new-password"
+                    placeholder="Crie uma senha forte"
+                    mostrarRequisitos
+                />
 
-                <div className={styles.field}>
-                    <label htmlFor="confirmar-senha" className={styles.label}>
-                        Confirme a nova senha
-                    </label>
-                    <input
-                        type={mostrarSenha ? "text" : "password"}
-                        id="confirmar-senha"
-                        autoComplete="new-password"
-                        className={styles.input}
-                        value={confirmacao}
-                        onChange={(evento) => setConfirmacao(evento.target.value)}
-                    />
-                </div>
+                <CampoSenha
+                    id="confirmar-senha"
+                    rotulo="Confirme a nova senha"
+                    valor={confirmacao}
+                    aoMudar={setConfirmacao}
+                    autoComplete="new-password"
+                />
 
                 {erro && (
                     <div className={styles.error} role="alert">
@@ -154,9 +136,9 @@ function RedefinirSenha() {
                     onClick={() => navigate("/")}
                     aria-label="Voltar para a página inicial"
                 >
-                    <span className={styles.brandMark}>M</span>
+                    <LogoMarca tamanho={44} />
                     <span>
-                        <span className={styles.brandName}>MenteUp</span>
+                        <LogoNome className={styles.brandName} />
                         <span className={styles.brandTagline}>Sua jornada de aprendizado</span>
                     </span>
                 </button>

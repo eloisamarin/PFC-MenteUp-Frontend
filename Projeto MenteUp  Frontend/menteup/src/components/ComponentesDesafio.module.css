@@ -21,7 +21,7 @@
 }
 
 .statusEncerrado {
-  background: rgba(252, 250, 245, 0.12);
+  background: rgba(var(--mu-veu-rgb), 0.12);
   color: var(--mu-app-muted);
 }
 
@@ -86,6 +86,7 @@
 }
 
 .ranking {
+  composes: clara from "../styles/superficie.module.css";
   padding: 24px;
   border-radius: var(--mu-radius-2xl);
   background: var(--mu-app-glass);
@@ -127,6 +128,7 @@
 }
 
 .linha {
+  composes: clara from "../styles/superficie.module.css";
   min-height: 72px;
   display: flex;
   align-items: center;
@@ -148,7 +150,7 @@
   display: grid;
   place-items: center;
   border-radius: var(--mu-radius-btn);
-  background: rgba(252, 250, 245, 0.12);
+  background: rgba(var(--mu-veu-rgb), 0.12);
   font-family: var(--mu-font-display);
   font-size: 16px;
   font-weight: 700;

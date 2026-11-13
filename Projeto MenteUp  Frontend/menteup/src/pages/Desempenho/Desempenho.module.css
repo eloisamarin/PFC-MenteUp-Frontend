@@ -13,6 +13,7 @@
 }
 
 .select {
+  composes: clara from "../../styles/superficie.module.css";
   min-width: 220px;
   height: 46px;
   padding: 0 14px;
@@ -33,7 +34,8 @@
 }
 
 .select option {
-  background: #1d2964;
+  background: #fff;
+  color: #14152b;
   color: var(--mu-app-text);
 }
 
@@ -127,7 +129,7 @@
 .item {
   padding: 18px;
   border-radius: var(--mu-radius-xl);
-  background: rgba(252, 250, 245, 0.05);
+  background: rgba(var(--mu-veu-rgb), 0.05);
   border: 1px solid var(--mu-app-glass-border);
   display: flex;
   flex-direction: column;
@@ -180,6 +182,7 @@
 }
 
 .question {
+  composes: clara from "../../styles/superficie.module.css";
   display: flex;
   gap: 12px;
   padding: 12px 14px;
@@ -209,7 +212,7 @@
 }
 
 .markNeutral {
-  background: rgba(252, 250, 245, 0.12);
+  background: rgba(var(--mu-veu-rgb), 0.12);
   color: var(--mu-app-muted);
 }
 
@@ -294,6 +297,7 @@
 }
 
 .textarea {
+  composes: clara from "../../styles/superficie.module.css";
   width: 100%;
   padding: 12px 14px;
   border-radius: 14px;
@@ -325,7 +329,7 @@
   margin: 0;
   font-size: 13px;
   font-weight: 700;
-  color: #ffb4ab;
+  color: var(--mu-error-text);
 }
 
 .commentActions {

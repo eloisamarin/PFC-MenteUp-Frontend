@@ -6,9 +6,10 @@ import AdminLayout from "../../components/administrador/AdminLayout";
 import { apiFetch } from "../../services/api";
 import { useConquistas } from "../../hooks/useConquistas";
 import { infoNivel } from "../../services/conquistasInfo";
-import { idDoUsuario, iniciais, nomeCurto, obterUsuarioLogado } from "../../services/usuarioLogado";
+import { idDoUsuario, nomeCurto, obterUsuarioLogado } from "../../services/usuarioLogado";
 import type { RankingAluno } from "../../types/aluno";
 import styles from "./Ranking.module.css";
+import { RostoUsuario } from "../../components/Avatar";
 
 const fmt = (n: number) => n.toLocaleString("pt-BR");
 
@@ -124,7 +125,7 @@ export default function Ranking({ perfil = "ALUNO" }: { perfil?: "ALUNO" | "ADMI
                                         <li key={aluno.usuarioId} className={`${styles.podiumSpot} ${lugar.classe}`}>
                                             <div className={styles.podiumPerson}>
                                                 {indice === 0 && <Crown size={26} className={styles.crown} />}
-                                                <span className={styles.podiumAvatar}>{iniciais(aluno.nomeUsuario)}</span>
+                                                <RostoUsuario avatar={aluno.avatar} nome={aluno.nomeUsuario} className={styles.podiumAvatar} />
                                                 <strong className={styles.podiumName}>{nomeCurto(aluno.nomeUsuario)}</strong>
                                                 <span className={styles.podiumLevel}>
                                                     {aluno.atividadesConcluidas}{" "}
@@ -177,7 +178,7 @@ export default function Ranking({ perfil = "ALUNO" }: { perfil?: "ALUNO" | "ADMI
                                             aria-current={souEu ? "true" : undefined}
                                         >
                                             <span className={styles.position}>{posicao}º</span>
-                                            <span className={styles.avatar}>{iniciais(aluno.nomeUsuario)}</span>
+                                            <RostoUsuario avatar={aluno.avatar} nome={aluno.nomeUsuario} className={styles.avatar} />
                                             <span className={styles.info}>
                                                 <span className={styles.name}>
                                                     {nomeCurto(aluno.nomeUsuario)}

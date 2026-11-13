@@ -30,6 +30,7 @@
 }
 
 .card {
+  composes: clara from "../../styles/superficie.module.css";
   border-radius: var(--mu-radius-2xl);
   background: var(--mu-app-glass);
   border: 1px solid var(--mu-app-glass-border);
@@ -55,13 +56,14 @@
 }
 
 .ghostButton {
+  composes: clara from "../../styles/superficie.module.css";
   border: 1px solid var(--mu-app-glass-border);
   background: var(--mu-app-glass);
   color: var(--mu-app-text);
 }
 
 .ghostButton:hover:not(:disabled) {
-  background: rgba(252, 250, 245, 0.14);
+  background: rgba(var(--mu-veu-rgb), 0.14);
 }
 
 .ghostButton:disabled {
@@ -94,7 +96,7 @@
   gap: 14px;
   padding: 14px 16px;
   border-radius: var(--mu-radius-xl);
-  background: rgba(252, 250, 245, 0.05);
+  background: rgba(var(--mu-veu-rgb), 0.05);
   border: 1px solid var(--mu-app-glass-border);
 }
 
@@ -159,6 +161,7 @@
 }
 
 .select {
+  composes: clara from "../../styles/superficie.module.css";
   height: 44px;
   min-width: 0;
   padding: 0 14px;
@@ -178,11 +181,13 @@
 }
 
 .select option {
-  background: #1d2964;
+  background: #fff;
+  color: #14152b;
   color: var(--mu-app-text);
 }
 
 .search {
+  composes: clara from "../../styles/superficie.module.css";
   height: 44px;
   min-width: 0;
   display: flex;
@@ -218,9 +223,9 @@
   margin-bottom: 16px;
   padding: 12px 16px;
   border-radius: 14px;
-  background: rgba(235, 100, 86, 0.15);
+  background: var(--mu-error-bg);
   border: 1px solid rgba(235, 100, 86, 0.45);
-  color: #ffb4ab;
+  color: var(--mu-error-text);
   font-size: 14px;
   font-weight: 700;
 }
@@ -318,7 +323,7 @@
 }
 
 .badgeNeutro {
-  background: rgba(252, 250, 245, 0.1);
+  background: rgba(var(--mu-veu-rgb), 0.1);
   color: var(--mu-app-text);
 }
 
@@ -369,6 +374,7 @@
 }
 
 .roundButton {
+  composes: clara from "../../styles/superficie.module.css";
   width: 40px;
   height: 40px;
   display: grid;
@@ -443,7 +449,7 @@
 }
 
 .userTable thead {
-  background: rgba(252, 250, 245, 0.06);
+  background: rgba(var(--mu-veu-rgb), 0.06);
 }
 
 .userTable th {
@@ -460,7 +466,7 @@
 }
 
 .userTable tbody tr:hover {
-  background: rgba(252, 250, 245, 0.04);
+  background: rgba(var(--mu-veu-rgb), 0.04);
 }
 
 .person {
@@ -507,6 +513,7 @@
 }
 
 .modal {
+  composes: clara from "../../styles/superficie.module.css";
   position: relative;
   width: 100%;
   max-width: 500px;
@@ -514,7 +521,7 @@
   overflow-y: auto;
   padding: 26px 26px 24px;
   border-radius: var(--mu-radius-xl);
-  background: #26326f;
+  background: var(--mu-app-glass);
   border: 1px solid var(--mu-app-glass-border);
   box-shadow: 0 30px 60px rgba(0, 0, 0, 0.45);
   color: var(--mu-app-text);
@@ -613,12 +620,12 @@
   width: 100%;
   border: 1px solid var(--mu-app-glass-border);
   border-radius: 999px;
-  background: rgba(252, 250, 245, 0.08);
+  background: rgba(var(--mu-veu-rgb), 0.08);
   color: var(--mu-app-text);
 }
 
 .closeButton:hover {
-  background: rgba(252, 250, 245, 0.14);
+  background: rgba(var(--mu-veu-rgb), 0.14);
 }
 
 .ghostButton:focus-visible,
@@ -680,6 +687,7 @@
 }
 
 .campo {
+  composes: clara from "../../styles/superficie.module.css";
   height: 44px;
   padding: 0 14px;
   border-radius: 14px;

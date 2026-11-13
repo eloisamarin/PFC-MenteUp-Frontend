@@ -121,7 +121,7 @@ function CriarDesafio({perfil}: { perfil: PerfilGestao }) {
     useEffect(() => {
         async function carregarTurmas() {
             try {
-                const resposta = await apiFetch("/turmas/all");
+                const resposta = await apiFetch("/turmas/all?incluirArquivadas=true");
                 if (!resposta.ok) throw new Error("Falha ao consultar as turmas.");
                 // O professor só cria desafio nas turmas dele
                 const todas: TurmaResumo[] = await resposta.json();
@@ -301,7 +301,7 @@ function CriarDesafio({perfil}: { perfil: PerfilGestao }) {
                         <label className={styles.label} htmlFor="turma">Turma</label>
                         <select id="turma" className={styles.input} value={turmaId} onChange={(e) => setTurmaId(e.target.value)}>
                             <option value="">Selecione uma turma</option>
-                            {turmas.map((t) => (
+                            {turmas.filter((t) => !t.arquivada || String(t.id) === turmaId).map((t) => (
                                 <option key={t.id} value={t.id}>{t.nome}</option>
                             ))}
                         </select>

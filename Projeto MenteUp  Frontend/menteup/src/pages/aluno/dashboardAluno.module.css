@@ -2,6 +2,7 @@
 .card,
 .statCard,
 .miniStat {
+  composes: clara from "../../styles/superficie.module.css";
   background: var(--mu-app-glass);
   border: 1px solid var(--mu-app-glass-border);
   box-shadow: var(--mu-app-shadow);
@@ -110,7 +111,7 @@
 }
 
 .heroTitle span {
-  color: var(--mu-indigo);
+  color: var(--mu-mint-on-gradient);
 }
 
 .heroText {
@@ -151,9 +152,9 @@
   margin-bottom: 20px;
   padding: 12px 16px;
   border-radius: 14px;
-  background: rgba(235, 100, 86, 0.15);
+  background: var(--mu-error-bg);
   border: 1px solid rgba(235, 100, 86, 0.45);
-  color: #ffb4ab;
+  color: var(--mu-error-text);
   font-weight: 700;
   font-size: 14px;
 }
@@ -181,8 +182,8 @@
 .badge {
   padding: 4px 12px;
   border-radius: 999px;
-  background: rgba(124, 58, 237, 0.45);
-  color: #fff;
+  background: var(--mu-badge-bg);
+  color: var(--mu-badge-text);
   font-size: 12px;
   font-weight: 700;
   white-space: nowrap;
@@ -196,6 +197,7 @@
 }
 
 .row {
+  composes: clara from "../../styles/superficie.module.css";
   width: 100%;
   min-height: 80px;
   display: flex;
@@ -213,7 +215,7 @@
 }
 
 .row:hover {
-  background: rgba(252, 250, 245, 0.13);
+  background: rgba(var(--mu-veu-rgb), 0.13);
   transform: translateX(2px);
 }
 
@@ -263,7 +265,7 @@
 .skeleton {
   height: 80px;
   border-radius: var(--mu-radius-xl);
-  background: linear-gradient(90deg, var(--mu-app-glass) 0%, rgba(252, 250, 245, 0.14) 50%, var(--mu-app-glass) 100%);
+  background: linear-gradient(90deg, var(--mu-app-glass) 0%, rgba(var(--mu-veu-rgb), 0.14) 50%, var(--mu-app-glass) 100%);
   background-size: 200% 100%;
   animation: shimmer 1.2s infinite linear;
 }
@@ -434,6 +436,7 @@
 }
 
 .podiumItem {
+  composes: clara from "../../styles/superficie.module.css";
   min-height: 76px;
   display: flex;
   align-items: center;

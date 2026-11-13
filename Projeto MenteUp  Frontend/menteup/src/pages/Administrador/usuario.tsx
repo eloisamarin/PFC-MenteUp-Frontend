@@ -2,8 +2,8 @@ import {useEffect, useMemo, useState, type FormEvent} from "react";
 import {ChevronLeft, ChevronRight, Ellipsis, GraduationCap, Search, ShieldCheck, User, UserPlus, Users, X} from "lucide-react";
 import AdminLayout from "../../components/administrador/AdminLayout";
 import {apiFetch, lerErro} from "../../services/api";
-import {iniciais} from "../../services/usuarioLogado";
 import styles from "./Administrador.module.css";
+import {RostoUsuario} from "../../components/Avatar";
 
 const POR_PAGINA = 8;
 
@@ -15,6 +15,7 @@ interface UsuarioApi {
     usuario: string;
     tipoUsuario?: string;
     aguardandoPrimeiroAcesso?: boolean;
+    avatar?: string | null;
     dataCadastro?: string;
     dataCriacao?: string;
     criadoEm?: string;
@@ -41,6 +42,7 @@ interface Usuario {
     cadastro: string | null;
     ultimoAcesso: string | null;
     turmas: string[];
+    avatar: string | null;
 }
 
 const TIPO: Record<Tipo, { rotulo: string; classe: string; icone: typeof User }> = {
@@ -173,7 +175,7 @@ function Usuarios() {
             try {
                 const [respUsuarios, respTurmas, respLogs] = await Promise.all([
                     apiFetch("/usuarios/all"),
-                    apiFetch("/turmas/all"),
+                    apiFetch("/turmas/all?incluirArquivadas=true"),
                     apiFetch("/logs?acao=LOGIN&resultado=SUCESSO&page=0&size=1000"),
                 ]);
 
@@ -198,6 +200,7 @@ function Usuarios() {
                     pendente: u.aguardandoPrimeiroAcesso === true,
                     cadastro: u.dataCadastro ?? u.dataCriacao ?? u.criadoEm ?? null,
                     ultimoAcesso: ultimo.get(u.id) ?? null,
+                    avatar: u.avatar ?? null,
                     turmas: turmas
                         .filter((t) => t.alunos?.some((a) => a.id === u.id) || t.professor?.id === u.id)
                         .map((t) => t.nome),
@@ -322,7 +325,7 @@ function Usuarios() {
                                 <tr key={u.id}>
                                     <td>
                                         <span className={styles.person}>
-                                            <span className={styles.avatar}>{iniciais(u.nome)}</span>
+                                            <RostoUsuario avatar={u.avatar} nome={u.nome} className={styles.avatar}/>
                                             <span>
                                                 <strong>{u.nome}</strong>
                                                 <small>{identificador(u.id)}{u.pendente && " · convite pendente"}</small>

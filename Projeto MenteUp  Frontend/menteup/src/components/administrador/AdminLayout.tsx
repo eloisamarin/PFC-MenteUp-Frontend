@@ -1,9 +1,10 @@
 import type { ReactNode } from "react";
-import { Activity, BookOpen, CircleUser, TrendingUp, Trophy, Users, UserCog, Zap } from "lucide-react";
+import { Activity, BookOpen, CircleUser, LayoutDashboard, TrendingUp, Trophy, Users, UserCog, Zap } from "lucide-react";
 
 import AppLayout, { type ItemMenu } from "../layout/AppLayout";
 
 const MENU: ItemMenu[] = [
+    { rotulo: "Dashboard", icone: <LayoutDashboard size={20} />, para: "/administrador/dashboard" },
     { rotulo: "Logs do sistema", icone: <Activity size={20} />, para: "/administrador/logs" },
     { rotulo: "Usuários", icone: <UserCog size={20} />, para: "/administrador/usuarios" },
     { rotulo: "Turmas", icone: <Users size={20} />, para: "/administrador/turmas" },
@@ -24,7 +25,7 @@ export default function AdminLayout({ children, compacto }: AdminLayoutProps) {
         <AppLayout
             menu={MENU}
             subtitulo="Central administrativa"
-            inicio="/administrador/logs"
+            inicio="/administrador/dashboard"
             rotuloMenu="Menu do administrador"
             xp={null}
             compacto={compacto}

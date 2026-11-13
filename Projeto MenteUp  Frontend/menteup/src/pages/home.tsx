@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 
 import styles from "./home.module.css";
+import { LogoMarca, LogoNome } from "../components/Logo";
 
 type Perfil = "estudante" | "professor";
 
@@ -74,8 +75,8 @@ function Home() {
 
     const marca = (
         <Link to="/" className={styles.brand}>
-            <span className={styles.brandMark}>M</span>
-            <span className={styles.brandName}>MenteUp</span>
+            <LogoMarca tamanho={36} />
+            <LogoNome className={styles.brandName} />
         </Link>
     );
 

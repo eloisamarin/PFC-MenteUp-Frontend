@@ -3,7 +3,9 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { LogOut, Zap } from "lucide-react";
 
 import styles from "./AppLayout.module.css";
-import { iniciais, obterUsuarioLogado, sair } from "../../services/usuarioLogado";
+import { obterUsuarioLogado, sair } from "../../services/usuarioLogado";
+import { LogoMarca, LogoNome } from "../Logo";
+import { RostoUsuario } from "../Avatar";
 
 export interface ItemMenu {
     rotulo: string;
@@ -49,11 +51,9 @@ export default function AppLayout({
             <header className={styles.topbar}>
                 <div className={styles.topbarInner}>
                     <button type="button" className={styles.brand} onClick={() => navigate(inicio)}>
-                        <span className={styles.brandMark}>M</span>
+                        <LogoMarca tamanho={40} />
                         <span>
-                            <span className={styles.brandName}>
-                                Mente<span>Up</span>
-                            </span>
+                            <LogoNome className={styles.brandName} />
                             <span className={styles.brandTagline}>{subtitulo}</span>
                         </span>
                     </button>
@@ -71,9 +71,11 @@ export default function AppLayout({
                             Sair
                         </button>
 
-                        <span className={styles.avatar} title={usuario?.nome}>
-                            {iniciais(usuario?.nome ?? usuario?.usuario)}
-                        </span>
+                        <RostoUsuario
+                            avatar={usuario?.avatar}
+                            nome={usuario?.nome ?? usuario?.usuario}
+                            className={styles.avatar}
+                        />
                     </div>
                 </div>
             </header>

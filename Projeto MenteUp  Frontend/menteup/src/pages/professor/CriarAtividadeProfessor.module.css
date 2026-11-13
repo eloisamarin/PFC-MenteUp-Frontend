@@ -74,6 +74,7 @@
 }
 
 .stepNumber {
+  composes: clara from "../../styles/superficie.module.css";
   width: 36px;
   height: 36px;
   flex-shrink: 0;
@@ -98,6 +99,7 @@
 }
 
 .card {
+  composes: clara from "../../styles/superficie.module.css";
   padding: 32px;
   border-radius: var(--mu-radius-2xl);
   background: var(--mu-app-glass);
@@ -139,6 +141,7 @@
 }
 
 .input {
+  composes: clara from "../../styles/superficie.module.css";
   width: 100%;
   min-height: 48px;
   padding: 12px 16px;
@@ -162,7 +165,8 @@
 }
 
 select.input option {
-  background: #1d2964;
+  background: #fff;
+  color: #14152b;
   color: var(--mu-app-text);
 }
 
@@ -198,6 +202,7 @@ select.input option {
 }
 
 .reviewBox {
+  composes: clara from "../../styles/superficie.module.css";
   width: 100%;
   max-width: 512px;
   margin: 0;
@@ -229,9 +234,9 @@ select.input option {
   margin: 20px 0 0;
   padding: 12px 16px;
   border-radius: 14px;
-  background: rgba(235, 100, 86, 0.15);
+  background: var(--mu-error-bg);
   border: 1px solid rgba(235, 100, 86, 0.45);
-  color: #ffb4ab;
+  color: var(--mu-error-text);
   font-size: 14px;
   font-weight: 700;
 }
