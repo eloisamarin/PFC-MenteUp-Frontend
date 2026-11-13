@@ -1,182 +1,271 @@
-import {useEffect, useState} from "react";
-import {apiFetch, lerErro} from "../../services/api.ts";
-import {Users} from "lucide-react";
-import LayoutPainel from "../../components/LayoutPainel";
+import {useEffect, useMemo, useState} from "react";
+import {Check, Clock, LogOut, Plus, Search, Users, X} from "lucide-react";
 
-interface Turma {
+import AlunoLayout from "../../components/aluno/AlunoLayout";
+import {apiFetch, lerErro} from "../../services/api.ts";
+import styles from "./turmasAluno.module.css";
+
+// Resposta de GET /alunos/me/turmas/disponiveis
+interface TurmaDoAluno {
     id: number;
     nome: string;
+    professor: string | null;
+    matriculado: boolean;
+    solicitacaoPendenteId: number | null;
+    solicitacaoPendenteTipo: "ENTRADA" | "SAIDA" | null;
 }
 
+type Filtro = "TODAS" | "MINHAS" | "DISPONIVEIS";
+
+const FILTROS: { id: Filtro; rotulo: string }[] = [
+    {id: "TODAS", rotulo: "Todas"},
+    {id: "MINHAS", rotulo: "Minhas turmas"},
+    {id: "DISPONIVEIS", rotulo: "Disponíveis"},
+];
+
+/*
+ * O aluno não entra nem sai da turma sozinho: ele envia um PEDIDO,
+ * e o professor da turma (ou um administrador) aprova ou recusa.
+ */
 function TurmasAluno() {
-    const [turmas, setTurmas] = useState<Turma[]>([]);
-    const [minhasIds, setMinhaIds] = useState<number[]>([]);
+    const [turmas, setTurmas] = useState<TurmaDoAluno[]>([]);
     const [carregando, setCarregando] = useState(true);
     const [processando, setProcessando] = useState<number | null>(null);
     const [erro, setErro] = useState("");
+    const [aviso, setAviso] = useState("");
+    const [filtro, setFiltro] = useState<Filtro>("TODAS");
+    const [busca, setBusca] = useState("");
+    const [versao, setVersao] = useState(0);
 
     useEffect(() => {
         async function carregar() {
             try {
-                const [respostaTurmas, respostaMinhas] = await Promise.all([
-                    apiFetch("/turmas/all"),
-                    apiFetch("/alunos/me/turmas"),
-                ]);
-                if (!respostaTurmas.ok || !respostaMinhas.ok) {
+                const resposta = await apiFetch("/alunos/me/turmas/disponiveis");
+
+                if (!resposta.ok) {
                     throw new Error("Falha ao consultar as turmas.");
                 }
 
-                const todas: Turma[] = await respostaTurmas.json();
-                const minhas: Turma[] = await respostaMinhas.json();
-
-                setTurmas(todas);
-                setMinhaIds(minhas.map((turma) => turma.id));
+                setTurmas(await resposta.json());
             } catch (error) {
                 console.error("Erro ao buscar as turmas:", error);
-                setErro("Não foi possivel carregar as turmas.");
+                setErro("Não foi possível carregar as turmas.");
             } finally {
                 setCarregando(false);
             }
         }
 
         carregar();
-    }, []);
+    }, [versao]);
 
-    async function alterarMatricula(turma: Turma) {
-        const matriculado = minhasIds.includes(turma.id);
+    const contagem = useMemo(() => {
+        const minhas = turmas.filter((turma) => turma.matriculado).length;
+        return {TODAS: turmas.length, MINHAS: minhas, DISPONIVEIS: turmas.length - minhas};
+    }, [turmas]);
 
+    const turmasFiltradas = useMemo(() => {
+        const termo = busca.trim().toLowerCase();
+        return turmas.filter((turma) => {
+            const passaFiltro =
+                filtro === "TODAS" ||
+                (filtro === "MINHAS" && turma.matriculado) ||
+                (filtro === "DISPONIVEIS" && !turma.matriculado);
+            return passaFiltro && (!termo || turma.nome.toLowerCase().includes(termo));
+        });
+    }, [turmas, filtro, busca]);
+
+    // Envia o pedido de entrada ou de saída
+    async function solicitar(turma: TurmaDoAluno) {
+        const tipo = turma.matriculado ? "SAIDA" : "ENTRADA";
+
+        await executar(turma, () => apiFetch("/alunos/me/solicitacoes", {
+            method: "POST",
+            body: JSON.stringify({turmaId: turma.id, tipo}),
+        }), tipo === "ENTRADA"
+            ? `Pedido para entrar em "${turma.nome}" enviado. Aguarde a aprovação do professor.`
+            : `Pedido para sair de "${turma.nome}" enviado. Aguarde a aprovação do professor.`);
+    }
+
+    // Desiste de um pedido que ainda não foi respondido
+    async function cancelar(turma: TurmaDoAluno) {
+        await executar(turma, () => apiFetch(`/alunos/me/solicitacoes/${turma.solicitacaoPendenteId}`, {
+            method: "DELETE",
+        }), `Pedido da turma "${turma.nome}" cancelado.`);
+    }
+
+    async function executar(turma: TurmaDoAluno, chamada: () => Promise<Response>, mensagemSucesso: string) {
         try {
             setProcessando(turma.id);
             setErro("");
+            setAviso("");
 
-            const resposta = await apiFetch(
-                `/alunos/me/turmas/${turma.id}`,
-                {method: matriculado ? "DELETE" : "POST"}
-            );
+            const resposta = await chamada();
+
             if (!resposta.ok) {
-                const erroApi = await lerErro(resposta, "Não foi possivel atualizar a matricula.");
-                setErro(erroApi.mensagem);
+                setErro((await lerErro(resposta, "Não foi possível enviar o pedido.")).mensagem);
                 return;
             }
-            setMinhaIds((atuais) =>
-                matriculado
-                    ? atuais.filter((id) => id !== turma.id)
-                    : [...atuais, turma.id]);
+
+            setAviso(mensagemSucesso);
+            setVersao((atual) => atual + 1);
         } catch (error) {
-            console.error("Erro ao atualizar matricula:", error);
-            setErro("Não foi possivel atualizar a matricula.");
+            console.error("Erro ao enviar o pedido:", error);
+            setErro("Não foi possível enviar o pedido.");
         } finally {
             setProcessando(null);
         }
     }
+
     return (
-        <LayoutPainel perfil="ALUNO">
-
-            <div className="mb-7">
-
-                <h1 className="text-2xl font-bold text-gray-800">
-                    Turmas
-                </h1>
-
-                <p className="text-sm text-gray-500 mt-1">
-                    Entre nas turmas das suas aulas para participar das atividades e dos desafios delas.
+        <AlunoLayout>
+            <header className={styles.header}>
+                <span className={styles.eyebrow}>Sua jornada</span>
+                <h1 className={styles.title}>Turmas</h1>
+                <p className={styles.subtitle}>
+                    Peça para entrar nas turmas das suas aulas. O professor da turma aprova o seu pedido.
                 </p>
+            </header>
 
+            <div className={styles.toolbar}>
+                <div className={styles.tabs} role="tablist" aria-label="Filtrar turmas">
+                    {FILTROS.map((f) => (
+                        <button
+                            key={f.id}
+                            type="button"
+                            role="tab"
+                            aria-selected={filtro === f.id}
+                            className={`${styles.tab} ${filtro === f.id ? styles.tabActive : ""}`}
+                            onClick={() => setFiltro(f.id)}
+                        >
+                            {f.rotulo}
+                            {!carregando && <span className={styles.tabCount}>{contagem[f.id]}</span>}
+                        </button>
+                    ))}
+                </div>
+
+                <label className={styles.search}>
+                    <Search size={16}/>
+                    <input
+                        type="search"
+                        placeholder="Buscar turma..."
+                        value={busca}
+                        onChange={(event) => setBusca(event.target.value)}
+                    />
+                </label>
             </div>
 
             {erro && (
-                <div className="mb-5 bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">
+                <div className={styles.error} role="alert">
                     {erro}
                 </div>
             )}
 
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+            {aviso && (
+                <div className={styles.aviso} role="status">
+                    {aviso}
+                </div>
+            )}
 
-                {carregando ? (
-
-                    <div className="py-16 text-center text-gray-500">
-                        Carregando turmas...
-                    </div>
-
-                ) : turmas.length === 0 ? (
-
-                    <div className="py-16 text-center">
-
-                        <Users
-                            size={40}
-                            className="mx-auto text-gray-300 mb-3"
+            {carregando ? (
+                <div className={styles.grid}>
+                    {[0, 1, 2].map((i) => (
+                        <div key={i} className={`${styles.card} ${styles.skeleton}`}/>
+                    ))}
+                </div>
+            ) : turmasFiltradas.length === 0 ? (
+                <div className={styles.empty}>
+                    <Users size={40}/>
+                    {turmas.length === 0 ? (
+                        <>
+                            <strong>Nenhuma turma disponível</strong>
+                            <span>Quando um professor criar uma turma, ela aparecerá aqui.</span>
+                        </>
+                    ) : (
+                        <>
+                            <strong>Nenhuma turma encontrada</strong>
+                            <span>Tente outro filtro ou outro termo de busca.</span>
+                        </>
+                    )}
+                </div>
+            ) : (
+                <div className={styles.grid}>
+                    {turmasFiltradas.map((turma) => (
+                        <CartaoTurma
+                            key={turma.id}
+                            turma={turma}
+                            ocupado={processando === turma.id}
+                            onSolicitar={() => solicitar(turma)}
+                            onCancelar={() => cancelar(turma)}
                         />
+                    ))}
+                </div>
+            )}
+        </AlunoLayout>
+    );
+}
 
-                        <p className="font-semibold text-gray-600">
-                            Nenhuma turma disponível
-                        </p>
+function CartaoTurma({turma, ocupado, onSolicitar, onCancelar}: {
+    turma: TurmaDoAluno;
+    ocupado: boolean;
+    onSolicitar: () => void;
+    onCancelar: () => void;
+}) {
+    const pendente = turma.solicitacaoPendenteTipo;
 
-                        <p className="text-sm text-gray-400 mt-1">
-                            Quando um professor criar uma turma, ela aparecerá aqui.
-                        </p>
+    // Selo do canto: situação do aluno nesta turma
+    const selo = pendente ? (
+        <span className={`${styles.badge} ${styles.badgeWait}`}>
+            <Clock size={14}/> {pendente === "ENTRADA" ? "Aguardando aprovação" : "Saída solicitada"}
+        </span>
+    ) : turma.matriculado ? (
+        <span className={`${styles.badge} ${styles.badgeOn}`}>
+            <Check size={14}/> Matriculado
+        </span>
+    ) : (
+        <span className={`${styles.badge} ${styles.badgeOff}`}>Disponível</span>
+    );
 
-                    </div>
+    const dica = pendente === "ENTRADA"
+        ? "Seu pedido foi enviado. Assim que o professor aprovar, a turma aparece para você."
+        : pendente === "SAIDA"
+            ? "Você continua na turma até o professor aprovar a saída."
+            : turma.matriculado
+                ? "Você vê as atividades e desafios desta turma."
+                : "Peça para entrar e ver as atividades e desafios desta turma.";
 
-                ) : (
-
-                    <ul>
-
-                        {turmas.map((turma) => {
-                            const matriculado = minhasIds.includes(turma.id);
-
-                            return (
-
-                                <li
-                                    key={turma.id}
-                                    className="flex items-center justify-between px-6 py-4 border-b border-gray-100 last:border-b-0"
-                                >
-
-                                    <div className="flex items-center gap-3">
-
-                                        <div className="w-9 h-9 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center">
-                                            <Users size={16} />
-                                        </div>
-
-                                        <div>
-
-                                            <p className="font-semibold text-gray-800">
-                                                {turma.nome}
-                                            </p>
-
-                                            {matriculado && (
-                                                <span className="inline-flex mt-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700">
-                                                    Matriculado
-                                                </span>
-                                            )}
-
-                                        </div>
-
-                                    </div>
-
-                                    <button
-                                        onClick={() => alterarMatricula(turma)}
-                                        disabled={processando === turma.id}
-                                        className={`px-4 py-2 rounded-lg text-sm font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed ${
-                                            matriculado
-                                                ? "border border-gray-200 text-gray-600 hover:bg-gray-100"
-                                                : "bg-[#5b4cff] text-white hover:bg-[#4a3de0]"
-                                        }`}
-                                    >
-                                        {matriculado ? "Sair da turma" : "Entrar na turma"}
-                                    </button>
-
-                                </li>
-
-                            );
-                        })}
-
-                    </ul>
-
-                )}
-
+    return (
+        <article className={`${styles.card} ${turma.matriculado ? styles.cardMatriculado : ""}`}>
+            <div className={styles.cardTop}>
+                <span className={styles.icon}>
+                    <Users size={22}/>
+                </span>
+                {selo}
             </div>
 
-        </LayoutPainel>
+            <div className={styles.cardBody}>
+                <h2 className={styles.cardTitle} title={turma.nome}>
+                    {turma.nome}
+                </h2>
+                {turma.professor && <p className={styles.cardHint}>Professor(a): {turma.professor}</p>}
+                <p className={styles.cardHint}>{dica}</p>
+            </div>
+
+            {pendente ? (
+                <button type="button" onClick={onCancelar} disabled={ocupado} className={styles.secondaryButton}>
+                    <X size={16}/> {ocupado ? "Aguarde..." : "Cancelar pedido"}
+                </button>
+            ) : (
+                <button
+                    type="button"
+                    onClick={onSolicitar}
+                    disabled={ocupado}
+                    className={turma.matriculado ? styles.secondaryButton : styles.primaryButton}
+                >
+                    {turma.matriculado ? <LogOut size={16}/> : <Plus size={16}/>}
+                    {ocupado ? "Aguarde..." : turma.matriculado ? "Pedir para sair" : "Pedir para entrar"}
+                </button>
+            )}
+        </article>
     );
 }
 

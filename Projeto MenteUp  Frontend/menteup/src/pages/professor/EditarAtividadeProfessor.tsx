@@ -1,24 +1,37 @@
-import {useEffect, useState} from "react";
-import {useNavigate, useParams} from "react-router-dom";
-import {apiFetch, lerErro} from "../../services/api";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { ChevronLeft, Eye, Lock, Plus, Save, X } from "lucide-react";
 
-interface Turma {
-    id: number;
-    nome: string;
-}
+import ProfessorLayout, { useAreaBase } from "../../components/layout/AreaLayout";
+import {
+    EditorPerguntas,
+    SeletorTemplate,
+    perguntaVazia,
+    perguntasIniciais,
+    prepararEnvio,
+    validarPerguntas,
+    type PerguntaRequest,
+} from "../../components/atividades/Editores";
+import ProfessorDaTurma from "../../components/ProfessorDaTurma";
+import { apiFetch, lerErro } from "../../services/api";
+import { podeAlterarTurma, type TurmaResumo } from "../../services/turmaDesafio";
+import { NOME_TIPO, type TipoAtividade } from "../../types/aluno";
+import styles from "./CriarAtividadeProfessor.module.css";
+
+type Turma = TurmaResumo;
 
 interface Alternativa {
-    id?: number;
-    texto: string;
+    id: number;
+    texto?: string;
     correta?: boolean;
+    ordem?: number | null;
 }
 
 interface Pergunta {
-    id?: number;
-    // O backend pode devolver "texto" (formato novo) ou "enunciado" (formato antigo)
+    id: number;
     texto?: string;
     enunciado?: string;
-    alternativas: Alternativa[];
+    alternativas?: Alternativa[];
 }
 
 interface Atividade {
@@ -27,956 +40,413 @@ interface Atividade {
     descricao: string;
     pontuacao: number;
     status: string;
+    tipo?: TipoAtividade;
     turma?: Turma;
-    perguntas: Pergunta[];
+    perguntas?: Pergunta[];
 }
 
-// Modelo usado pelo editor de perguntas (sempre com "enunciado")
-interface AlternativaEditavel {
-    id?: number;
-    texto: string;
-    correta: boolean;
-}
-
-interface PerguntaEditavel {
-    id?: number;
-    enunciado: string;
-    alternativas: AlternativaEditavel[];
-}
-
-// GET /atividades/{id} devolve { atividade, perguntas, ... }.
-// Aceitamos também o formato antigo (atividade com perguntas dentro).
 interface QuestionarioResponse {
     atividade?: Atividade;
     perguntas?: Pergunta[];
 }
 
-function EditarAtividadeProfessor() {
-    const {id} = useParams();
-    const navigate = useNavigate();
+const STATUS = [
+    { valor: "PENDENTE", rotulo: "Rascunho" },
+    { valor: "EM_ANDAMENTO", rotulo: "Ativa" },
+    { valor: "CONCLUIDO", rotulo: "Encerrada" },
+];
 
-    const [atividade, setAtividade] = useState<Atividade | null>(null);
-    const [turmas, setTurmas] = useState<Turma[]>([]);
+function paraRequest(tipo: TipoAtividade, pergunta: Pergunta): PerguntaRequest {
+    const alternativas = (pergunta.alternativas ?? []).map((a) => ({
+        texto: a.texto ?? "",
+        correta: a.correta === true,
+        ordem: a.ordem ?? null,
+    }));
+    const enunciado = pergunta.texto ?? pergunta.enunciado ?? "";
+
+    if (tipo === "VERDADEIRO_FALSO") {
+        const verdadeiro = alternativas.find((a) => a.texto.trim().toLowerCase() === "verdadeiro");
+        const correta = verdadeiro ? verdadeiro.correta : alternativas[0]?.correta ?? true;
+        return {
+            enunciado,
+            alternativas: [
+                { texto: "Verdadeiro", correta },
+                { texto: "Falso", correta: !correta },
+            ],
+        };
+    }
+    if (tipo === "ORDENACAO") {
+        return {
+            enunciado,
+            alternativas: [...alternativas]
+                .sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0))
+                .map((a) => ({ texto: a.texto, correta: true })),
+        };
+    }
+    if (tipo === "LACUNAS") {
+        return {
+            enunciado,
+            alternativas: alternativas.map((a) =>
+                a.correta ? { texto: a.texto, correta: true, ordem: a.ordem } : { texto: a.texto, correta: false }
+            ),
+        };
+    }
+    if (tipo === "ASSOCIACAO") {
+        return { enunciado, alternativas: alternativas.slice(0, 1).map((a) => ({ texto: a.texto, correta: true })) };
+    }
+    return { enunciado, alternativas: alternativas.map((a) => ({ texto: a.texto, correta: a.correta })) };
+}
+
+function EditarAtividadeProfessor() {
+    const { id } = useParams<{ id: string }>();
+    const navigate = useNavigate();
+    const area = useAreaBase();
+    const perfil = area === "/administrador" ? "ADMINISTRADOR" : "PROFESSOR";
 
     const [titulo, setTitulo] = useState("");
     const [descricao, setDescricao] = useState("");
-    const [pontuacao, setPontuacao] = useState<number>(1);
+    const [pontuacao, setPontuacao] = useState(1);
     const [status, setStatus] = useState("PENDENTE");
-    const [turmaId, setTurmaId] = useState<number | "">("");
+    const [turmaId, setTurmaId] = useState("");
+    const [turmas, setTurmas] = useState<Turma[]>([]);
+    const [tituloOriginal, setTituloOriginal] = useState("");
 
-    const [perguntas, setPerguntas] = useState<PerguntaEditavel[]>([]);
+    const [tipo, setTipo] = useState<TipoAtividade>("QUIZ");
+    const [perguntas, setPerguntas] = useState<PerguntaRequest[]>([]);
+    const [original, setOriginal] = useState<{ tipo: TipoAtividade; perguntas: PerguntaRequest[] }>({
+        tipo: "QUIZ",
+        perguntas: [],
+    });
+    const [indice, setIndice] = useState(0);
     const [perguntasAlteradas, setPerguntasAlteradas] = useState(false);
+    const [bloqueado, setBloqueado] = useState(false);
 
-    const [loading, setLoading] = useState(true);
+    const [carregando, setCarregando] = useState(true);
+    const [encontrada, setEncontrada] = useState(false);
     const [salvando, setSalvando] = useState(false);
     const [erro, setErro] = useState("");
     const [sucesso, setSucesso] = useState("");
 
-    /*
-     * =====================================================
-     * CARREGAR ATIVIDADE
-     * =====================================================
-     */
-
     useEffect(() => {
-        const carregarAtividade = async () => {
+        const carregar = async () => {
             try {
                 if (!id) {
                     setErro("ID da atividade não informado.");
                     return;
                 }
-
                 const response = await apiFetch(`/atividades/${id}`);
-
                 if (!response.ok) {
-                    const erroApi = await lerErro(
-                        response,
-                        "Não foi possível carregar a atividade."
-                    );
+                    const erroApi = await lerErro(response, "Não foi possível carregar a atividade.");
                     throw new Error(erroApi.mensagem);
                 }
-
-                const dados: QuestionarioResponse & Atividade =
-                    await response.json();
-
+                const dados: QuestionarioResponse & Atividade = await response.json();
                 const base: Atividade = dados.atividade ?? dados;
-                const perguntas: Pergunta[] =
-                    dados.perguntas ?? base.perguntas ?? [];
+                const tipoAtual = base.tipo ?? "QUIZ";
+                const lista = (dados.perguntas ?? base.perguntas ?? []).map((p) => paraRequest(tipoAtual, p));
 
-                const data: Atividade = {...base, perguntas};
-
-                setAtividade(data);
-
-                setPerguntas(
-                    perguntas.map((pergunta) => ({
-                        id: pergunta.id,
-                        enunciado: pergunta.texto ?? pergunta.enunciado ?? "",
-                        alternativas: (pergunta.alternativas ?? []).map(
-                            (alternativa) => ({
-                                id: alternativa.id,
-                                texto: alternativa.texto ?? "",
-                                correta: alternativa.correta === true,
-                            })
-                        ),
-                    }))
-                );
-                setPerguntasAlteradas(false);
-
-                setTitulo(data.titulo || "");
-                setDescricao(data.descricao || "");
-                setPontuacao(data.pontuacao || 1);
-                setStatus(data.status || "PENDENTE");
-                setTurmaId(data.turma?.id ?? "");
+                setTitulo(base.titulo || "");
+                setTituloOriginal(base.titulo || "");
+                setDescricao(base.descricao || "");
+                setPontuacao(base.pontuacao || 1);
+                setStatus(base.status || "PENDENTE");
+                setTurmaId(base.turma?.id ? String(base.turma.id) : "");
+                setTipo(tipoAtual);
+                setPerguntas(lista.length ? lista : perguntasIniciais(tipoAtual));
+                setOriginal({ tipo: tipoAtual, perguntas: lista });
+                setPerguntasAlteradas(lista.length === 0);
+                setEncontrada(true);
             } catch (error) {
                 console.error(error);
-                setErro(
-                    error instanceof Error
-                        ? error.message
-                        : "Não foi possível carregar a atividade."
-                );
+                setErro(error instanceof Error ? error.message : "Não foi possível carregar a atividade.");
             } finally {
-                setLoading(false);
+                setCarregando(false);
             }
         };
-
-        carregarAtividade();
-    }, [id, navigate]);
-
-    /*
-     * =====================================================
-     * CARREGAR TURMAS
-     * =====================================================
-     */
+        carregar();
+    }, [id]);
 
     useEffect(() => {
         const carregarTurmas = async () => {
             try {
-                const response = await apiFetch("/turmas/all");
-
-                if (!response.ok) {
-                    throw new Error("Erro ao carregar turmas.");
-                }
-
-                const data = await response.json();
-
-                setTurmas(data);
+                const response = await apiFetch("/turmas/all?incluirArquivadas=true");
+                if (!response.ok) throw new Error("Erro ao buscar turmas");
+                // O professor só move a atividade entre as turmas dele
+                const todas: Turma[] = await response.json();
+                setTurmas(todas.filter((t) => podeAlterarTurma(t, perfil)));
             } catch (error) {
                 console.error("Erro ao carregar turmas:", error);
             }
         };
-
         carregarTurmas();
-    }, []);
+    }, [perfil]);
 
-    /*
-     * =====================================================
-     * EDITOR DE PERGUNTAS
-     * =====================================================
-     */
+    const sair = () => navigate(`${area}/atividades`);
 
-    const alterarPerguntas = (
-        atualizar: (atuais: PerguntaEditavel[]) => PerguntaEditavel[]
-    ) => {
-        setPerguntas(atualizar);
+    function escolherTipo(novo: TipoAtividade) {
+        if (novo === tipo) return;
+        setTipo(novo);
+        setPerguntas(novo === original.tipo && original.perguntas.length ? original.perguntas : perguntasIniciais(novo));
+        setIndice(0);
         setPerguntasAlteradas(true);
-    };
-
-    const adicionarPergunta = () => {
-        alterarPerguntas((atuais) => [
-            ...atuais,
-            {
-                enunciado: "",
-                alternativas: [
-                    {texto: "", correta: false},
-                    {texto: "", correta: false},
-                ],
-            },
-        ]);
-    };
-
-    const removerPergunta = (perguntaIndex: number) => {
-        alterarPerguntas((atuais) =>
-            atuais.filter((_, index) => index !== perguntaIndex)
-        );
-    };
-
-    const atualizarEnunciado = (perguntaIndex: number, valor: string) => {
-        alterarPerguntas((atuais) =>
-            atuais.map((pergunta, index) =>
-                index === perguntaIndex
-                    ? {...pergunta, enunciado: valor}
-                    : pergunta
-            )
-        );
-    };
-
-    const adicionarAlternativa = (perguntaIndex: number) => {
-        alterarPerguntas((atuais) =>
-            atuais.map((pergunta, index) =>
-                index === perguntaIndex
-                    ? {
-                        ...pergunta,
-                        alternativas: [
-                            ...pergunta.alternativas,
-                            {texto: "", correta: false},
-                        ],
-                    }
-                    : pergunta
-            )
-        );
-    };
-
-    const removerAlternativa = (
-        perguntaIndex: number,
-        alternativaIndex: number
-    ) => {
-        if (perguntas[perguntaIndex].alternativas.length <= 2) {
-            setErro("Cada pergunta precisa ter pelo menos 2 alternativas.");
-            return;
-        }
-
         setErro("");
+    }
 
-        alterarPerguntas((atuais) =>
-            atuais.map((pergunta, index) =>
-                index === perguntaIndex
-                    ? {
-                        ...pergunta,
-                        alternativas: pergunta.alternativas.filter(
-                            (_, i) => i !== alternativaIndex
-                        ),
-                    }
-                    : pergunta
-            )
-        );
-    };
+    function alterarPerguntas(lista: PerguntaRequest[]) {
+        setPerguntas(lista);
+        setPerguntasAlteradas(true);
+        setErro("");
+    }
 
-    const atualizarAlternativa = (
-        perguntaIndex: number,
-        alternativaIndex: number,
-        valor: string
-    ) => {
-        alterarPerguntas((atuais) =>
-            atuais.map((pergunta, index) =>
-                index === perguntaIndex
-                    ? {
-                        ...pergunta,
-                        alternativas: pergunta.alternativas.map(
-                            (alternativa, i) =>
-                                i === alternativaIndex
-                                    ? {...alternativa, texto: valor}
-                                    : alternativa
-                        ),
-                    }
-                    : pergunta
-            )
-        );
-    };
+    function adicionarPergunta() {
+        alterarPerguntas([...perguntas, perguntaVazia(tipo)]);
+        setIndice(perguntas.length);
+    }
 
-    const marcarRespostaCorreta = (
-        perguntaIndex: number,
-        alternativaIndex: number
-    ) => {
-        alterarPerguntas((atuais) =>
-            atuais.map((pergunta, index) =>
-                index === perguntaIndex
-                    ? {
-                        ...pergunta,
-                        alternativas: pergunta.alternativas.map(
-                            (alternativa, i) => ({
-                                ...alternativa,
-                                correta: i === alternativaIndex,
-                            })
-                        ),
-                    }
-                    : pergunta
-            )
-        );
-    };
-
-    const validarPerguntas = (): string | null => {
-        if (perguntas.length === 0) {
-            return "A atividade precisa ter pelo menos uma pergunta.";
-        }
-
-        for (let i = 0; i < perguntas.length; i++) {
-            const pergunta = perguntas[i];
-
-            if (!pergunta.enunciado.trim()) {
-                return `Informe o enunciado da pergunta ${i + 1}.`;
-            }
-
-            if (pergunta.alternativas.length < 2) {
-                return `A pergunta ${i + 1} precisa ter pelo menos 2 alternativas.`;
-            }
-
-            if (!pergunta.alternativas.some((a) => a.correta)) {
-                return `Marque a resposta correta da pergunta ${i + 1}.`;
-            }
-
-            for (let j = 0; j < pergunta.alternativas.length; j++) {
-                if (!pergunta.alternativas[j].texto.trim()) {
-                    return `Preencha a alternativa ${j + 1} da pergunta ${i + 1}.`;
-                }
-            }
-        }
-
+    function validar(): string | null {
+        if (!titulo.trim()) return "Informe o título da atividade.";
+        if (!turmaId) return "Selecione uma turma.";
+        if (!pontuacao || pontuacao <= 0) return "Informe uma pontuação maior que zero.";
+        if (pontuacao > 1000) return "A pontuação deve ser no máximo 1000 XP.";
+        if (!descricao.trim()) return "Informe a descrição da atividade.";
+        if (perguntasAlteradas && !bloqueado) return validarPerguntas(tipo, perguntas);
         return null;
-    };
+    }
 
-    /*
-     * =====================================================
-     * ATUALIZAR ATIVIDADE
-     * =====================================================
-     */
-
-    const atualizarAtividade = async (
-        event: React.FormEvent<HTMLFormElement>
-    ) => {
-        event.preventDefault();
-
-        setErro("");
+    async function salvar() {
+        const problema = validar();
+        setErro(problema ?? "");
         setSucesso("");
-
-        if (!titulo.trim()) {
-            setErro("Informe o título da atividade.");
-            return;
-        }
-
-        if (titulo.trim().length < 5) {
-            setErro("O título deve possuir pelo menos 5 caracteres.");
-            return;
-        }
-
-        if (!descricao.trim()) {
-            setErro("Informe a descrição da atividade.");
-            return;
-        }
-
-        if (descricao.trim().length < 10) {
-            setErro("A descrição deve possuir pelo menos 10 caracteres.");
-            return;
-        }
-
-        if (pontuacao < 1) {
-            setErro("A pontuação deve ser no mínimo 1.");
-            return;
-        }
-
-        if (turmaId === "") {
-            setErro("Selecione uma turma.");
-            return;
-        }
-
-        if (perguntasAlteradas) {
-            const erroPerguntas = validarPerguntas();
-
-            if (erroPerguntas) {
-                setErro(erroPerguntas);
-                return;
-            }
-        }
+        if (problema) return;
 
         try {
             setSalvando(true);
 
-            /*
-             * Enviamos apenas os dados principais da atividade.
-             * As perguntas são gerenciadas em /atividades/{id}/questionario
-             * e não devem ir neste PUT (o backend novo não as recebe aqui).
-             */
-
-            const atividadeAtualizada = {
-                id: Number(id),
-                titulo: titulo.trim(),
-                descricao: descricao.trim(),
-                pontuacao: Number(pontuacao),
-                status: status,
-                turma: {
-                    id: Number(turmaId),
-                },
-            };
-
             const response = await apiFetch("/atividades", {
                 method: "PUT",
-                body: JSON.stringify(atividadeAtualizada),
+                body: JSON.stringify({
+                    id: Number(id),
+                    titulo: titulo.trim(),
+                    descricao: descricao.trim(),
+                    pontuacao: Number(pontuacao),
+                    status,
+                    turma: { id: Number(turmaId) },
+                }),
             });
-
             if (!response.ok) {
-                const erroApi = await lerErro(
-                    response,
-                    "Não foi possível atualizar a atividade."
-                );
-
-                console.error("Erro do backend:", erroApi);
-
+                const erroApi = await lerErro(response, "Não foi possível atualizar a atividade.");
                 throw new Error(erroApi.mensagem);
             }
 
-            /*
-             * As perguntas só são enviadas se o professor mexeu nelas.
-             * Assim, editar apenas título/descrição/etc. nunca depende
-             * do endpoint do questionário.
-             */
-
-            if (perguntasAlteradas) {
-                const respostaQuestionario = await apiFetch(
-                    `/atividades/${id}/questionario`,
-                    {
-                        method: "PUT",
-                        body: JSON.stringify({
-                            perguntas: perguntas.map((pergunta) => ({
-                                id: pergunta.id,
-                                enunciado: pergunta.enunciado.trim(),
-                                alternativas: pergunta.alternativas.map(
-                                    (alternativa) => ({
-                                        id: alternativa.id,
-                                        texto: alternativa.texto.trim(),
-                                        correta: alternativa.correta,
-                                    })
-                                ),
-                            })),
-                        }),
+            if (perguntasAlteradas && !bloqueado) {
+                const resposta = await apiFetch(`/atividades/${id}/questionario`, {
+                    method: "PUT",
+                    body: JSON.stringify({ tipo, perguntas: prepararEnvio(tipo, perguntas) }),
+                });
+                if (!resposta.ok) {
+                    const erroApi = await lerErro(resposta, "Não foi possível atualizar as perguntas.");
+                    if (resposta.status === 409 || erroApi.codigo === "ATIVIDADE_COM_RESPOSTAS") {
+                        setBloqueado(true);
+                        setTipo(original.tipo);
+                        setPerguntas(original.perguntas);
+                        setIndice(0);
+                        setPerguntasAlteradas(false);
+                        throw new Error(
+                            "Os dados da atividade foram salvos, mas as perguntas não podem mais ser alteradas porque alunos já começaram a responder."
+                        );
                     }
-                );
-
-                if (!respostaQuestionario.ok) {
-                    const erroApi = await lerErro(
-                        respostaQuestionario,
-                        "Não foi possível atualizar as perguntas."
-                    );
-
-                    console.error("Erro ao salvar perguntas:", erroApi);
-
-                    throw new Error(
-                        `Os dados da atividade foram salvos, mas as perguntas não: ${erroApi.mensagem}`
-                    );
+                    throw new Error(`Os dados da atividade foram salvos, mas as perguntas não: ${erroApi.mensagem}`);
                 }
-
                 setPerguntasAlteradas(false);
+                setOriginal({ tipo, perguntas });
             }
 
-            setSucesso("Atividade atualizada com sucesso! 🎉");
-
-            setTimeout(() => {
-                navigate(`/professor/atividades/${id}`);
-            }, 1000);
+            setSucesso("Atividade atualizada com sucesso!");
+            setTimeout(() => navigate(`${area}/atividades/${id}`), 1000);
         } catch (error) {
             console.error(error);
-
-            setErro(
-                error instanceof Error
-                    ? error.message
-                    : "Erro ao atualizar atividade."
-            );
+            setErro(error instanceof Error ? error.message : "Erro ao atualizar atividade.");
         } finally {
             setSalvando(false);
         }
-    };
-
-    /*
-     * =====================================================
-     * LOADING
-     * =====================================================
-     */
-
-    if (loading) {
-        return (
-            <div className="mu-dashboard">
-                <main className="mu-main">
-                    <div className="mu-content">
-                        <div className="mu-card mu-empty">
-                            <div className="mu-empty-icon">⏳</div>
-
-                            <h3>Carregando atividade...</h3>
-
-                            <p>
-                                Aguarde enquanto buscamos os dados da atividade.
-                            </p>
-                        </div>
-                    </div>
-                </main>
-            </div>
-        );
     }
 
-    /*
-     * =====================================================
-     * ERRO
-     * =====================================================
-     */
-
-    if (!atividade) {
-        return (
-            <div className="mu-dashboard">
-                <main className="mu-main">
-                    <div className="mu-content">
-                        <div className="mu-card mu-empty">
-                            <div className="mu-empty-icon">⚠️</div>
-
-                            <h3>Atividade não encontrada</h3>
-
-                            <p>
-                                {erro || "Não foi possível carregar os dados da atividade."}
-                            </p>
-
-                            <button
-                                className="mu-btn mu-btn-primary"
-                                onClick={() =>
-                                    navigate("/professor/atividades")
-                                }
-                            >
-                                Voltar para atividades
-                            </button>
-                        </div>
-                    </div>
-                </main>
+    const cabecalho = (
+        <header className={styles.header}>
+            <button type="button" className={styles.close} onClick={sair} aria-label="Cancelar edição">
+                <X size={18} />
+            </button>
+            <div>
+                <span className={styles.eyebrow}>Editar atividade</span>
+                <h1 className={styles.title}>{tituloOriginal || "Editar missão"}</h1>
             </div>
+        </header>
+    );
+
+    if (carregando || !encontrada) {
+        return (
+            <ProfessorLayout>
+                {cabecalho}
+                <section className={styles.card}>
+                    <h2 className={styles.cardTitle}>
+                        {carregando ? "Carregando atividade..." : "Atividade não encontrada"}
+                    </h2>
+                    <p className={styles.cardSubtitle}>
+                        {carregando ? "Aguarde enquanto buscamos os dados." : erro || "Não foi possível carregar a atividade."}
+                    </p>
+                    {!carregando && (
+                        <button type="button" className={styles.ghostButton} onClick={sair}>
+                            <ChevronLeft size={16} /> Voltar para atividades
+                        </button>
+                    )}
+                </section>
+            </ProfessorLayout>
         );
     }
-
-    /*
-     * =====================================================
-     * TELA
-     * =====================================================
-     */
 
     return (
-        <div className="mu-dashboard">
-            <main className="mu-main">
+        <ProfessorLayout>
+            {cabecalho}
 
-                {/* HEADER */}
+            <section className={styles.card}>
+                <h2 className={styles.cardTitle}>Informações básicas</h2>
+                <p className={styles.cardSubtitle}>Atualize os dados que os alunos veem na missão.</p>
 
-                <header className="mu-header">
+                <label className={styles.label} htmlFor="titulo">
+                    Título da atividade
+                </label>
+                <input id="titulo" className={styles.input} value={titulo} onChange={(e) => setTitulo(e.target.value)} />
 
-                    <input
-                        className="mu-search"
-                        type="text"
-                        placeholder="Pesquisar..."
-                    />
-
-                    <div className="mu-header-user">
-
-                        <div className="mu-avatar">
-                            PE
-                        </div>
-
-                        <span className="mu-user-name">
-              Professora
-            </span>
-
-                    </div>
-
-                </header>
-
-                {/* CONTEÚDO */}
-
-                <div className="mu-content">
-
-                    {/* VOLTAR */}
-
-                    <button
-                        type="button"
-                        className="mu-btn mu-btn-secondary"
-                        onClick={() =>
-                            navigate(`/professor/atividades/${id}`)
-                        }
-                        style={{marginBottom: "20px"}}
-                    >
-                        ← Voltar
-                    </button>
-
-                    {/* TÍTULO */}
-
-                    <div className="mu-content-header">
-
-                        <div className="mu-title">
-
-                            <h1>
-                                Editar atividade
-                            </h1>
-
-                            <p>
-                                Atualize as informações da atividade.
-                            </p>
-
-                        </div>
-
-                    </div>
-
-                    {/* MENSAGEM DE ERRO */}
-
-                    {erro && (
-                        <div
-                            style={{
-                                background: "#fff0f0",
-                                color: "#d64545",
-                                border: "1px solid #ffd0d0",
-                                borderRadius: "10px",
-                                padding: "12px 15px",
-                                marginBottom: "18px",
-                                fontSize: "13px",
-                            }}
-                        >
-                            ⚠️ {erro}
-                        </div>
-                    )}
-
-                    {/* MENSAGEM DE SUCESSO */}
-
-                    {sucesso && (
-                        <div
-                            style={{
-                                background: "#e1f8ec",
-                                color: "#209b62",
-                                border: "1px solid #bdebd2",
-                                borderRadius: "10px",
-                                padding: "12px 15px",
-                                marginBottom: "18px",
-                                fontSize: "13px",
-                            }}
-                        >
-                            ✅ {sucesso}
-                        </div>
-                    )}
-
-                    {/* FORMULÁRIO */}
-
-                    <form
-                        className="mu-card"
-                        onSubmit={atualizarAtividade}
-                        style={{
-                            padding: "25px",
-                        }}
-                    >
-
-                        {/* TÍTULO */}
-
-                        <div className="mu-form-group">
-
-                            <label htmlFor="titulo">
-                                Título da atividade
-                            </label>
-
-                            <input
-                                id="titulo"
-                                type="text"
-                                value={titulo}
-                                onChange={(event) =>
-                                    setTitulo(event.target.value)
-                                }
-                                placeholder="Digite o título da atividade"
-                                maxLength={100}
-                            />
-
-                        </div>
-
-                        {/* DESCRIÇÃO */}
-
-                        <div className="mu-form-group">
-
-                            <label htmlFor="descricao">
-                                Descrição
-                            </label>
-
-                            <textarea
-                                id="descricao"
-                                value={descricao}
-                                onChange={(event) =>
-                                    setDescricao(event.target.value)
-                                }
-                                placeholder="Digite a descrição da atividade"
-                                maxLength={1000}
-                            />
-
-                        </div>
-
-                        {/* PONTUAÇÃO + STATUS */}
-
-                        <div className="mu-form-row">
-
-                            <div className="mu-form-group">
-
-                                <label htmlFor="pontuacao">
-                                    Pontuação
-                                </label>
-
-                                <input
-                                    id="pontuacao"
-                                    type="number"
-                                    min="1"
-                                    value={pontuacao}
-                                    onChange={(event) =>
-                                        setPontuacao(
-                                            Number(event.target.value)
-                                        )
-                                    }
-                                />
-
-                            </div>
-
-                            <div className="mu-form-group">
-
-                                <label htmlFor="status">
-                                    Status
-                                </label>
-
-                                <select
-                                    id="status"
-                                    value={status}
-                                    onChange={(event) =>
-                                        setStatus(event.target.value)
-                                    }
-                                >
-
-                                    <option value="PENDENTE">
-                                        Pendente
-                                    </option>
-
-                                    <option value="EM_ANDAMENTO">
-                                        Em andamento
-                                    </option>
-
-                                    <option value="CONCLUIDO">
-                                        Concluído
-                                    </option>
-
-                                </select>
-
-                            </div>
-
-                        </div>
-
-                        {/* TURMA */}
-
-                        <div className="mu-form-group">
-
-                            <label htmlFor="turma">
-                                Turma
-                            </label>
-
-                            <select
-                                id="turma"
-                                value={turmaId}
-                                onChange={(event) =>
-                                    setTurmaId(
-                                        event.target.value === ""
-                                            ? ""
-                                            : Number(event.target.value)
-                                    )
-                                }
-                            >
-
-                                <option value="">
-                                    Selecione uma turma
+                <div className={styles.row}>
+                    <div>
+                        <label className={styles.label} htmlFor="turma">
+                            Turma
+                        </label>
+                        <select id="turma" className={styles.input} value={turmaId} onChange={(e) => setTurmaId(e.target.value)}>
+                            <option value="">Selecione uma turma</option>
+                            {turmas.filter((t) => !t.arquivada || String(t.id) === turmaId).map((t) => (
+                                <option key={t.id} value={t.id}>
+                                    {t.nome}
                                 </option>
-
-                                {turmas.map((turma) => (
-                                    <option
-                                        key={turma.id}
-                                        value={turma.id}
-                                    >
-                                        {turma.nome}
+                            ))}
+                        </select>
+                        {perfil === "ADMINISTRADOR" && (
+                            <ProfessorDaTurma
+                                turma={turmas.find((t) => String(t.id) === turmaId)}
+                                onVinculado={(atualizada) =>
+                                    setTurmas((lista) => lista.map((t) => (t.id === atualizada.id ? atualizada : t)))
+                                }
+                            />
+                        )}
+                    </div>
+                    <div className={styles.row}>
+                        <div>
+                            <label className={styles.label} htmlFor="pontuacao">
+                                Pontuação (XP)
+                            </label>
+                            <input
+                                id="pontuacao"
+                                type="number"
+                                min={1}
+                                max={1000}
+                                className={styles.input}
+                                value={pontuacao}
+                                onChange={(e) => setPontuacao(Number(e.target.value))}
+                            />
+                        </div>
+                        <div>
+                            <label className={styles.label} htmlFor="status">
+                                Status
+                            </label>
+                            <select id="status" className={styles.input} value={status} onChange={(e) => setStatus(e.target.value)}>
+                                {STATUS.map((s) => (
+                                    <option key={s.valor} value={s.valor}>
+                                        {s.rotulo}
                                     </option>
                                 ))}
-
                             </select>
-
                         </div>
-
-                        {/* PERGUNTAS */}
-
-                        <div
-                            style={{
-                                marginTop: "25px",
-                                paddingTop: "20px",
-                                borderTop: "1px solid #eeeef5",
-                            }}
-                        >
-
-                            <h2
-                                style={{
-                                    fontSize: "16px",
-                                    color: "#29293f",
-                                    marginBottom: "6px",
-                                }}
-                            >
-                                Perguntas
-                            </h2>
-
-                            <p
-                                style={{
-                                    color: "#9292a8",
-                                    fontSize: "12px",
-                                    marginBottom: "5px",
-                                }}
-                            >
-                                Edite os enunciados e as alternativas e marque a
-                                resposta correta de cada pergunta.
-                            </p>
-
-                            {perguntas.length === 0 && (
-                                <p
-                                    style={{
-                                        color: "#9999ad",
-                                        fontSize: "12px",
-                                        marginTop: "12px",
-                                    }}
-                                >
-                                    Nenhuma pergunta cadastrada.
-                                </p>
-                            )}
-
-                            {perguntas.map((pergunta, perguntaIndex) => (
-
-                                <div
-                                    className="pergunta-card"
-                                    key={pergunta.id ?? `nova-${perguntaIndex}`}
-                                >
-
-                                    <div className="pergunta-header">
-
-                                        <h3>Pergunta {perguntaIndex + 1}</h3>
-
-                                        <button
-                                            type="button"
-                                            title="Remover pergunta"
-                                            onClick={() => removerPergunta(perguntaIndex)}
-                                        >
-                                            ✕
-                                        </button>
-
-                                    </div>
-
-                                    <label htmlFor={`enunciado-${perguntaIndex}`}>
-                                        Enunciado da pergunta
-                                    </label>
-
-                                    <textarea
-                                        id={`enunciado-${perguntaIndex}`}
-                                        value={pergunta.enunciado}
-                                        onChange={(event) =>
-                                            atualizarEnunciado(
-                                                perguntaIndex,
-                                                event.target.value
-                                            )
-                                        }
-                                        placeholder="Digite a pergunta"
-                                    />
-
-                                    <h4>Alternativas</h4>
-
-                                    <p>
-                                        Marque a opção que representa a resposta correta.
-                                    </p>
-
-                                    {pergunta.alternativas.map(
-                                        (alternativa, alternativaIndex) => (
-
-                                            <div
-                                                className="alternativa"
-                                                key={alternativa.id ?? `nova-${alternativaIndex}`}
-                                            >
-
-                                                <input
-                                                    type="radio"
-                                                    name={`correta-${perguntaIndex}`}
-                                                    checked={alternativa.correta}
-                                                    onChange={() =>
-                                                        marcarRespostaCorreta(
-                                                            perguntaIndex,
-                                                            alternativaIndex
-                                                        )
-                                                    }
-                                                />
-
-                                                <input
-                                                    type="text"
-                                                    value={alternativa.texto}
-                                                    onChange={(event) =>
-                                                        atualizarAlternativa(
-                                                            perguntaIndex,
-                                                            alternativaIndex,
-                                                            event.target.value
-                                                        )
-                                                    }
-                                                    placeholder={`Alternativa ${alternativaIndex + 1}`}
-                                                />
-
-                                                <button
-                                                    type="button"
-                                                    title="Remover alternativa"
-                                                    onClick={() =>
-                                                        removerAlternativa(
-                                                            perguntaIndex,
-                                                            alternativaIndex
-                                                        )
-                                                    }
-                                                >
-                                                    ✕
-                                                </button>
-
-                                            </div>
-                                        )
-                                    )}
-
-                                    <button
-                                        type="button"
-                                        className="botao-secundario"
-                                        onClick={() => adicionarAlternativa(perguntaIndex)}
-                                    >
-                                        + Adicionar alternativa
-                                    </button>
-
-                                </div>
-                            ))}
-
-                            <button
-                                type="button"
-                                className="botao-secundario"
-                                onClick={adicionarPergunta}
-                            >
-                                + Adicionar pergunta
-                            </button>
-
-                        </div>
-
-                        {/* BOTÕES */}
-
-                        <div className="mu-modal-footer">
-
-                            <button
-                                type="button"
-                                className="mu-btn mu-btn-secondary"
-                                onClick={() =>
-                                    navigate(
-                                        `/professor/atividades/${id}`
-                                    )
-                                }
-                            >
-                                Cancelar
-                            </button>
-
-                            <button
-                                type="submit"
-                                className="mu-btn mu-btn-primary"
-                                disabled={salvando}
-                            >
-
-                                {salvando
-                                    ? "Salvando..."
-                                    : "💾 Salvar alterações"}
-
-                            </button>
-
-                        </div>
-
-                    </form>
-
+                    </div>
                 </div>
 
-            </main>
-        </div>
+                <label className={styles.label} htmlFor="descricao">
+                    Descrição
+                </label>
+                <textarea
+                    id="descricao"
+                    className={styles.input}
+                    rows={3}
+                    value={descricao}
+                    onChange={(e) => setDescricao(e.target.value)}
+                />
+            </section>
+
+            <section className={styles.card}>
+                <h2 className={styles.cardTitle}>Template</h2>
+                <p className={styles.cardSubtitle}>
+                    {bloqueado
+                        ? "O template não pode ser trocado depois que os alunos começaram a responder."
+                        : "Trocar de template substitui as perguntas atuais ao salvar."}
+                </p>
+                <SeletorTemplate valor={tipo} onChange={escolherTipo} bloqueado={bloqueado} />
+            </section>
+
+            <section className={styles.card}>
+                <div className={styles.cardHeader}>
+                    <div>
+                        <h2 className={styles.cardTitle}>Perguntas</h2>
+                        <p className={styles.cardSubtitle}>
+                            {NOME_TIPO[tipo]} ·{" "}
+                            {tipo === "ASSOCIACAO"
+                                ? `${perguntas.length} ${perguntas.length === 1 ? "par" : "pares"}`
+                                : `Questão ${Math.min(indice + 1, perguntas.length)} de ${perguntas.length}`}
+                        </p>
+                    </div>
+                    {!bloqueado && tipo !== "ASSOCIACAO" && (
+                        <button type="button" className={styles.ghostButton} onClick={adicionarPergunta}>
+                            <Plus size={16} /> Adicionar
+                        </button>
+                    )}
+                </div>
+
+                {bloqueado ? (
+                    <div className={styles.locked}>
+                        <Lock size={22} />
+                        <p>Alunos já começaram a responder esta atividade, então as perguntas ficaram bloqueadas para edição.</p>
+                        <button type="button" className={styles.ghostButton} onClick={() => navigate(`${area}/atividades/${id}`)}>
+                            <Eye size={16} /> Ver perguntas
+                        </button>
+                    </div>
+                ) : (
+                    <EditorPerguntas
+                        tipo={tipo}
+                        perguntas={perguntas}
+                        onChange={alterarPerguntas}
+                        indice={indice}
+                        onIndice={setIndice}
+                    />
+                )}
+
+                {erro && (
+                    <p className={styles.error} role="alert">
+                        {erro}
+                    </p>
+                )}
+                {sucesso && (
+                    <p className={styles.success} role="status">
+                        {sucesso}
+                    </p>
+                )}
+
+                <footer className={styles.footer}>
+                    <button type="button" className={styles.ghostButton} onClick={sair} disabled={salvando}>
+                        <ChevronLeft size={16} /> Cancelar
+                    </button>
+                    <button type="button" className={styles.primaryButton} onClick={salvar} disabled={salvando}>
+                        <Save size={16} /> {salvando ? "Salvando..." : "Salvar alterações"}
+                    </button>
+                </footer>
+            </section>
+        </ProfessorLayout>
     );
 }
 

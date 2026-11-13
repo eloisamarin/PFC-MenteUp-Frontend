@@ -1,3 +1,5 @@
+import {apiFetch} from "./api";
+
 export type Perfil = "ALUNO" | "PROFESSOR" | "ADMINISTRADOR";
 export type PerfilGestao = Exclude<Perfil, "ALUNO">;
 export type StatusDesafio = "AGUARDANDO" | "EM_ANDAMENTO" | "ENCERRADO";
@@ -8,25 +10,37 @@ export const ROTA_BASE: Record<Perfil, string> = {
     ADMINISTRADOR: "/administrador",
 };
 
-// Cores fixas de cada alternativa, na mesma ordem na tela do professor e na do aluno
-export const CORES_ALTERNATIVA = [
-    "bg-rose-600",
-    "bg-blue-600",
-    "bg-amber-600",
-    "bg-emerald-600",
-];
-
 export const LETRAS_ALTERNATIVA = ["A", "B", "C", "D"];
+
+export interface ProfessorResponsavel {
+    id: number;
+    nome: string;
+}
 
 export interface TurmaResumo {
     id: number;
     nome: string;
+    // Professor que tem acesso às atividades e desafios da turma (null = só o administrador)
+    professorResponsavel?: ProfessorResponsavel | null;
+    // Arquivada: sai das listas e não recebe nada novo, mas mantém o histórico
+    arquivada?: boolean;
+}
+
+/** GET /turmas/{id}/exclusao: se a turma pode ser excluída e, se não, o motivo. */
+export interface ExclusaoTurma {
+    podeExcluir: boolean;
+    alunos: number;
+    desafios: number;
+    resultados: number;
+    atividadesEmAndamento: number;
+    motivo: string | null;
 }
 
 export interface AlunoTurma {
     id: number;
     nomeUsuario: string;
-    usuario: string;
+    // E-mail: só vem para o administrador (LGPD). Na turma e para o professor, não vem.
+    usuario?: string;
     tipoUsuario?: string;
 }
 
@@ -84,16 +98,37 @@ export interface LinhaRanking {
     nomeUsuario: string;
     pontos: number;
     acertos: number;
+    avatar?: string | null;
 }
 
 export function contagem(quantidade: number, singular: string, plural: string) {
     return `${quantidade} ${quantidade === 1 ? singular : plural}`;
 }
 
-export function usuarioLogado(): { id?: number; nome?: string } {
+
+export function usuarioLogado(): { id?: number; nome?: string; avatar?: string | null } {
     try {
         return JSON.parse(localStorage.getItem("usuario") ?? "{}");
     } catch {
         return {};
     }
+}
+
+/** Professores que o administrador pode vincular a uma turma. */
+export async function carregarProfessores(): Promise<ProfessorResponsavel[]> {
+    const resposta = await apiFetch("/usuarios/all");
+    if (!resposta.ok) throw new Error("Falha ao consultar os professores.");
+
+    const usuarios: { id: number; nomeUsuario: string; tipoUsuario?: string }[] = await resposta.json();
+    return usuarios
+        .filter((usuario) => usuario.tipoUsuario?.toUpperCase() === "PROFESSOR")
+        .map((usuario) => ({id: usuario.id, nome: usuario.nomeUsuario}))
+        .sort((a, b) => a.nome.localeCompare(b.nome));
+}
+
+/** O professor só altera as turmas dele; o administrador, todas. */
+export function podeAlterarTurma(turma: TurmaResumo, perfil: PerfilGestao): boolean {
+    if (perfil === "ADMINISTRADOR") return true;
+    const id = usuarioLogado().id;
+    return id !== undefined && turma.professorResponsavel?.id === id;
 }

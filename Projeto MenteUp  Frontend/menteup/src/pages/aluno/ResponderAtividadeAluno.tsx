@@ -1,6 +1,30 @@
-import {useNavigate, useParams} from "react-router-dom";
-import {useEffect, useState} from "react";
-import {apiFetch, lerErro} from "../../services/api";
+import { useCallback, useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import {
+    CheckCircle2,
+    ChevronLeft,
+    ChevronRight,
+    Lock,
+    PartyPopper,
+    Trophy,
+    TriangleAlert,
+    Zap,
+} from "lucide-react";
+
+import AlunoLayout from "../../components/aluno/AlunoLayout";
+import ConfirmarExclusao from "../../components/ConfirmarExclusao";
+import { useConquistas } from "../../hooks/useConquistas";
+import { apiFetch, lerErro } from "../../services/api";
+import {
+    PlayerAssociacao,
+    PlayerPergunta,
+    corpoResposta,
+    respostaCompleta,
+    valorInicial,
+    type Valor,
+} from "../../components/atividades/Players";
+import { NOME_TIPO, estaAberta, type AtividadeAluno, type TipoAtividade } from "../../types/aluno";
+import styles from "./ResponderAtividadeAluno.module.css";
 
 interface AlternativaResponse {
     id: number;
@@ -32,6 +56,7 @@ interface AtividadeResponse {
     status: "PENDENTE" | "EM_ANDAMENTO" | "CONCLUIDO";
     usuario: UsuarioResponse | null;
     dataCriacao?: string;
+    tipo?: TipoAtividade;
 }
 
 interface ResultadoAtividadeResponse {
@@ -44,7 +69,8 @@ interface ResultadoAtividadeResponse {
 
 interface RespostaProgressoResponse {
     perguntaId: number;
-    alternativaId: number;
+    alternativaId: number | null;
+    alternativasIds?: number[] | null;
 }
 
 interface ProgressoAtividadeResponse {
@@ -61,30 +87,49 @@ interface QuestionarioResponse {
     meuProgresso: ProgressoAtividadeResponse | null;
 }
 
-function VisualizarAtividadeAluno() {
-    const {id} = useParams<{ id: string }>();
-    const navigate = useNavigate();
+const LETRAS = "ABCDEFGH";
 
-    //const [atividade, setAtividade] = useState<Atividade | null>(null);
+function ResponderAtividadeAluno() {
+    const { id } = useParams<{ id: string }>();
+    const navigate = useNavigate();
+    const { verificarNovas } = useConquistas();
+
     const [questionario, setQuestionario] = useState<QuestionarioResponse | null>(null);
-    const atividade = questionario?.atividade;
-    const meuResultado = questionario?.meuResultado ?? null;
     const [carregando, setCarregando] = useState(true);
     const [erro, setErro] = useState("");
-    const [respostas, setRespostas] = useState<Record<number, number>>({});
-    //const [recarregar, setRecarregar] = useState(0);
+
+    const [respostas, setRespostas] = useState<Record<number, Valor>>({});
+    const [indice, setIndice] = useState(0);
+    const [rascunho, setRascunho] = useState<Valor>([]);
+    const [ligacoes, setLigacoes] = useState<Record<number, number | null>>({});
+    const [enviando, setEnviando] = useState(false);
+    // Respostas prontas para envio, aguardando o aluno confirmar a finalização
+    const [paraFinalizar, setParaFinalizar] = useState<Record<number, Valor> | null>(null);
+    // Próxima atividade aberta, oferecida ao terminar esta
+    const [proximaId, setProximaId] = useState<number | null>(null);
+
+    const atividade = questionario?.atividade;
+    const perguntas = questionario?.perguntas ?? [];
+    const tipo: TipoAtividade = atividade?.tipo ?? "QUIZ";
+    const associacao = tipo === "ASSOCIACAO";
+    const meuResultado = questionario?.meuResultado ?? null;
 
     const enviada = meuResultado !== null;
     const encerrada = atividade?.status === "CONCLUIDO";
     const podeResponder = atividade?.status === "EM_ANDAMENTO" && !enviada;
-    const percentualConclusao = questionario?.meuProgresso?.percentualConclusao ?? 0;
+
+    const pergunta = perguntas[indice];
+    const ultima = associacao || indice === perguntas.length - 1;
+    const respondidas = associacao
+        ? perguntas.filter((p) => ligacoes[p.id] != null).length
+        : perguntas.filter((p) => respostas[p.id] !== undefined).length;
+    const completa = associacao ? respondidas === perguntas.length : respostaCompleta(rascunho);
+    const percentual = perguntas.length ? Math.round((respondidas / perguntas.length) * 100) : 0;
 
     useEffect(() => {
         const buscarAtividade = async () => {
             try {
-                const usuarioSalvo = localStorage.getItem("usuario");
-
-                if (!usuarioSalvo) {
+                if (!localStorage.getItem("usuario")) {
                     navigate("/login");
                     return;
                 }
@@ -99,7 +144,7 @@ function VisualizarAtividadeAluno() {
                 if (!response.ok) {
                     const erroApi = await lerErro(response, "Atividade não encontrada.");
                     setErro(erroApi.mensagem);
-                    return
+                    return;
                 }
 
                 const dados: QuestionarioResponse = await response.json();
@@ -107,21 +152,20 @@ function VisualizarAtividadeAluno() {
                 setErro("");
                 setQuestionario(dados);
 
-                if (dados.meuProgresso) {
-                    const respostasSalvas: Record<number, number> = {};
+                const salvas: Record<number, Valor> = {};
+                dados.meuProgresso?.respostas.forEach((r) => {
+                    salvas[r.perguntaId] = r.alternativasIds ?? [r.alternativaId];
+                });
+                setRespostas(salvas);
+                setLigacoes(
+                    Object.fromEntries(dados.perguntas.map((p) => [p.id, salvas[p.id]?.[0] ?? null]))
+                );
 
-                    dados.meuProgresso.respostas.forEach((resposta) => {
-                        respostasSalvas[resposta.perguntaId] =
-                            resposta.alternativaId;
-                    });
-                    setRespostas(respostasSalvas);
-                } else {
-                    setRespostas({});
-                }
-
+                const primeiraAberta = dados.perguntas.findIndex((p) => salvas[p.id] === undefined);
+                setIndice(primeiraAberta === -1 ? Math.max(0, dados.perguntas.length - 1) : primeiraAberta);
             } catch (error) {
-                console.error("Error ao buscar atividade:", error);
-                setErro("Não foi possivel carregar a atividade.");
+                console.error("Erro ao buscar atividade:", error);
+                setErro("Não foi possível carregar a atividade.");
             } finally {
                 setCarregando(false);
             }
@@ -129,450 +173,388 @@ function VisualizarAtividadeAluno() {
         buscarAtividade();
     }, [id, navigate]);
 
-    async function selecionarResposta(
-        perguntaId: number,
-        alternativaId: number
-    ) {
-        if (!podeResponder || !id) {
-            return;
+    useEffect(() => {
+        if (pergunta) setRascunho(respostas[pergunta.id] ?? valorInicial(tipo, pergunta));
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [indice, pergunta?.id]);
+
+    async function salvarResposta(perguntaId: number, valor: Valor) {
+        const resposta = await apiFetch(`/atividades/${id}/progresso`, {
+            method: "PUT",
+            body: JSON.stringify(corpoResposta(tipo, perguntaId, valor)),
+        });
+
+        if (!resposta.ok) {
+            const erroApi = await lerErro(resposta, "Não foi possível salvar sua resposta.");
+            throw new Error(erroApi.mensagem);
         }
 
-        setRespostas((atuais) => ({
-            ...atuais, [perguntaId]: alternativaId,
-        }));
+        setRespostas((atuais) => ({ ...atuais, [perguntaId]: valor }));
+    }
 
+    // Antes de finalizar (ação sem volta), pede confirmação ao aluno
+    function pedirFinalizacao(todas: Record<number, Valor>) {
+        const faltando = perguntas.findIndex((p) => todas[p.id] === undefined);
+        if (faltando !== -1) {
+            setIndice(faltando);
+            setErro("Responda todas as perguntas antes de finalizar.");
+            return;
+        }
+        setParaFinalizar(todas);
+    }
+
+    async function finalizarConfirmado() {
+        if (!paraFinalizar || enviando) return;
         try {
-            const resposta = await apiFetch(`/atividades/${id}/progresso`, {
-                    method: "PUT",
-                    body: JSON.stringify({
-                        perguntaId,
-                        alternativaId,
-                    }),
-                }
-            );
-
-            if (!resposta.ok) {
-                const erroApi = await lerErro(
-                    resposta,
-                    "Não foi possivel salvar sua resposta."
-                );
-                setErro(erroApi.mensagem);
-            }
+            setEnviando(true);
+            setErro("");
+            await finalizarAtividade();
+            setParaFinalizar(null);
         } catch (error) {
-            console.error(
-                "Erro ao salvar o seu progresso",
-                error
-            );
-
-            setErro(
-                "Não foi possivel salvar sua resposta."
-            );
+            console.error("Erro ao finalizar:", error);
+            setParaFinalizar(null);
+            setErro(error instanceof Error ? error.message : "Não foi possível concluir a atividade.");
+        } finally {
+            setEnviando(false);
         }
     }
 
     async function finalizarAtividade() {
-        if (!questionario || !atividade || !id || !podeResponder) return;
+        const resposta = await apiFetch(`/atividades/${id}/respostas`, { method: "POST" });
 
-        const faltando = questionario.perguntas.some(
-            (pergunta) => respostas[pergunta.id] === undefined
+        if (!resposta.ok) {
+            const erroApi = await lerErro(resposta, "Não foi possível concluir a atividade.");
+            throw new Error(erroApi.mensagem);
+        }
+
+        const resultadoApi: ResultadoAtividadeResponse = await resposta.json();
+        setQuestionario((atual) =>
+            atual ? { ...atual, meuResultado: resultadoApi, meuProgresso: null } : atual
         );
 
-        if (faltando) {
-            setErro("Responda todas as perguntas antes de finalizar.");
-            return;
-        }
+        // Atividade concluída: confere se ela liberou alguma conquista
+        void verificarNovas();
+    }
+
+    const confirmar = useCallback(async () => {
+        if (!podeResponder || !pergunta || !completa || enviando) return;
 
         try {
+            setEnviando(true);
             setErro("");
 
-            const resposta = await apiFetch(`/atividades/${id}/respostas`, {
-                method: "POST",
-
-            });
-
-            if (!resposta.ok) {
-                const erroApi = await lerErro(resposta, "Não foi possivel concluir a atividade");
-
-                setErro(erroApi.mensagem);
+            if (associacao) {
+                const todas: Record<number, Valor> = { ...respostas };
+                for (const p of perguntas) {
+                    const valor: Valor = [ligacoes[p.id]];
+                    if (JSON.stringify(respostas[p.id]) !== JSON.stringify(valor)) {
+                        await salvarResposta(p.id, valor);
+                    }
+                    todas[p.id] = valor;
+                }
+                pedirFinalizacao(todas);
                 return;
             }
-            const resultadoApi: ResultadoAtividadeResponse = await resposta.json();
 
-            setQuestionario((atual) =>
-                atual ? {
-                    ...atual,
-                    meuResultado: resultadoApi,
-                    meuProgresso: null,
-                } : atual
-            );
+            if (JSON.stringify(respostas[pergunta.id]) !== JSON.stringify(rascunho)) {
+                await salvarResposta(pergunta.id, rascunho);
+            }
 
+            if (ultima) {
+                pedirFinalizacao({ ...respostas, [pergunta.id]: rascunho });
+            } else {
+                setIndice((i) => i + 1);
+            }
         } catch (error) {
-            console.error("Erro ao concluir atividade:", error);
-            setErro("Não foi possivel concluir a atividade.");
+            console.error("Erro ao responder:", error);
+            setErro(error instanceof Error ? error.message : "Não foi possível salvar sua resposta.");
+        } finally {
+            setEnviando(false);
         }
-    }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [podeResponder, pergunta, rascunho, ligacoes, completa, enviando, respostas, ultima]);
 
-    /* ==============================
-       CARREGANDO
-    ============================== */
+    useEffect(() => {
+        if (!podeResponder || !pergunta || paraFinalizar) return;
+        const alternativas = pergunta.alternativas;
+
+        function onKey(e: KeyboardEvent) {
+            if (e.ctrlKey || e.metaKey || e.altKey) return;
+            const pos = LETRAS.indexOf(e.key.toUpperCase());
+            const escolhaPorLetra = tipo === "QUIZ" || tipo === "VERDADEIRO_FALSO";
+            if (escolhaPorLetra && e.key.length === 1 && pos !== -1 && pos < alternativas.length) {
+                setRascunho([alternativas[pos].id]);
+            } else if (e.key === "Enter") {
+                confirmar();
+            }
+        }
+
+        window.addEventListener("keydown", onKey);
+        return () => window.removeEventListener("keydown", onKey);
+    }, [podeResponder, pergunta, confirmar, tipo, paraFinalizar]);
+
+    const voltar = () => navigate("/aluno/atividades");
+
+    // Com o resultado na tela, procura a próxima atividade aberta (em andamento primeiro)
+    const concluiu = meuResultado !== null;
+    useEffect(() => {
+        if (!concluiu) return;
+        let ativo = true;
+        apiFetch("/alunos/me/atividades")
+            .then((r) => (r.ok ? r.json() : []))
+            .then((lista: AtividadeAluno[]) => {
+                const abertas = lista
+                    .filter((item) => estaAberta(item) && item.atividade.id !== Number(id))
+                    .sort((a, b) => Number(b.status === "EM_ANDAMENTO") - Number(a.status === "EM_ANDAMENTO"));
+                if (ativo) setProximaId(abertas[0]?.atividade.id ?? null);
+            })
+            .catch(() => undefined);
+        return () => {
+            ativo = false;
+        };
+    }, [concluiu, id]);
+
+    const topo = (
+        <div className={styles.topRow}>
+            <button type="button" className={styles.back} onClick={voltar}>
+                <ChevronLeft size={18} /> Sair
+            </button>
+            {atividade && (
+                <span className={styles.xpChip}>
+                    <Zap size={26} />+{atividade.pontuacao} XP
+                </span>
+            )}
+        </div>
+    );
+
     if (carregando) {
         return (
-            <div className="mu-dashboard">
-                <main className="mu-main">
-                    <div className="mu-content">
-                        <div className="mu-card mu-empty">
-                            <div className="mu-empty-icon">⏳</div>
-
-                            <h3>Carregando atividade...</h3>
-
-                            <p>Aguarde enquanto buscamos os dados.</p>
-                        </div>
-                    </div>
-                </main>
-            </div>
+            <AlunoLayout compacto>
+                {topo}
+                <section className={`${styles.card} ${styles.center}`}>
+                    <div className={styles.spinner} aria-hidden />
+                    <p className={styles.muted}>Carregando atividade...</p>
+                </section>
+            </AlunoLayout>
         );
     }
-
-    /* ==============================
-       ERRO
-    ============================== */
 
     if (!atividade) {
         return (
-            <div className="mu-dashboard">
-                <main className="mu-main">
-                    <div className="mu-content">
-                        <div className="mu-card mu-empty">
-                            <div className="mu-empty-icon">⚠️</div>
-
-                            <h3>Atividade não encontrada</h3>
-
-                            <p>
-                                {erro || "Não foi possível encontrar esta atividade."}
-                            </p>
-
-                            <button
-                                className="mu-btn mu-btn-primary"
-                                onClick={() => navigate("/aluno/atividades")}
-                            >
-                                ← Voltar para atividades
-                            </button>
-                        </div>
-                    </div>
-                </main>
-            </div>
+            <AlunoLayout compacto>
+                {topo}
+                <section className={`${styles.card} ${styles.center}`}>
+                    <TriangleAlert size={40} className={styles.coral} />
+                    <h2 className={styles.stateTitle}>Atividade não encontrada</h2>
+                    <p className={styles.muted}>
+                        {erro || "Não foi possível encontrar esta atividade."}
+                    </p>
+                    <button type="button" className={styles.primary} onClick={voltar}>
+                        Voltar para atividades
+                    </button>
+                </section>
+            </AlunoLayout>
         );
     }
 
-    /* ==============================
-       TELA DE VISUALIZAÇÃO
-    ============================== */
+    const assunto = [atividade.turma?.nome, atividade.titulo].filter(Boolean).join(" - ");
+
+    if (meuResultado) {
+        const pctAcerto = meuResultado.totalQuestoes
+            ? Math.round((meuResultado.acertos / meuResultado.totalQuestoes) * 100)
+            : 0;
+        // O final é o que fica na memória: a mensagem acompanha o desempenho, sempre positiva
+        const [tituloFinal, textoFinal] =
+            pctAcerto === 100
+                ? ["Gabaritou!", "Você acertou todas as perguntas. Que fase!"]
+                : pctAcerto >= 70
+                  ? ["Mandou bem!", "Ótimo resultado. Seu XP já foi somado."]
+                  : pctAcerto >= 40
+                    ? ["Bom trabalho!", "Você está no caminho. Cada atividade conta para o seu nível."]
+                    : ["Atividade concluída!", "Todo começo conta. Revise o conteúdo e siga para a próxima."];
+
+        return (
+            <AlunoLayout compacto>
+                {topo}
+                <section className={`${styles.card} ${styles.center}`}>
+                    <span className={styles.subject}>{assunto}</span>
+                    {pctAcerto >= 70 ? (
+                        <PartyPopper size={56} className={styles.gold} aria-hidden />
+                    ) : (
+                        <CheckCircle2 size={56} className={styles.mint} aria-hidden />
+                    )}
+                    <h2 className={styles.stateTitle}>{tituloFinal}</h2>
+                    <p className={styles.muted}>{textoFinal}</p>
+
+                    <div className={styles.resultGrid}>
+                        <div className={styles.resultItem}>
+                            <strong className={styles.mint}>
+                                {meuResultado.acertos}/{meuResultado.totalQuestoes}
+                            </strong>
+                            <span>Acertos</span>
+                        </div>
+                        <div className={styles.resultItem}>
+                            <strong className={styles.gold}>{pctAcerto}%</strong>
+                            <span>Aproveitamento</span>
+                        </div>
+                        <div className={styles.resultItem}>
+                            <strong className={styles.indigo}>+{meuResultado.pontuacao}</strong>
+                            <span>XP ganho</span>
+                        </div>
+                    </div>
+
+                    <div className={styles.resultActions}>
+                        {proximaId !== null ? (
+                            <button
+                                type="button"
+                                className={styles.primary}
+                                onClick={() => navigate(`/aluno/atividades/responder/${proximaId}`)}
+                            >
+                                Próxima atividade <ChevronRight size={16} />
+                            </button>
+                        ) : (
+                            <button type="button" className={styles.primary} onClick={voltar}>
+                                Voltar para atividades <ChevronRight size={16} />
+                            </button>
+                        )}
+                        <button type="button" className={styles.ghost} onClick={() => navigate("/aluno/ranking")}>
+                            <Trophy size={16} /> Ver ranking
+                        </button>
+                    </div>
+                    <p className={styles.note}>Suas respostas foram registradas.</p>
+                </section>
+            </AlunoLayout>
+        );
+    }
+
+    if (!podeResponder || perguntas.length === 0) {
+        const titulo = encerrada
+            ? "Atividade encerrada"
+            : perguntas.length === 0
+              ? "Nenhuma pergunta cadastrada"
+              : "Atividade ainda não liberada";
+        const texto = encerrada
+            ? "Esta atividade foi encerrada pelo professor e não aceita mais respostas."
+            : perguntas.length === 0
+              ? "Esta atividade ainda não possui perguntas."
+              : "O professor ainda não abriu esta atividade para respostas.";
+
+        return (
+            <AlunoLayout compacto>
+                {topo}
+                <section className={`${styles.card} ${styles.center}`}>
+                    <span className={styles.subject}>{assunto}</span>
+                    <Lock size={40} className={styles.muted} />
+                    <h2 className={styles.stateTitle}>{titulo}</h2>
+                    <p className={styles.muted}>{texto}</p>
+                    <button type="button" className={styles.primary} onClick={voltar}>
+                        Voltar para atividades
+                    </button>
+                </section>
+            </AlunoLayout>
+        );
+    }
 
     return (
-        <div className="mu-dashboard">
-            <main className="mu-main">
+        <AlunoLayout compacto>
+            {topo}
 
-                {/* HEADER */}
-
-                <header className="mu-header">
-                    <input
-                        className="mu-search"
-                        type="text"
-                        placeholder="Pesquisar..."
-                    />
-
-                    <div className="mu-header-user">
-                        <div className="mu-avatar">
-                            PE
-                        </div>
-
-                        <span className="mu-user-name">
-              Aluno
-            </span>
-                    </div>
+            <section className={styles.card}>
+                <header className={styles.cardHeader}>
+                    <span className={styles.subject}>{assunto}</span>
+                    <span className={styles.typeBadge}>{NOME_TIPO[tipo]}</span>
                 </header>
 
-                {/* CONTEÚDO */}
+                <div
+                    className={styles.track}
+                    role="progressbar"
+                    aria-valuenow={percentual}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-label="Progresso da atividade"
+                >
+                    <div className={styles.fill} style={{ width: `${percentual}%` }} />
+                </div>
+                <span className={styles.counter}>
+                    {associacao
+                        ? `${respondidas} de ${perguntas.length} ligações`
+                        : `Questão ${indice + 1} de ${perguntas.length}`}
+                </span>
 
-                <div className="mu-content">
+                {associacao ? (
+                    <PlayerAssociacao
+                        titulo={atividade.descricao || "Ligue cada item ao seu correspondente"}
+                        perguntas={perguntas}
+                        ligacoes={ligacoes}
+                        onChange={setLigacoes}
+                    />
+                ) : (
+                    <PlayerPergunta
+                        key={pergunta.id}
+                        tipo={tipo}
+                        pergunta={pergunta}
+                        valor={rascunho}
+                        onChange={setRascunho}
+                    />
+                )}
 
-                    {/* VOLTAR */}
-
-                    <button
-                        className="mu-btn mu-btn-secondary"
-                        onClick={() =>
-                            navigate("/aluno/atividades")
-                        }
-                    >
-                        ← Voltar
-                    </button>
-
-                    {/* CABEÇALHO */}
-
-                    <div className="mu-view-header">
-
-                        <div>
-              <span className="mu-view-label">
-                ATIVIDADE
-              </span>
-
-                            <h1>
-                                {atividade.titulo}
-                            </h1>
-
-                            <p>
-                                {atividade.descricao}
-                            </p>
-                        </div>
-
-                        <div className="mu-view-status">
-
-              <span
-                  className={`mu-badge ${
-                      enviada
-                          ? "mu-status-concluida"
-                          : encerrada
-                              ? "mu-status-rascunho"
-                              : "mu-status-andamento"
-                  }`}
-              >
-                {enviada ? "CONCLUIDA"
-                    : encerrada ? "ENCERRADA"
-                        : percentualConclusao > 0 ? "EM_ANDAMENTO"
-                            : "PENDENTE"}
-              </span>
-
-                        </div>
-
-                    </div>
-
-                    {/* INFORMAÇÕES */}
-
-                    <div className="mu-info-grid">
-
-                        <div className="mu-info-card">
-                            <span>🏆</span>
-
-                            <div>
-                                <small>Pontuação</small>
-
-                                <strong>
-                                    {atividade.pontuacao} pontos
-                                </strong>
-                            </div>
-                        </div>
-
-                        <div className="mu-info-card">
-                            <span>🏫</span>
-
-                            <div>
-                                <small>Turma</small>
-
-                                <strong>
-                                    {atividade.turma?.nome ||
-                                        "Não informada"}
-                                </strong>
-                            </div>
-                        </div>
-
-                        <div className="mu-info-card">
-                            <span>📝</span>
-
-                            <div>
-                                <small>Perguntas</small>
-
-                                <strong>
-                                    {questionario.perguntas?.length || 0}
-                                </strong>
-                            </div>
-                        </div>
-
-                    </div>
-
-                    {podeResponder && (
-                        <div className="mb-6 bg-white rounded-xl p-5 border border-gray-100 shadow-sm">
-
-                            <div className="flex justify-between items-center mb-2">
-                                <span className="text-sm font-semibold text-gray-700">
-                                    Progresso da atividade
-                                </span>
-
-                                <span className="text-sm font-bold text-[#5b4cff]">
-                                    {percentualConclusao}%
-                                </span>
-                            </div>
-
-                            <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-                                <div
-                                    className="h-full bg-[#5b4cff] transition-all"
-                                    style={{
-                                        width: `${percentualConclusao}%`
-                                    }}
-                                />
-                            </div>
-
-                        </div>
-                    )}
-
-                    {/* PERGUNTAS */}
-
-                    <div className="mu-card mu-questions-card">
-
-                        <div className="mu-section-header">
-
-                            <div>
-                                <h2>
-                                    Perguntas da atividade
-                                </h2>
-
-                                <p>
-                                    Responda todas as perguntas e finalize para
-                                    visualizar seu resultado.
-                                </p>
-                            </div>
-
-                        </div>
-
-                        {questionario.perguntas?.length === 0 ? (
-
-                            <div className="mu-empty">
-
-                                <div className="mu-empty-icon">
-                                    📝
-                                </div>
-
-                                <h3>
-                                    Nenhuma pergunta cadastrada
-                                </h3>
-
-                                <p>
-                                    Esta atividade ainda não possui
-                                    perguntas.
-                                </p>
-
-                            </div>
-
-                        ) : (
-
-                            <div className="mu-question-list">
-
-                                {questionario.perguntas.map(
-                                    (pergunta, index) => (
-
-                                        <div
-
-                                            className="mu-question"
-                                            key={pergunta.id}
-                                        >
-
-                                            <div className="mu-question-number">
-                                                {index + 1}
-                                            </div>
-
-                                            <div className="mu-question-content">
-
-                                                <h3>
-                                                    {pergunta.texto}
-                                                </h3>
-
-                                                <div className="mu-alternatives">
-
-                                                    {pergunta.alternativas?.map(
-                                                        (alternativa) => (
-
-                                                            <button
-                                                                type="button"
-                                                                className={`mu-alternative ${
-                                                                    respostas[pergunta.id] === alternativa.id
-                                                                        ? "selected"
-                                                                        : ""
-                                                                }`}
-                                                                key={alternativa.id}
-                                                                onClick={() =>
-                                                                    selecionarResposta(
-                                                                        pergunta.id,
-                                                                        alternativa.id
-                                                                    )
-                                                                }
-                                                                disabled={!podeResponder}
-                                                            >
-
-                                <span className="mu-alternative-letter">
-                                  •
-                                </span>
-
-                                                                <span>
-                                  {alternativa.texto}
-                                </span>
-
-                                                            </button>
-
-                                                        )
-                                                    )}
-
-                                                </div>
-
-                                            </div>
-
-                                        </div>
-
-                                    )
-                                )}
-
-                            </div>
-
+                <footer className={styles.footer}>
+                    <div className={styles.footerLeft}>
+                        {indice > 0 && !associacao && (
+                            <button
+                                type="button"
+                                className={styles.ghost}
+                                onClick={() => {
+                                    setErro("");
+                                    setIndice((i) => i - 1);
+                                }}
+                            >
+                                <ChevronLeft size={16} /> Questão anterior
+                            </button>
                         )}
                         {erro && (
-                            <div className="mu-error">
+                            <span className={styles.error} role="alert">
                                 {erro}
-                            </div>
+                            </span>
                         )}
-
-                        {podeResponder && questionario.perguntas?.length > 0 && (
-                            <button
-                                type="button"
-                                className="mu-finish-button"
-                                onClick={finalizarAtividade}
-                            >
-                                Finalizar atividade
-                            </button>
-                        )}
-
-                        {podeResponder && (
-                            <button
-                                type="button"
-                                className="mu-btn mu-btn-secondary"
-                                onClick={() =>
-                                    navigate("/aluno/atividades")
-                                }
-                            >
-                                Sair da atividade
-                            </button>
-                        )}
-
-                        {meuResultado && (
-                            <div className="mu-success">
-                                Atividade concluída. Você acertou {meuResultado.acertos} de{" "}
-                                {meuResultado.totalQuestoes} pergunta(s) e fez{" "}
-                                {meuResultado.pontuacao} ponto(s). Não é possível responder
-                                novamente.
-                            </div>
-                        )}
-
-                        {encerrada && !enviada && (
-                            <div className="mu-error">
-                                Esta atividade foi encerrada pelo professor e não aceita mais
-                                respostas.
-                            </div>
-                        )}
-
                     </div>
 
-                </div>
+                    <button
+                        type="button"
+                        className={styles.confirm}
+                        onClick={confirmar}
+                        disabled={!completa || enviando}
+                    >
+                        {enviando
+                            ? "Salvando..."
+                            : ultima
+                              ? "Finalizar atividade"
+                              : "Confirmar resposta"}
+                        <ChevronRight size={16} />
+                    </button>
+                </footer>
+            </section>
 
-            </main>
-        </div>
+            {paraFinalizar && (
+                <ConfirmarExclusao
+                    variante="confirmar"
+                    titulo="Finalizar atividade?"
+                    mensagem={
+                        <>
+                            Você respondeu <strong>{perguntas.length} de {perguntas.length}</strong> perguntas.
+                            Depois de finalizar, não dá para alterar as respostas.
+                        </>
+                    }
+                    processando={enviando}
+                    rotuloCancelar="Revisar respostas"
+                    rotuloConfirmar="Finalizar"
+                    rotuloProcessando="Finalizando..."
+                    onConfirmar={finalizarConfirmado}
+                    onCancelar={() => setParaFinalizar(null)}
+                />
+            )}
+        </AlunoLayout>
     );
 }
 
-export default VisualizarAtividadeAluno;
+export default ResponderAtividadeAluno;

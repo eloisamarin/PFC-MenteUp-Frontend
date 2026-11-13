@@ -1,0 +1,664 @@
+.page {
+  min-height: 100vh;
+  padding-bottom: 72px;
+  background: var(--mu-gradient-page);
+  background-attachment: fixed;
+  color: var(--mu-app-text);
+  font-family: var(--mu-font-body);
+  -webkit-font-smoothing: antialiased;
+  scroll-behavior: smooth;
+}
+
+.container {
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(26, 39, 103, 0.85);
+  border-bottom: 1px solid var(--mu-app-glass-border);
+  backdrop-filter: blur(10px);
+}
+
+.headerInner {
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--mu-app-text);
+  text-decoration: none;
+}
+
+
+.brandName {
+  font-family: var(--mu-font-display);
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.nav {
+  display: flex;
+  gap: 28px;
+}
+
+.nav a {
+  color: var(--mu-app-muted);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.nav a:hover {
+  color: var(--mu-app-text);
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.textButton,
+.pillButton,
+.primaryButton,
+.outlineButton,
+.ctaButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition: filter 0.15s, background 0.15s;
+}
+
+.textButton {
+  padding: 8px 12px;
+  border: 0;
+  background: none;
+  color: var(--mu-app-text);
+  font-size: 14px;
+}
+
+.pillButton {
+  height: 38px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--mu-indigo);
+  color: #fff;
+  font-size: 14px;
+}
+
+.primaryButton {
+  height: 48px;
+  padding: 0 22px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--mu-indigo);
+  color: #fff;
+  font-size: 15px;
+}
+
+.outlineButton {
+  composes: clara from "../styles/superficie.module.css";
+  height: 48px;
+  padding: 0 22px;
+  border: 1px solid var(--mu-app-glass-border);
+  border-radius: 14px;
+  background: var(--mu-app-glass);
+  color: var(--mu-app-text);
+  font-size: 15px;
+}
+
+.pillButton:hover,
+.primaryButton:hover {
+  filter: brightness(1.1);
+}
+
+.outlineButton:hover {
+  background: rgba(var(--mu-veu-rgb), 0.14);
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  align-items: center;
+  gap: 48px;
+  padding-top: 80px;
+  padding-bottom: 72px;
+}
+
+.badge {
+  composes: clara from "../styles/superficie.module.css";
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--mu-app-glass);
+  border: 1px solid var(--mu-app-glass-border);
+  color: var(--mu-mint);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.heroTitle {
+  margin: 20px 0;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--mu-font-display);
+  font-size: 60px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.mintText {
+  color: var(--mu-mint-on-gradient);
+}
+
+.goldText {
+  color: var(--mu-gold);
+}
+
+.heroText {
+  max-width: 500px;
+  margin: 0 0 28px;
+  color: var(--mu-app-muted);
+  font-size: 17px;
+  line-height: 28px;
+}
+
+.toggle {
+  composes: clara from "../styles/superficie.module.css";
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  margin-bottom: 28px;
+  border-radius: 14px;
+  background: var(--mu-app-glass);
+  border: 1px solid var(--mu-app-glass-border);
+}
+
+.toggleOption {
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  color: var(--mu-app-muted);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.toggleActive {
+  background: var(--mu-indigo);
+  color: #fff;
+}
+
+.heroActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.heroPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.glassCard {
+  composes: clara from "../styles/superficie.module.css";
+  border-radius: var(--mu-radius-xl);
+  background: var(--mu-app-glass);
+  border: 1px solid var(--mu-app-glass-border);
+  box-shadow: var(--mu-app-shadow);
+  backdrop-filter: blur(10px);
+}
+
+.levelCard {
+  padding: 22px 24px;
+}
+
+.levelTop {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.ring {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  flex-shrink: 0;
+}
+
+.ringTrack,
+.ringFill {
+  fill: none;
+  stroke-width: 6;
+}
+
+.ringTrack {
+  stroke: var(--mu-app-track);
+}
+
+.ringFill {
+  stroke: var(--mu-mint);
+  stroke-linecap: round;
+}
+
+.ringCenter {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.ringCenter b {
+  font-family: var(--mu-font-display);
+  font-size: 14px;
+}
+
+.ringCenter small {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--mu-app-muted);
+}
+
+.levelLabel {
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--mu-app-muted);
+}
+
+.levelXp {
+  margin: 4px 0 0;
+  font-family: var(--mu-font-display);
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.levelXp span {
+  font-size: 13px;
+  color: var(--mu-app-muted);
+}
+
+.levelTrack {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--mu-app-track);
+  overflow: hidden;
+}
+
+.levelFill {
+  width: 82%;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--mu-indigo);
+}
+
+.miniCard {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+}
+
+.miniCard strong {
+  display: block;
+  font-family: var(--mu-font-display);
+  font-size: 15px;
+}
+
+.miniCard small {
+  font-size: 12px;
+  color: var(--mu-app-muted);
+}
+
+.streakCard {
+  width: 78%;
+  margin-left: auto;
+}
+
+.trophyCard {
+  width: 88%;
+}
+
+.miniIcon,
+.featureIcon {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+}
+
+.featureIcon {
+  border-radius: 50%;
+  margin-bottom: 20px;
+}
+
+.gold {
+  background: rgba(237, 190, 36, 0.18);
+  color: var(--mu-gold);
+}
+
+.goldSolid {
+  background: var(--mu-gold);
+  color: #3b2a00;
+}
+
+.indigo {
+  background: rgba(97, 95, 255, 0.25);
+  color: #a9a8ff;
+}
+
+.coral {
+  background: rgba(235, 100, 86, 0.2);
+  color: #ff8f82;
+}
+
+.mint {
+  background: rgba(0, 169, 158, 0.2);
+  color: #3fd8cc;
+}
+
+.section {
+  padding-top: 72px;
+  padding-bottom: 72px;
+}
+
+.eyebrow {
+  display: block;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--mu-mint-on-gradient);
+}
+
+.center {
+  text-align: center;
+}
+
+.sectionTitle {
+  margin: 8px 0 12px;
+  font-family: var(--mu-font-display);
+  font-size: 34px;
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+.sectionText {
+  margin: 0;
+  color: var(--mu-app-muted);
+  font-size: 16px;
+  line-height: 26px;
+}
+
+.features {
+  margin-top: 40px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.featureCard,
+.stepCard {
+  padding: 24px;
+}
+
+.featureCard h3,
+.stepCard h3 {
+  margin: 0 0 8px;
+  font-family: var(--mu-font-display);
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.featureCard p,
+.stepCard p {
+  margin: 0;
+  color: var(--mu-app-muted);
+  font-size: 14px;
+  line-height: 21px;
+}
+
+.steps {
+  margin-top: 40px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.stepNumber {
+  display: block;
+  margin-bottom: 10px;
+  font-family: var(--mu-font-display);
+  font-size: 34px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--mu-indigo);
+}
+
+.teacher {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 48px;
+}
+
+.checklist {
+  margin: 24px 0 32px;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.checklist li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.check {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(0, 169, 158, 0.2);
+  color: #3fd8cc;
+}
+
+.teacherVisual {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.statCard {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 22px;
+  color: #c9c8ff;
+}
+
+.statCard strong {
+  margin-top: 10px;
+  font-family: var(--mu-font-display);
+  font-size: 32px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--mu-app-text);
+}
+
+.statCard small {
+  font-size: 13px;
+  color: var(--mu-app-muted);
+}
+
+.statMint,
+.statMint strong {
+  color: #3fd8cc;
+}
+
+.chartCard {
+  grid-column: 1 / -1;
+  padding: 22px;
+}
+
+.chartCard > span {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.bars {
+  height: 96px;
+  margin-top: 18px;
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.bar {
+  flex: 1;
+  border-radius: 12px 12px 4px 4px;
+  background: var(--mu-indigo);
+}
+
+.cta {
+  margin: 48px 0 0;
+  padding: 56px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  border-radius: var(--mu-radius-2xl);
+  background: linear-gradient(120deg, var(--mu-indigo) 0%, #3b6cf6 100%);
+  box-shadow: var(--mu-app-shadow);
+}
+
+.cta h2 {
+  margin: 0 0 10px;
+  font-family: var(--mu-font-display);
+  font-size: 32px;
+  font-weight: 800;
+}
+
+.cta p {
+  margin: 0 0 28px;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 15px;
+}
+
+.ctaButton {
+  height: 46px;
+  padding: 0 22px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 14px;
+  background: rgba(26, 39, 103, 0.55);
+  color: #fff;
+  font-size: 14px;
+}
+
+.ctaButton:hover {
+  background: rgba(26, 39, 103, 0.75);
+}
+
+.textButton:focus-visible,
+.pillButton:focus-visible,
+.primaryButton:focus-visible,
+.outlineButton:focus-visible,
+.ctaButton:focus-visible,
+.toggleOption:focus-visible,
+.nav a:focus-visible,
+.brand:focus-visible {
+  outline: 2px solid var(--mu-mint);
+  outline-offset: 2px;
+}
+
+@media (max-width: 960px) {
+  .nav {
+    display: none;
+  }
+
+  .hero,
+  .teacher {
+    grid-template-columns: 1fr;
+  }
+
+  .features {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .steps {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .heroTitle {
+    font-size: 44px;
+  }
+
+  .sectionTitle {
+    font-size: 28px;
+  }
+
+  .features {
+    grid-template-columns: 1fr;
+  }
+
+  .streakCard,
+  .trophyCard {
+    width: 100%;
+  }
+
+  .toggle {
+    width: 100%;
+  }
+
+  .toggleOption {
+    flex: 1;
+    justify-content: center;
+    padding: 0 8px;
+  }
+
+  .headerActions .textButton {
+    display: none;
+  }
+}

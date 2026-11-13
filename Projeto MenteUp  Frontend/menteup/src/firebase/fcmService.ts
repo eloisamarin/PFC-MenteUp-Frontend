@@ -19,9 +19,7 @@ export async function gerarTokenFCM(): Promise<string | null> {
         const registration =
             await navigator.serviceWorker.register(
                 "/firebase-messaging-sw.js"
-            );
-
-        console.log("4. Service Worker registrado:", registration);
+            );;
 
         console.log("5. Gerando FCM Token...");
 
@@ -30,7 +28,6 @@ export async function gerarTokenFCM(): Promise<string | null> {
             serviceWorkerRegistration: registration,
         });
 
-        console.log("6. Resultado do getToken:", token);
 
         if (!token) {
             console.log("Não foi possível gerar o token FCM.");
@@ -114,10 +111,6 @@ export function ouvirNotificacoesFCM() {
 
     onMessage(messaging, (payload) => {
 
-        console.log(
-            "🔥🔥 MENSAGEM FCM RECEBIDA:",
-            payload
-        );
 
         const titulo =
             payload.notification?.title ||
@@ -127,8 +120,7 @@ export function ouvirNotificacoesFCM() {
             payload.notification?.body ||
             "Você recebeu uma nova notificação.";
 
-        console.log("Título:", titulo);
-        console.log("Mensagem:", mensagem);
+
 
         if (Notification.permission === "granted") {
 

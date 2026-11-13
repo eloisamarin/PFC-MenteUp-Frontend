@@ -1,0 +1,97 @@
+:root {
+  --mu-bg: #1a2767;
+  /* Fundo de todas as telas: gradiente azul → roxo da marca */
+  --mu-gradient-page: linear-gradient(135deg, #3652ff 0%, #7c3aed 100%);
+  --mu-bg-deep: #12134e;
+  --mu-surface: rgba(29, 41, 100, 0.95);
+  --mu-surface-soft: rgba(29, 41, 100, 0.65);
+  --mu-surface-sunken: rgba(18, 19, 78, 0.55);
+  --mu-input-bg: rgba(18, 19, 78, 0.4);
+  --mu-surface-solid: #1d2964;
+
+  /* Superfície clara para destaque máximo (ex: item ativo do menu, pódio, modais) */
+  --mu-surface-light: #f4f6ff;
+  --mu-text-on-light: #12134e;
+
+  --mu-border: rgba(86, 106, 175, 0.55);
+  --mu-border-input: #3a497e;
+
+  --mu-text: #f7faff;
+  --mu-text-muted: #e6ecff; /* claro o bastante para o gradiente (4,7:1) */
+  --mu-text-on-brand: #fcfcfc;
+
+  --mu-teal: #00b4ac;
+  --mu-teal-ink: #080e2c;
+  --mu-purple: #7755ff;
+  --mu-blue: #3652ff;
+  --mu-violet: #7c3aed;
+  --mu-gradient-brand: linear-gradient(90deg, #3652ff 0%, #7c3aed 100%);
+  --mu-danger: #ff6b81;
+
+  /* Estados semânticos complementares */
+  --mu-success: #34d399;             /* Verde de confirmação nos cartões */
+  --mu-success-on-gradient: #86efac; /* Verde legível direto no gradiente */
+  --mu-warning: #fb923c;             /* Avisos moderados e streaks/ofensivas */
+  --mu-info: #38bdf8;                /* Dicas, badges informativos e links suaves */
+
+  --mu-radius-sm: 10px;
+  --mu-radius-md: 12px;
+  --mu-radius-lg: 16px;
+  --mu-radius-pill: 999px;
+  --mu-shadow-card: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  --mu-shadow-input: 0 1px 2px -1px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.1);
+
+  --mu-font: var(--mu-font-body);
+
+  --mu-app-text: #fcfaf5;
+  --mu-app-muted: #e6ecff; /* claro o bastante para o gradiente (4,7:1) */
+  /* Sobre o gradiente: véu branco translúcido (topo, chips, hover).
+     Dentro dos cartões vira branco sólido: ver styles/superficie.module.css */
+  --mu-app-glass: rgba(255, 255, 255, 0.14);
+  --mu-veu-rgb: 252, 250, 245; /* divisórias e trilhas: claras no gradiente, escuras nos cartões */
+  --mu-sunken: rgba(18, 19, 78, 0.35);
+  --mu-error-text: #ffb4ab;
+  /* Etiquetas (perfil, turma, status): roxo translúcido com texto branco sobre o gradiente */
+  --mu-badge-bg: rgba(124, 58, 237, 0.3);
+  --mu-badge-text: #ffffff;
+  --mu-app-glass-border: rgba(252, 250, 245, 0.16);
+  --mu-app-track: rgba(252, 250, 245, 0.14);
+  --mu-app-shadow: 0 12px 30px rgba(0, 3, 16, 0.28);
+
+  --mu-indigo: #615fff;
+  --mu-error-bg: rgba(58, 18, 52, 0.92); /* faixa de erro escura: o texto #ffb4ab fica legível sobre o gradiente */
+  --mu-mint-on-gradient: #b8fff4; /* verde-água para texto direto no gradiente: 4,9:1 */
+  --mu-indigo-text: #f0eeff; /* texto pequeno de destaque: 4,8:1 sobre o gradiente */
+  --mu-gold: #edbe24;
+  --mu-mint: #00a99e;
+  --mu-coral: #eb6456;
+  --mu-lilac: #c27aff;
+
+  /* Cores de raridade das conquistas */
+  --mu-bronze: #cd7f32;
+  --mu-silver: #a8a9ad;
+
+  --mu-radius-xl: 22px;
+  --mu-radius-2xl: 26px;
+  --mu-radius-btn: 18px;
+
+  --mu-font-display: "Sora", system-ui, sans-serif;
+  --mu-font-body: "Manrope", system-ui, sans-serif;
+}
+
+body {
+  font-family: var(--mu-font-body);
+}
+
+/* Respeita quem pediu ao sistema para reduzir movimento:
+   desliga animações e transições longas em todas as telas. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -1,0 +1,386 @@
+.mint {
+  color: #3fd8cc;
+}
+
+.selectLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--mu-app-muted);
+}
+
+.select {
+  composes: clara from "../../styles/superficie.module.css";
+  min-width: 220px;
+  height: 46px;
+  padding: 0 14px;
+  border-radius: 14px;
+  border: 1px solid var(--mu-app-glass-border);
+  background: var(--mu-app-glass);
+  color: var(--mu-app-text);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  text-transform: none;
+  outline: none;
+  cursor: pointer;
+}
+
+.select:focus {
+  border-color: var(--mu-indigo);
+}
+
+.select option {
+  background: #fff;
+  color: #14152b;
+  color: var(--mu-app-text);
+}
+
+.table td:not(:first-child),
+.table th:not(:first-child) {
+  font-variant-numeric: tabular-nums;
+}
+
+.zero {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(235, 100, 86, 0.18);
+  color: #ff8f82;
+  font-weight: 700;
+}
+
+.back {
+  margin-bottom: 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--mu-app-muted);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.back:hover {
+  color: var(--mu-app-text);
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.titleIcon {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.legend {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  color: var(--mu-app-muted);
+}
+
+.legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend i {
+  width: 12px;
+  height: 12px;
+  border-radius: 4px;
+}
+
+.legendAtividade {
+  background: linear-gradient(180deg, #7c3aed 0%, #3652ff 100%);
+}
+
+.legendDesafio {
+  background: var(--mu-gold);
+}
+
+.chart {
+  height: 230px;
+  overflow-x: auto;
+}
+
+.barCol {
+  min-width: 56px;
+}
+
+.barDesafio {
+  background: linear-gradient(180deg, #f5d36b 0%, var(--mu-gold) 100%);
+}
+
+.items {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.item {
+  padding: 18px;
+  border-radius: var(--mu-radius-xl);
+  background: rgba(var(--mu-veu-rgb), 0.05);
+  border: 1px solid var(--mu-app-glass-border);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.itemHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+
+.itemTitleRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.itemTitle {
+  margin: 0;
+  font-family: var(--mu-font-display);
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.itemMeta {
+  font-size: 13px;
+  color: var(--mu-app-muted);
+}
+
+.tipo {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(97, 95, 255, 0.22);
+  color: #c9c8ff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.questions {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.question {
+  composes: clara from "../../styles/superficie.module.css";
+  display: flex;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--mu-app-glass);
+  font-size: 14px;
+}
+
+.mark {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+}
+
+.markRight {
+  background: rgba(0, 169, 158, 0.25);
+  color: #3fd8cc;
+}
+
+.markWrong {
+  background: rgba(235, 100, 86, 0.22);
+  color: #ff8f82;
+}
+
+.markNeutral {
+  background: rgba(var(--mu-veu-rgb), 0.12);
+  color: var(--mu-app-muted);
+}
+
+.questionBody {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.questionText {
+  margin: 0;
+  font-weight: 700;
+}
+
+.answer {
+  margin: 0;
+  color: var(--mu-app-muted);
+}
+
+.correct {
+  margin: 0;
+  color: #3fd8cc;
+}
+
+.comment {
+  padding-top: 14px;
+  border-top: 1px solid var(--mu-app-glass-border);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.commentBox {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(97, 95, 255, 0.15);
+  border: 1px solid rgba(97, 95, 255, 0.35);
+}
+
+.commentAuthor {
+  margin: 0 0 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #c9c8ff;
+}
+
+.commentText {
+  margin: 0;
+  font-size: 14px;
+  white-space: pre-line;
+}
+
+.linkButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  margin-left: -10px;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  color: #a9a8ff;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.linkButton:hover {
+  background: var(--mu-app-glass);
+}
+
+.commentLabel {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.textarea {
+  composes: clara from "../../styles/superficie.module.css";
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--mu-app-glass-border);
+  background: var(--mu-app-glass);
+  color: var(--mu-app-text);
+  font-family: inherit;
+  font-size: 14px;
+  resize: vertical;
+  outline: none;
+}
+
+.textarea::placeholder {
+  color: var(--mu-app-muted);
+}
+
+.textarea:focus {
+  border-color: var(--mu-indigo);
+}
+
+.counter {
+  margin: 0;
+  align-self: flex-end;
+  font-size: 12px;
+  color: var(--mu-app-muted);
+}
+
+.commentError {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--mu-error-text);
+}
+
+.commentActions {
+  display: flex;
+  gap: 8px;
+}
+
+.saveButton,
+.cancelButton {
+  height: 40px;
+  padding: 0 18px;
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.saveButton {
+  border: 0;
+  background: var(--mu-gradient-brand);
+  color: #fff;
+}
+
+.saveButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cancelButton {
+  border: 1px solid var(--mu-app-glass-border);
+  background: none;
+  color: var(--mu-app-text);
+}
+
+.cancelButton:hover {
+  background: var(--mu-app-glass);
+}
+
+.select:focus-visible,
+.back:focus-visible,
+.linkButton:focus-visible,
+.saveButton:focus-visible,
+.cancelButton:focus-visible {
+  outline: 2px solid var(--mu-mint);
+  outline-offset: 2px;
+}
+
+@media (max-width: 900px) {
+  .select {
+    min-width: 0;
+    width: 100%;
+  }
+}

@@ -1,638 +1,380 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { apiFetch } from "../../services/api";
+import { Check, ChevronLeft, ChevronRight, Plus, Sparkles, X } from "lucide-react";
 
-interface Turma {
-  id: number;
-  nome: string;
-}
+import ProfessorLayout, { useAreaBase } from "../../components/layout/AreaLayout";
+import {
+    EditorPerguntas,
+    SeletorTemplate,
+    perguntaVazia,
+    perguntasIniciais,
+    prepararEnvio,
+    validarPerguntas,
+    type PerguntaRequest,
+} from "../../components/atividades/Editores";
+import ProfessorDaTurma from "../../components/ProfessorDaTurma";
+import { apiFetch, lerErro } from "../../services/api";
+import { podeAlterarTurma, type TurmaResumo } from "../../services/turmaDesafio";
+import { NOME_TIPO, type TipoAtividade } from "../../types/aluno";
+import styles from "./CriarAtividadeProfessor.module.css";
 
-interface Alternativa {
-  texto: string;
-  correta: boolean;
-}
+type Turma = TurmaResumo;
 
-interface Pergunta {
-  enunciado: string;
-  alternativas: Alternativa[];
-}
+const ETAPAS = ["Informações", "Template", "Perguntas", "Revisão"];
 
 function CriarAtividadeProfessor() {
-  const navigate = useNavigate();
-
-  const [titulo, setTitulo] = useState("");
-  const [descricao, setDescricao] = useState("");
-  const [pontuacao, setPontuacao] = useState(10);
-
-  const [turmas, setTurmas] = useState<Turma[]>([]);
-  const [turmaId, setTurmaId] = useState("");
-
-  const [perguntas, setPerguntas] = useState<Pergunta[]>([
-    {
-      enunciado: "",
-      alternativas: [
-        { texto: "", correta: false },
-        { texto: "", correta: false },
-        { texto: "", correta: false },
-        { texto: "", correta: false },
-      ],
-    },
-  ]);
-
-  const [carregandoTurmas, setCarregandoTurmas] = useState(true);
-  const [salvando, setSalvando] = useState(false);
-  const [erro, setErro] = useState("");
-
-  // =========================================================
-  // CARREGAR TURMAS
-  // =========================================================
-
-  useEffect(() => {
-    const carregarTurmas = async () => {
-      try {
-        setCarregandoTurmas(true);
-
-        const response = await apiFetch("/turmas/all");
-
-        if (!response.ok) {
-          throw new Error("Erro ao buscar turmas");
-        }
-
-        const data = await response.json();
-
-        console.log("Turmas recebidas:", data);
-
-        setTurmas(data);
-      } catch (error) {
-        console.error("Erro ao carregar turmas:", error);
-        setErro("Erro ao carregar turmas. Tente novamente.");
-      } finally {
-        setCarregandoTurmas(false);
-      }
-    };
-
-    carregarTurmas();
-  }, []);
-
-  // =========================================================
-  // PERGUNTAS
-  // =========================================================
-
-  function adicionarPergunta() {
-    setPerguntas([
-      ...perguntas,
-      {
-        enunciado: "",
-        alternativas: [
-          { texto: "", correta: false },
-          { texto: "", correta: false },
-        ],
-      },
-    ]);
-  }
-
-  function removerPergunta(index: number) {
-    if (perguntas.length === 1) {
-      alert("A atividade precisa ter pelo menos uma pergunta.");
-      return;
-    }
-
-    setPerguntas(perguntas.filter((_, i) => i !== index));
-  }
-
-  function atualizarEnunciado(
-    perguntaIndex: number,
-    valor: string
-  ) {
-    const novasPerguntas = [...perguntas];
-
-    novasPerguntas[perguntaIndex].enunciado = valor;
-
-    setPerguntas(novasPerguntas);
-  }
-
-  // =========================================================
-  // ALTERNATIVAS
-  // =========================================================
-
-  function adicionarAlternativa(perguntaIndex: number) {
-    const novasPerguntas = [...perguntas];
-
-    novasPerguntas[perguntaIndex].alternativas.push({
-      texto: "",
-      correta: false,
-    });
-
-    setPerguntas(novasPerguntas);
-  }
-
-  function removerAlternativa(
-    perguntaIndex: number,
-    alternativaIndex: number
-  ) {
-    const novasPerguntas = [...perguntas];
-
-    if (
-      novasPerguntas[perguntaIndex].alternativas.length <= 2
-    ) {
-      alert("A pergunta precisa ter pelo menos 2 alternativas.");
-      return;
-    }
-
-    novasPerguntas[perguntaIndex].alternativas.splice(
-      alternativaIndex,
-      1
-    );
-
-    setPerguntas(novasPerguntas);
-  }
-
-  function atualizarAlternativa(
-    perguntaIndex: number,
-    alternativaIndex: number,
-    valor: string
-  ) {
-    const novasPerguntas = [...perguntas];
-
-    novasPerguntas[perguntaIndex].alternativas[
-      alternativaIndex
-    ].texto = valor;
-
-    setPerguntas(novasPerguntas);
-  }
-
-  function marcarRespostaCorreta(
-    perguntaIndex: number,
-    alternativaIndex: number
-  ) {
-    const novasPerguntas = [...perguntas];
-
-    novasPerguntas[perguntaIndex].alternativas =
-      novasPerguntas[perguntaIndex].alternativas.map(
-        (alternativa, index) => ({
-          ...alternativa,
-          correta: index === alternativaIndex,
-        })
-      );
-
-    setPerguntas(novasPerguntas);
-  }
-
-  // =========================================================
-  // SALVAR
-  // =========================================================
-
-  async function salvarAtividade() {
-    try {
-      setErro("");
-
-      if (!titulo.trim()) {
-        alert("Informe o título da atividade.");
-        return;
-      }
-
-      if (!descricao.trim()) {
-        alert("Informe a descrição da atividade.");
-        return;
-      }
-
-      if (!turmaId) {
-        alert("Selecione uma turma.");
-        return;
-      }
-
-      for (let i = 0; i < perguntas.length; i++) {
-        if (!perguntas[i].enunciado.trim()) {
-          alert(`Informe o enunciado da pergunta ${i + 1}.`);
-          return;
-        }
-
-        if (perguntas[i].alternativas.length < 2) {
-          alert(
-            `A pergunta ${i + 1} precisa ter pelo menos 2 alternativas.`
-          );
-          return;
-        }
-
-        const temRespostaCorreta =
-          perguntas[i].alternativas.some(
-            (alternativa) => alternativa.correta
-          );
-
-        if (!temRespostaCorreta) {
-          alert(
-            `Marque a resposta correta da pergunta ${i + 1}.`
-          );
-          return;
-        }
-
-        for (
-          let j = 0;
-          j < perguntas[i].alternativas.length;
-          j++
-        ) {
-          if (
-            !perguntas[i].alternativas[j].texto.trim()
-          ) {
-            alert(
-              `Preencha a alternativa ${j + 1} da pergunta ${i + 1}.`
-            );
-            return;
-          }
-        }
-      }
-
-      setSalvando(true);
-
-      // =================================================
-      // 1 - CRIA A ATIVIDADE
-      // =================================================
-
-      const atividadeResponse = await apiFetch("/atividades", {
-        method: "POST",
-        body: JSON.stringify({
-          titulo: titulo.trim(),
-          descricao: descricao.trim(),
-          pontuacao: Number(pontuacao),
-          status: "PENDENTE",
-          turma: {
-            id: Number(turmaId),
-          },
-        }),
-      });
-
-      if (!atividadeResponse.ok) {
-        const erroBackend =
-          await atividadeResponse.text();
-
-        console.error(erroBackend);
-
-        throw new Error(
-          "Não foi possível criar a atividade."
-        );
-      }
-
-      const atividade =
-        await atividadeResponse.json();
-
-      console.log(
-        "Atividade criada:",
-        atividade
-      );
-
-      // =================================================
-      // 2 - CRIA PERGUNTAS E ALTERNATIVAS
-      // =================================================
-
-      const questionarioResponse = await apiFetch(
-        `/atividades/${atividade.id}/questionario`,
-        {
-          method: "POST",
-          body: JSON.stringify({
-            perguntas: perguntas.map((pergunta) => ({
-              enunciado: pergunta.enunciado.trim(),
-              alternativas: pergunta.alternativas.map((alternativa) => ({
-                texto: alternativa.texto.trim(),
-                correta: alternativa.correta,
-              })),
-            })),
-          }),
-        }
-      );
-
-      if (!questionarioResponse.ok) {
-        const erroQuestionario =
-          await questionarioResponse.text();
-
-        console.error(
-          erroQuestionario
-        );
-
-        throw new Error(
-          "A atividade foi criada, mas houve um erro ao salvar as perguntas."
-        );
-      }
-
-      alert("Atividade criada com sucesso!");
-
-      navigate("/professor/atividades");
-
-    } catch (error) {
-      console.error(
-        "Erro ao salvar atividade:",
-        error
-      );
-
-      if (error instanceof Error) {
-        alert(error.message);
-      } else {
-        alert(
-          "Erro ao salvar a atividade."
-        );
-      }
-    } finally {
-      setSalvando(false);
-    }
-  }
-
-  // =========================================================
-  // TELA
-  // =========================================================
-
-  return (
-    <div className="criar-atividade-container">
-
-      <button
-        type="button"
-        onClick={() =>
-          navigate("/professor/atividades")
-        }
-        className="botao-voltar"
-      >
-        ← Voltar
-      </button>
-
-      <h1>Criar atividade</h1>
-
-      <p>
-        Cadastre uma nova atividade para uma turma.
-      </p>
-
-      {erro && (
-        <div className="erro-turmas">
-          ⚠️ {erro}
-        </div>
-      )}
-
-      {/* ================================================= */}
-      {/* DADOS DA ATIVIDADE */}
-      {/* ================================================= */}
-
-      <section className="card-atividade">
-
-        <h2>Dados da atividade</h2>
-
-        <label>
-          Título da atividade
-        </label>
-
-        <input
-          type="text"
-          value={titulo}
-          onChange={(e) =>
-            setTitulo(e.target.value)
-          }
-          placeholder="Digite o título da atividade"
-        />
-
-        <label>
-          Descrição da atividade
-        </label>
-
-        <textarea
-          value={descricao}
-          onChange={(e) =>
-            setDescricao(e.target.value)
-          }
-          placeholder="Digite a descrição da atividade"
-        />
-
-        <label>
-          Pontuação
-        </label>
-
-        <input
-          type="number"
-          min="1"
-          value={pontuacao}
-          onChange={(e) =>
-            setPontuacao(
-              Number(e.target.value)
-            )
-          }
-        />
-
-        <label>
-          Turma
-        </label>
-
-        {carregandoTurmas ? (
-          <p>Carregando turmas...</p>
-        ) : turmas.length === 0 ? (
-          <p>
-            ⚠️ Nenhuma turma encontrada.
-          </p>
-        ) : (
-          <select
-            value={turmaId}
-            onChange={(e) =>
-              setTurmaId(e.target.value)
+    const navigate = useNavigate();
+    const area = useAreaBase();
+    const perfil = area === "/administrador" ? "ADMINISTRADOR" : "PROFESSOR";
+
+    const [etapa, setEtapa] = useState(0);
+    const [titulo, setTitulo] = useState("");
+    const [descricao, setDescricao] = useState("");
+    const [pontuacao, setPontuacao] = useState(10);
+    const [turmaId, setTurmaId] = useState("");
+    const [turmas, setTurmas] = useState<Turma[]>([]);
+    const [carregandoTurmas, setCarregandoTurmas] = useState(true);
+
+    const [tipo, setTipo] = useState<TipoAtividade>("QUIZ");
+    const [perguntas, setPerguntas] = useState<PerguntaRequest[]>(perguntasIniciais("QUIZ"));
+    const [indice, setIndice] = useState(0);
+
+    const [atividadeId, setAtividadeId] = useState<number | null>(null);
+    const [perguntasSalvas, setPerguntasSalvas] = useState(false);
+    const [salvando, setSalvando] = useState(false);
+    const [erro, setErro] = useState("");
+
+    useEffect(() => {
+        const carregarTurmas = async () => {
+            try {
+                setCarregandoTurmas(true);
+                const response = await apiFetch("/turmas/all");
+                if (!response.ok) throw new Error("Erro ao buscar turmas");
+                // O professor só cria atividade nas turmas dele
+                const todas: Turma[] = await response.json();
+                setTurmas(todas.filter((t) => podeAlterarTurma(t, perfil)));
+            } catch (error) {
+                console.error("Erro ao carregar turmas:", error);
+                setErro("Erro ao carregar turmas. Tente novamente.");
+            } finally {
+                setCarregandoTurmas(false);
             }
-          >
-            <option value="">
-              Selecione uma turma
-            </option>
+        };
+        carregarTurmas();
+    }, [perfil]);
 
-            {turmas.map((turma) => (
-              <option
-                key={turma.id}
-                value={turma.id}
-              >
-                {turma.nome}
-              </option>
-            ))}
-          </select>
-        )}
+    const turma = turmas.find((t) => String(t.id) === turmaId);
+    const sair = () => navigate(`${area}/atividades`);
 
-      </section>
+    function validarEtapa(): string | null {
+        if (etapa === 0) {
+            if (!titulo.trim()) return "Informe o título da atividade.";
+            if (!turmaId) return "Selecione uma turma.";
+            if (!pontuacao || pontuacao <= 0) return "Informe uma pontuação maior que zero.";
+        if (pontuacao > 1000) return "A pontuação deve ser no máximo 1000 XP.";
+            if (!descricao.trim()) return "Informe a descrição da atividade.";
+        }
+        if (etapa === 2) return validarPerguntas(tipo, perguntas);
+        return null;
+    }
 
-      {/* ================================================= */}
-      {/* PERGUNTAS */}
-      {/* ================================================= */}
+    function continuar() {
+        const problema = validarEtapa();
+        setErro(problema ?? "");
+        if (!problema) setEtapa((e) => Math.min(e + 1, ETAPAS.length - 1));
+    }
 
-      <section className="card-atividade">
+    function voltar() {
+        setErro("");
+        if (etapa === 0) sair();
+        else setEtapa((e) => e - 1);
+    }
 
-        <h2>Perguntas</h2>
+    function escolherTipo(novo: TipoAtividade) {
+        if (novo === tipo) return;
+        setTipo(novo);
+        setPerguntas(perguntasIniciais(novo));
+        setIndice(0);
+        setPerguntasSalvas(false);
+    }
 
-        <p>
-          Adicione as perguntas e escolha a
-          resposta correta.
-        </p>
+    function adicionarPergunta() {
+        setPerguntas((lista) => [...lista, perguntaVazia(tipo)]);
+        setIndice(perguntas.length);
+    }
 
-        {perguntas.map(
-          (pergunta, perguntaIndex) => (
+    function alterarPerguntas(lista: PerguntaRequest[]) {
+        setPerguntas(lista);
+        setPerguntasSalvas(false);
+        setErro("");
+    }
 
-            <div
-              className="pergunta-card"
-              key={perguntaIndex}
-            >
+    async function salvar(publicar: boolean) {
+        try {
+            setSalvando(true);
+            setErro("");
 
-              <div className="pergunta-header">
+            const dadosAtividade = {
+                titulo: titulo.trim(),
+                descricao: descricao.trim(),
+                pontuacao: Number(pontuacao),
+                turma: { id: Number(turmaId) },
+            };
 
-                <h3>
-                  Pergunta{" "}
-                  {perguntaIndex + 1}
-                </h3>
+            let id = atividadeId;
+            if (id === null) {
+                const resposta = await apiFetch("/atividades", {
+                    method: "POST",
+                    body: JSON.stringify({ ...dadosAtividade, status: "PENDENTE" }),
+                });
+                if (!resposta.ok) {
+                    const erroApi = await lerErro(resposta, "Não foi possível criar a atividade.");
+                    throw new Error(erroApi.mensagem);
+                }
+                const criada = await resposta.json();
+                id = Number(criada.id);
+                setAtividadeId(id);
+            }
 
-                {perguntas.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      removerPergunta(
-                        perguntaIndex
-                      )
-                    }
-                  >
-                    ✕
-                  </button>
+            if (!perguntasSalvas) {
+                const resposta = await apiFetch(`/atividades/${id}/questionario`, {
+                    method: atividadeId === null ? "POST" : "PUT",
+                    body: JSON.stringify({ tipo, perguntas: prepararEnvio(tipo, perguntas) }),
+                });
+                if (!resposta.ok) {
+                    const erroApi = await lerErro(
+                        resposta,
+                        "A atividade foi criada, mas houve um erro ao salvar as perguntas."
+                    );
+                    throw new Error(erroApi.mensagem);
+                }
+                setPerguntasSalvas(true);
+            }
+
+            if (publicar || atividadeId !== null) {
+                const resposta = await apiFetch("/atividades", {
+                    method: "PUT",
+                    body: JSON.stringify({ id, ...dadosAtividade, status: publicar ? "EM_ANDAMENTO" : "PENDENTE" }),
+                });
+                if (!resposta.ok) {
+                    const erroApi = await lerErro(
+                        resposta,
+                        "As perguntas foram salvas, mas não foi possível publicar a atividade."
+                    );
+                    throw new Error(erroApi.mensagem);
+                }
+            }
+
+            navigate(`${area}/atividades`);
+        } catch (error) {
+            console.error("Erro ao salvar atividade:", error);
+            setErro(error instanceof Error ? error.message : "Erro ao salvar a atividade.");
+        } finally {
+            setSalvando(false);
+        }
+    }
+
+    const resumoPerguntas =
+        tipo === "ASSOCIACAO"
+            ? `${perguntas.length} ${perguntas.length === 1 ? "par" : "pares"}`
+            : `${perguntas.length} ${perguntas.length === 1 ? "pergunta" : "perguntas"}`;
+
+    return (
+        <ProfessorLayout>
+            <header className={styles.header}>
+                <button type="button" className={styles.close} onClick={sair} aria-label="Cancelar criação">
+                    <X size={18} />
+                </button>
+                <div>
+                    <span className={styles.eyebrow}>Nova atividade</span>
+                    <h1 className={styles.title}>Crie uma nova missão</h1>
+                </div>
+            </header>
+
+            <ol className={styles.stepper}>
+                {ETAPAS.map((nome, i) => (
+                    <li
+                        key={nome}
+                        className={`${styles.step} ${i < etapa ? styles.stepDone : ""} ${i === etapa ? styles.stepCurrent : ""}`}
+                        aria-current={i === etapa ? "step" : undefined}
+                    >
+                        <span className={styles.stepNumber}>{i < etapa ? <Check size={16} /> : i + 1}</span>
+                        <span className={styles.stepName}>{nome}</span>
+                    </li>
+                ))}
+            </ol>
+
+            <section className={styles.card}>
+                {etapa === 0 && (
+                    <>
+                        <h2 className={styles.cardTitle}>Informações básicas</h2>
+                        <p className={styles.cardSubtitle}>Dê contexto para os alunos entenderem a missão.</p>
+
+                        <label className={styles.label} htmlFor="titulo">
+                            Título da atividade
+                        </label>
+                        <input
+                            id="titulo"
+                            className={styles.input}
+                            placeholder="Ex.: Expedição pelo sistema solar"
+                            value={titulo}
+                            onChange={(e) => setTitulo(e.target.value)}
+                        />
+
+                        <div className={styles.row}>
+                            <div>
+                                <label className={styles.label} htmlFor="turma">
+                                    Turma
+                                </label>
+                                <select
+                                    id="turma"
+                                    className={styles.input}
+                                    value={turmaId}
+                                    onChange={(e) => setTurmaId(e.target.value)}
+                                    disabled={carregandoTurmas}
+                                >
+                                    <option value="">{carregandoTurmas ? "Carregando turmas..." : "Selecione uma turma"}</option>
+                                    {turmas.map((t) => (
+                                        <option key={t.id} value={t.id}>
+                                            {t.nome}
+                                        </option>
+                                    ))}
+                                </select>
+                                {perfil === "ADMINISTRADOR" && (
+                                    <ProfessorDaTurma
+                                        turma={turma}
+                                        onVinculado={(atualizada) =>
+                                            setTurmas((lista) => lista.map((t) => (t.id === atualizada.id ? atualizada : t)))
+                                        }
+                                    />
+                                )}
+                                {perfil === "PROFESSOR" && !carregandoTurmas && turmas.length === 0 && (
+                                    <p style={{ fontSize: 13, margin: "4px 0 0" }}>
+                                        Você ainda não é professor responsável por nenhuma turma. Peça a um administrador para vincular você.
+                                    </p>
+                                )}
+                            </div>
+                            <div>
+                                <label className={styles.label} htmlFor="pontuacao">
+                                    Pontuação (XP)
+                                </label>
+                                <input
+                                    id="pontuacao"
+                                    type="number"
+                                    min={1}
+                                    max={1000}
+                                    className={styles.input}
+                                    value={pontuacao}
+                                    onChange={(e) => setPontuacao(Number(e.target.value))}
+                                />
+                            </div>
+                        </div>
+
+                        <label className={styles.label} htmlFor="descricao">
+                            Descrição
+                        </label>
+                        <textarea
+                            id="descricao"
+                            className={styles.input}
+                            rows={3}
+                            placeholder="Explique o objetivo da missão para os alunos."
+                            value={descricao}
+                            onChange={(e) => setDescricao(e.target.value)}
+                        />
+                    </>
                 )}
 
-              </div>
+                {etapa === 1 && (
+                    <>
+                        <h2 className={styles.cardTitle}>Escolha um template</h2>
+                        <p className={styles.cardSubtitle}>
+                            Trocar de template depois de montar as perguntas apaga as perguntas já criadas.
+                        </p>
+                        <SeletorTemplate valor={tipo} onChange={escolherTipo} />
+                    </>
+                )}
 
-              <label>
-                Enunciado da pergunta
-              </label>
+                {etapa === 2 && (
+                    <>
+                        <div className={styles.cardHeader}>
+                            <div>
+                                <h2 className={styles.cardTitle}>Monte as perguntas</h2>
+                                <p className={styles.cardSubtitle}>
+                                    {NOME_TIPO[tipo]} ·{" "}
+                                    {tipo === "ASSOCIACAO" ? resumoPerguntas : `Questão ${indice + 1} de ${perguntas.length}`}
+                                </p>
+                            </div>
+                            {tipo !== "ASSOCIACAO" && (
+                                <button type="button" className={styles.ghostButton} onClick={adicionarPergunta}>
+                                    <Plus size={16} /> Adicionar
+                                </button>
+                            )}
+                        </div>
+                        <EditorPerguntas
+                            tipo={tipo}
+                            perguntas={perguntas}
+                            onChange={alterarPerguntas}
+                            indice={indice}
+                            onIndice={setIndice}
+                        />
+                    </>
+                )}
 
-              <textarea
-                value={
-                  pergunta.enunciado
-                }
-                onChange={(e) =>
-                  atualizarEnunciado(
-                    perguntaIndex,
-                    e.target.value
-                  )
-                }
-                placeholder="Digite a pergunta"
-              />
+                {etapa === 3 && (
+                    <div className={styles.review}>
+                        <span className={styles.reviewIcon}>
+                            <Sparkles size={26} />
+                        </span>
+                        <h2 className={styles.reviewTitle}>Pronta para publicar</h2>
+                        <p className={styles.cardSubtitle}>
+                            {[titulo.trim(), resumoPerguntas, `${pontuacao} XP`, turma?.nome].filter(Boolean).join(" · ")}
+                        </p>
+                        <dl className={styles.reviewBox}>
+                            <div>
+                                <dt>Template</dt>
+                                <dd>{NOME_TIPO[tipo]}</dd>
+                            </div>
+                            <div>
+                                <dt>Perguntas</dt>
+                                <dd>{resumoPerguntas}</dd>
+                            </div>
+                            <div>
+                                <dt>Visibilidade</dt>
+                                <dd>{turma ? `Turma ${turma.nome}` : "-"}</dd>
+                            </div>
+                        </dl>
+                    </div>
+                )}
 
-              <h4>
-                Alternativas
-              </h4>
+                {erro && (
+                    <p className={styles.error} role="alert">
+                        {erro}
+                    </p>
+                )}
 
-              <p>
-                Marque a opção que
-                representa a resposta
-                correta.
-              </p>
-
-              {pergunta.alternativas.map(
-                (
-                  alternativa,
-                  alternativaIndex
-                ) => (
-
-                  <div
-                    className="alternativa"
-                    key={
-                      alternativaIndex
-                    }
-                  >
-
-                    <input
-                      type="radio"
-                      name={`correta-${perguntaIndex}`}
-                      checked={
-                        alternativa.correta
-                      }
-                      onChange={() =>
-                        marcarRespostaCorreta(
-                          perguntaIndex,
-                          alternativaIndex
-                        )
-                      }
-                    />
-
-                    <input
-                      type="text"
-                      value={
-                        alternativa.texto
-                      }
-                      onChange={(e) =>
-                        atualizarAlternativa(
-                          perguntaIndex,
-                          alternativaIndex,
-                          e.target.value
-                        )
-                      }
-                      placeholder={`Alternativa ${alternativaIndex +
-                        1
-                        }`}
-                    />
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        removerAlternativa(
-                          perguntaIndex,
-                          alternativaIndex
-                        )
-                      }
-                    >
-                      ✕
+                <footer className={styles.footer}>
+                    <button type="button" className={styles.ghostButton} onClick={voltar} disabled={salvando}>
+                        <ChevronLeft size={16} /> Voltar
                     </button>
 
-                  </div>
-                )
-              )}
-
-              <button
-                type="button"
-                onClick={() =>
-                  adicionarAlternativa(
-                    perguntaIndex
-                  )
-                }
-                className="botao-secundario"
-              >
-                + Adicionar alternativa
-              </button>
-
-            </div>
-          )
-        )}
-
-        <button
-          type="button"
-          onClick={adicionarPergunta}
-          className="botao-secundario"
-        >
-          + Adicionar pergunta
-        </button>
-
-      </section>
-
-      {/* ================================================= */}
-      {/* BOTÕES */}
-      {/* ================================================= */}
-
-      <div className="botoes-acoes">
-
-        <button
-          type="button"
-          onClick={() =>
-            navigate(
-              "/professor/atividades"
-            )
-          }
-        >
-          Cancelar
-        </button>
-
-        <button
-          type="button"
-          onClick={salvarAtividade}
-          disabled={salvando}
-        >
-          {salvando
-            ? "Salvando..."
-            : "Salvar atividade"}
-        </button>
-
-      </div>
-
-    </div>
-  );
+                    {etapa < ETAPAS.length - 1 ? (
+                        <button type="button" className={styles.primaryButton} onClick={continuar}>
+                            Continuar <ChevronRight size={16} />
+                        </button>
+                    ) : (
+                        <div className={styles.footerActions}>
+                            <button type="button" className={styles.ghostButton} onClick={() => salvar(false)} disabled={salvando}>
+                                Salvar rascunho
+                            </button>
+                            <button type="button" className={styles.publishButton} onClick={() => salvar(true)} disabled={salvando}>
+                                {salvando ? "Salvando..." : "Publicar atividade"} <ChevronRight size={16} />
+                            </button>
+                        </div>
+                    )}
+                </footer>
+            </section>
+        </ProfessorLayout>
+    );
 }
 
 export default CriarAtividadeProfessor;

@@ -1,0 +1,280 @@
+.shell {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  background: var(--mu-gradient-page);
+  background-attachment: fixed;
+  color: var(--mu-app-text);
+  font-family: var(--mu-font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+.glowTop,
+.glowBottom {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.glowTop {
+  width: 512px;
+  height: 512px;
+  left: -128px;
+  top: -128px;
+  background: rgba(152, 16, 250, 0.25);
+  filter: blur(80px);
+}
+
+.glowBottom {
+  width: 576px;
+  height: 576px;
+  right: -160px;
+  top: 400px;
+  background: rgba(54, 82, 255, 0.28);
+  filter: blur(90px);
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--mu-app-glass);
+  border-bottom: 1px solid var(--mu-app-glass-border);
+  box-shadow: var(--mu-app-shadow);
+  backdrop-filter: blur(10px);
+}
+
+.topbarInner {
+  max-width: 1552px;
+  margin: 0 auto;
+  padding: 0 32px;
+  height: 87px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  border: 0;
+  background: none;
+  padding: 0;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+
+.brandName {
+  display: block;
+  font-family: var(--mu-font-display);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 18px;
+  color: var(--mu-app-text);
+}
+
+
+.brandTagline {
+  display: block;
+  margin-top: 4px;
+  font-size: 12.8px;
+  color: var(--mu-app-muted);
+}
+
+.topActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.xpChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 14px 0 12px;
+  border-radius: 999px;
+  background: var(--mu-app-glass);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.xpChip svg {
+  color: var(--mu-gold);
+}
+
+.ghostButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 13px;
+  border-radius: 12px;
+  border: 1px solid var(--mu-app-glass-border);
+  background: var(--mu-app-glass);
+  color: var(--mu-app-text);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.ghostButton:hover {
+  background: rgba(var(--mu-veu-rgb), 0.14);
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--mu-coral);
+  display: grid;
+  place-items: center;
+  font-family: var(--mu-font-display);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.body {
+  position: relative;
+  max-width: 1552px;
+  margin: 0 auto;
+  padding: 64px 32px 48px;
+  display: flex;
+  gap: 64px;
+  align-items: flex-start;
+}
+
+.bodyCompact {
+  padding-top: 28px;
+  padding-bottom: 24px;
+}
+
+.bodyCompact .sidebar {
+  top: 115px;
+}
+
+.sidebar {
+  width: 208px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  position: sticky;
+  top: 151px;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.navItem {
+  height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px;
+  border-radius: var(--mu-radius-btn);
+  color: var(--mu-app-muted);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.2s, color 0.2s;
+}
+
+.navItem:hover:not(.navItemActive):not(.navItemDisabled) {
+  background: var(--mu-app-glass);
+  color: var(--mu-app-text);
+}
+
+/* Item ativo em branco: o gradiente da marca sumiria sobre o fundo, que é o mesmo gradiente */
+.navItemActive {
+  background: #fff;
+  color: var(--mu-blue);
+  font-weight: 700;
+}
+
+.navItemDisabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.soon {
+  margin-left: auto;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.navItem:focus-visible,
+.brand:focus-visible,
+.ghostButton:focus-visible {
+  outline: 2px solid var(--mu-mint);
+  outline-offset: 2px;
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 1100px) {
+  .body {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 24px;
+    padding-top: 24px;
+  }
+
+  .sidebar {
+    position: static;
+    width: 100%;
+  }
+
+  .nav {
+    flex-direction: row;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .navItem {
+    flex-shrink: 0;
+  }
+
+  .soon {
+    display: none;
+  }
+
+  .sidebarExtra {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .topbarInner {
+    padding: 0 16px;
+    height: 68px;
+  }
+
+  .brandTagline,
+  .xpChip {
+    display: none;
+  }
+
+  .body {
+    padding: 16px 16px 32px;
+  }
+}
+
+/* O fundo em gradiente já dá a cor: os brilhos decorativos ficam desligados */
+.glowTop,
+.glowBottom {
+  display: none;
+}

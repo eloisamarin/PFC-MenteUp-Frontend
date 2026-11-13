@@ -1,0 +1,754 @@
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.eyebrow {
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--mu-indigo-text);
+}
+
+.title {
+  margin: 6px 0 10px;
+  font-family: var(--mu-font-display);
+  font-size: 40px;
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--mu-app-text);
+}
+
+.subtitle {
+  margin: 0;
+  font-size: 16px;
+  color: var(--mu-app-muted);
+}
+
+.card {
+  composes: clara from "../../styles/superficie.module.css";
+  border-radius: var(--mu-radius-2xl);
+  background: var(--mu-app-glass);
+  border: 1px solid var(--mu-app-glass-border);
+  box-shadow: var(--mu-app-shadow);
+  backdrop-filter: blur(10px);
+}
+
+.ghostButton,
+.primaryButton,
+.closeButton {
+  height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 16px;
+  border-radius: 14px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: filter 0.15s, background 0.15s;
+}
+
+.ghostButton {
+  composes: clara from "../../styles/superficie.module.css";
+  border: 1px solid var(--mu-app-glass-border);
+  background: var(--mu-app-glass);
+  color: var(--mu-app-text);
+}
+
+.ghostButton:hover:not(:disabled) {
+  background: rgba(var(--mu-veu-rgb), 0.14);
+}
+
+.ghostButton:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.primaryButton {
+  border: 0;
+  background: var(--mu-indigo);
+  color: #fff;
+}
+
+.primaryButton:hover {
+  filter: brightness(1.1);
+}
+
+.spin {
+  animation: girar 1s linear infinite;
+}
+
+@keyframes girar {
+  to { transform: rotate(360deg); }
+}
+
+.identity {
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: var(--mu-radius-xl);
+  background: rgba(var(--mu-veu-rgb), 0.05);
+  border: 1px solid var(--mu-app-glass-border);
+}
+
+.identity > span:last-child {
+  display: flex;
+  flex-direction: column;
+}
+
+.identity strong {
+  font-size: 15px;
+}
+
+.identity small {
+  font-size: 13px;
+  color: var(--mu-app-muted);
+}
+
+.identityIcon {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: rgba(97, 95, 255, 0.25);
+  color: #a9a8ff;
+}
+
+.panel {
+  padding: 24px;
+}
+
+.panelHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.panelTitle {
+  margin: 0;
+  font-family: var(--mu-font-display);
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.panelSubtitle {
+  margin: 4px 0 0;
+  font-size: 14px;
+  color: var(--mu-app-muted);
+}
+
+.filters {
+  margin: 20px 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, 1fr) auto;
+  gap: 10px;
+}
+
+.filterActions {
+  display: flex;
+  gap: 8px;
+}
+
+.select {
+  composes: clara from "../../styles/superficie.module.css";
+  height: 44px;
+  min-width: 0;
+  padding: 0 14px;
+  border-radius: 14px;
+  border: 1px solid var(--mu-app-glass-border);
+  background: var(--mu-app-glass);
+  color: var(--mu-app-text);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  outline: none;
+  cursor: pointer;
+}
+
+.select:focus {
+  border-color: var(--mu-indigo);
+}
+
+.select option {
+  background: #fff;
+  color: #14152b;
+  color: var(--mu-app-text);
+}
+
+.search {
+  composes: clara from "../../styles/superficie.module.css";
+  height: 44px;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  border-radius: 14px;
+  border: 1px solid var(--mu-app-glass-border);
+  background: var(--mu-app-glass);
+  color: var(--mu-app-muted);
+}
+
+.search:focus-within {
+  border-color: var(--mu-indigo);
+}
+
+.search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--mu-app-text);
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+}
+
+.search input::placeholder {
+  color: var(--mu-app-muted);
+}
+
+.error {
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: var(--mu-error-bg);
+  border: 1px solid rgba(235, 100, 86, 0.45);
+  color: var(--mu-error-text);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.tableWrap {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.table th {
+  padding: 0 14px 14px 0;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--mu-app-muted);
+  white-space: nowrap;
+}
+
+.table td {
+  padding: 16px 14px 16px 0;
+  border-top: 1px solid var(--mu-app-glass-border);
+  vertical-align: middle;
+}
+
+.emptyCell {
+  padding: 40px 0 !important;
+  text-align: center;
+  color: var(--mu-app-muted);
+}
+
+.evento {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.corIndigo { color: #8a88ff; }
+.corCoral { color: #ff8f82; }
+.corLilas { color: var(--mu-lilac); }
+.corOuro { color: var(--mu-gold); }
+.corMint { color: #3fd8cc; }
+
+.acaoCell {
+  max-width: 380px;
+}
+
+.acaoCell strong {
+  display: block;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.acaoCell small {
+  font-size: 12px;
+  color: var(--mu-app-muted);
+}
+
+.muted {
+  color: var(--mu-app-muted);
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.badgeMint {
+  background: rgba(0, 169, 158, 0.2);
+  color: #3fd8cc;
+}
+
+.badgeCoral {
+  background: rgba(235, 100, 86, 0.2);
+  color: #ff8f82;
+}
+
+.badgeNeutro {
+  background: rgba(var(--mu-veu-rgb), 0.1);
+  color: var(--mu-app-text);
+}
+
+.badgeOuro {
+  background: rgba(237, 190, 36, 0.18);
+  color: var(--mu-gold);
+}
+
+.iconButton {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  color: var(--mu-app-muted);
+  cursor: pointer;
+}
+
+.iconButton:hover {
+  background: var(--mu-app-glass);
+  color: var(--mu-app-text);
+}
+
+.pager {
+  margin-top: 16px;
+  padding-top: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  border-top: 1px solid var(--mu-app-glass-border);
+  font-size: 14px;
+  color: var(--mu-app-muted);
+}
+
+.pagerButtons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pageCount {
+  font-weight: 700;
+  color: var(--mu-app-text);
+}
+
+.roundButton {
+  composes: clara from "../../styles/superficie.module.css";
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--mu-app-glass-border);
+  border-radius: 50%;
+  background: var(--mu-app-glass);
+  color: var(--mu-app-text);
+  cursor: pointer;
+}
+
+.roundPrimary {
+  border-color: transparent;
+  background: var(--mu-indigo);
+}
+
+.roundButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.summary {
+  margin-bottom: 32px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.summaryCard {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 22px 20px;
+}
+
+.summaryCard > span:last-child {
+  display: flex;
+  flex-direction: column;
+}
+
+.summaryCard strong {
+  font-family: var(--mu-font-display);
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.summaryCard small {
+  font-size: 14px;
+  color: var(--mu-app-muted);
+}
+
+.sectionTitle {
+  margin: 0 0 16px;
+  font-family: var(--mu-font-display);
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.userFilters {
+  margin-bottom: 18px;
+  display: flex;
+  gap: 12px;
+}
+
+.searchWide {
+  flex: 1;
+}
+
+.tableCard {
+  overflow: hidden;
+}
+
+.userTable thead {
+  background: rgba(var(--mu-veu-rgb), 0.06);
+}
+
+.userTable th {
+  padding: 16px 14px 16px 0;
+}
+
+.userTable th:first-child,
+.userTable td:first-child {
+  padding-left: 18px;
+}
+
+.userTable td {
+  padding: 12px 14px 12px 0;
+}
+
+.userTable tbody tr:hover {
+  background: rgba(var(--mu-veu-rgb), 0.04);
+}
+
+.person {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.person > span:last-child {
+  display: flex;
+  flex-direction: column;
+}
+
+.person strong {
+  font-weight: 700;
+}
+
+.person small {
+  font-size: 12px;
+  color: var(--mu-app-muted);
+}
+
+.avatar {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(97, 95, 255, 0.28);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(4, 8, 30, 0.65);
+  backdrop-filter: blur(4px);
+}
+
+.modal {
+  composes: clara from "../../styles/superficie.module.css";
+  position: relative;
+  width: 100%;
+  max-width: 500px;
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  padding: 26px 26px 24px;
+  border-radius: var(--mu-radius-xl);
+  background: var(--mu-app-glass);
+  border: 1px solid var(--mu-app-glass-border);
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.45);
+  color: var(--mu-app-text);
+  font-family: var(--mu-font-body);
+}
+
+.modalClose {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  color: var(--mu-app-muted);
+  cursor: pointer;
+}
+
+.modalClose:hover {
+  background: var(--mu-app-glass);
+  color: var(--mu-app-text);
+}
+
+.modalTitle {
+  margin: 0;
+  font-family: var(--mu-font-display);
+  font-size: 19px;
+  font-weight: 700;
+}
+
+.modalSubtitle {
+  margin: 4px 0 18px;
+  font-size: 14px;
+  color: var(--mu-app-muted);
+}
+
+.modalHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 14px;
+  border-bottom: 2px solid var(--mu-app-glass-border);
+}
+
+.modalHead strong {
+  font-family: var(--mu-font-display);
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.details {
+  margin: 14px 0 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  font-size: 14px;
+}
+
+.details > div {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  gap: 8px;
+}
+
+.details dt {
+  color: var(--mu-app-muted);
+}
+
+.details dd {
+  margin: 0;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.dataLabel {
+  font-size: 14px;
+  color: var(--mu-app-muted);
+}
+
+.data {
+  margin: 6px 0 20px;
+  max-height: 200px;
+  overflow: auto;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(4, 8, 30, 0.35);
+  font-size: 12px;
+  white-space: pre-wrap;
+}
+
+.closeButton {
+  width: 100%;
+  border: 1px solid var(--mu-app-glass-border);
+  border-radius: 999px;
+  background: rgba(var(--mu-veu-rgb), 0.08);
+  color: var(--mu-app-text);
+}
+
+.closeButton:hover {
+  background: rgba(var(--mu-veu-rgb), 0.14);
+}
+
+.ghostButton:focus-visible,
+.primaryButton:focus-visible,
+.closeButton:focus-visible,
+.iconButton:focus-visible,
+.roundButton:focus-visible,
+.modalClose:focus-visible,
+.select:focus-visible {
+  outline: 2px solid var(--mu-mint);
+  outline-offset: 2px;
+}
+
+@media (max-width: 1100px) {
+  .filters {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .summary {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .userFilters {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 640px) {
+  .title {
+    font-size: 32px;
+  }
+
+  .filters,
+  .summary {
+    grid-template-columns: 1fr;
+  }
+
+  .details > div {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+}
+
+/* Formulário "Novo usuário" (só o administrador cria professor e administrador) */
+.formNovo {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 18px 0 20px;
+}
+
+.formNovo label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--mu-app-muted);
+}
+
+.campo {
+  composes: clara from "../../styles/superficie.module.css";
+  height: 44px;
+  padding: 0 14px;
+  border-radius: 14px;
+  border: 1px solid var(--mu-app-glass-border);
+  background: var(--mu-app-glass);
+  color: var(--mu-app-text);
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+}
+
+.campo:focus {
+  border-color: rgba(122, 108, 255, 0.8);
+}
+
+.sucesso {
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: rgba(0, 169, 158, 0.15);
+  border: 1px solid rgba(0, 169, 158, 0.45);
+  color: #5ff0e2;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* Lei de Fitts: área de toque de pelo menos 44x44px sem mudar o desenho do botão */
+.iconButton {
+  position: relative;
+}
+
+.iconButton::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: max(100%, 44px);
+  height: max(100%, 44px);
+  transform: translate(-50%, -50%);
+}
+
+.roundButton {
+  position: relative;
+}
+
+.roundButton::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: max(100%, 44px);
+  height: max(100%, 44px);
+  transform: translate(-50%, -50%);
+}
+
+.modalClose::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: max(100%, 44px);
+  height: max(100%, 44px);
+  transform: translate(-50%, -50%);
+}

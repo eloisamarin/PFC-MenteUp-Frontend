@@ -1,1 +1,8 @@
 @import "tailwindcss";
+
+/*Fontes do app*/
+@theme{
+  --font-sans: "Manrope", system-ui, sans-serif;
+  --font-display: "Sora", system-ui, sans-serif;
+}
+
