@@ -2,8 +2,7 @@
   position: relative;
   min-height: 100vh;
   overflow: hidden;
-  background: var(--mu-gradient-page);
-  background-attachment: fixed;
+  background: var(--mu-bg);
   color: var(--mu-app-text);
   font-family: var(--mu-font-body);
   -webkit-font-smoothing: antialiased;
@@ -273,8 +272,3 @@
   }
 }
 
-/* O fundo em gradiente já dá a cor: os brilhos decorativos ficam desligados */
-.glowTop,
-.glowBottom {
-  display: none;
-}

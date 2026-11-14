@@ -2,8 +2,10 @@
   position: relative;
   min-height: 100vh;
   overflow: hidden;
-  background: var(--mu-gradient-page);
-  background-attachment: fixed;
+  background:
+    radial-gradient(ellipse 60% 70% at 15% 20%, rgba(119, 85, 255, 0.22) 0%, rgba(119, 85, 255, 0) 60%),
+    radial-gradient(ellipse 60% 70% at 88% 80%, rgba(0, 180, 172, 0.12) 0%, rgba(0, 180, 172, 0) 55%),
+    var(--mu-bg);
   color: var(--mu-text);
   font-family: var(--mu-font);
   -webkit-font-smoothing: antialiased;
