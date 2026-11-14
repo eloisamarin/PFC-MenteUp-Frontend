@@ -1,6 +1,7 @@
 import { getToken } from "firebase/messaging";
 import { onMessage } from "firebase/messaging";
 import { messaging } from "../firebase/firebaseConfig";
+import { API_URL } from "../services/api";
 export async function gerarTokenFCM(): Promise<string | null> {
     try {
         console.log("1. Iniciando geração do FCM Token...");
@@ -65,8 +66,9 @@ export async function registrarTokenFCM(): Promise<void> {
             return;
         }
 
+        // Mesmo endereço do resto do sistema (VITE_API_URL na Vercel; localhost no desenvolvimento)
         const resposta = await fetch(
-            "http://localhost:8080/usuarios/fcm-token",
+            `${API_URL}/usuarios/fcm-token`,
             {
                 method: "POST",
 
