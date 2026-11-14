@@ -30,6 +30,7 @@ messaging.onBackgroundMessage((payload) => {
         body:
             payload.notification?.body ||
             "Você recebeu uma nova notificação.",
+        icon: "/icon-192.png",
         data: payload.data || {}
     };
 
