@@ -18,7 +18,8 @@ Este repositório tem a **interface web (front-end)** do MenteUp. A API REST fic
 | Aplicação (front-end) | https://menteup.vercel.app |
 | API (back-end) | https://pfc-menteup-backend.onrender.com |
 
-> O plano gratuito do Render coloca a API para dormir quando ninguém a usa. O primeiro login depois de um tempo parado pode levar cerca de 1 minuto.
+## Vídeo das Funcionalidades
+Vídeo Menteup: https://drive.google.com/file/d/1mA2XsdNKIGsaFj6UkQUOCrodvDmc4DFc/view?usp=sharing
 
 ---
 
@@ -382,6 +383,10 @@ As capturas de tela da versão 1.0.0 ficam na pasta [`docs/evidencias`](docs/evi
 | `08-desafio-ao-vivo.png` | Desafio ao vivo com o ranking |
 | `09-dashboard-professor.png` | Dashboard do professor com os filtros |
 | `10-usuarios-admin.png` | Gestão de usuários pelo administrador |
+
+### 5. Vídeo de demonstração
+
+O vídeo mostra o uso da plataforma na versão 1.0.0, do cadastro ao painel do administrador: [assistir no Google Drive](https://drive.google.com/file/d/1mA2XsdNKIGsaFj6UkQUOCrodvDmc4DFc/view?usp=sharing).
 
 ---
 
